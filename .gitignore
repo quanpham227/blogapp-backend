@@ -1,0 +1,79 @@
+### Maven ###
+/target/
+dependency-reduced-pom.xml
+src/main/resources/google_credentials.json
+src/main/resources/application.yml
+buildNumber.properties
+.mvn/timing.properties
+
+### Spring Boot ###
+/logs
+*.log
+spring-boot-app/
+spring-boot-admin/
+spring-boot-cache/
+spring-boot-cloud/
+spring-boot-data/
+spring-boot-security/
+spring-boot-starter/
+spring-boot-test/
+spring-boot-web/
+spring-boot-actuator/
+
+### Eclipse ###
+.metadata
+bin/**
+tmp/
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+### Windows ###
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
