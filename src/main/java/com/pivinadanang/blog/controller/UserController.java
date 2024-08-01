@@ -23,7 +23,7 @@ import java.util.List;
 public class UserController {
     private final IUserService userService;
     @PostMapping("/register")
-    public ResponseEntity<?> createUser(@Valid @RequestBody UserDTO userDTO, BindingResult result) {
+    public ResponseEntity<?> createUser(@Valid @RequestBody UserDTO userDTO, BindingResult result) throws Exception{
         try {
             if(result.hasErrors()){
             List<String> errorMessages = result.getFieldErrors()

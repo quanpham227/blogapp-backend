@@ -8,6 +8,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -56,7 +57,7 @@ public class JwtTokenUtils {
 
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()  // Khởi tạo JwtParserBuilder
+        return Jwts.parser()// Khởi tạo JwtParserBuilder
                 .verifyWith(getSignInKey())  // Sử dụng verifyWith() để thiết lập signing key
                 .build()  // Xây dựng JwtParser
                 .parseSignedClaims(token)  // Phân tích token đã ký
@@ -74,31 +75,13 @@ public class JwtTokenUtils {
     public String getSubject(String token) {
         return  extractClaim(token, Claims::getSubject);
     }
-//    public boolean validateToken(String token, User userDetails) {
-//        try {
-//            String subject = extractClaim(token, Claims::getSubject);
-//            //subject is phoneNumber or email
-//            Token existingToken = tokenRepository.findByToken(token);
-//            if(existingToken == null ||
-//                    existingToken.isRevoked() == true ||
-//                    !userDetails.isActive()
-//            ) {
-//                return false;
-//            }
-//            return (subject.equals(userDetails.getUsername()))
-//                    && !isTokenExpired(token);
-//        } catch (MalformedJwtException e) {
-//            logger.error("Invalid JWT token: {}", e.getMessage());
-//        } catch (ExpiredJwtException e) {
-//            logger.error("JWT token is expired: {}", e.getMessage());
-//        } catch (UnsupportedJwtException e) {
-//            logger.error("JWT token is unsupported: {}", e.getMessage());
-//        } catch (IllegalArgumentException e) {
-//            logger.error("JWT claims string is empty: {}", e.getMessage());
-//        }
-//
-//        return false;
-//    }
+
+    public boolean validateToken(String token, UserDetails userDetails) {
+      String phoneNumber = extractPhoneNumbers(token);
+      return (phoneNumber.equals(userDetails.getUsername()))
+              && !isTokenExpired(token);
+    }
+
     public String extractPhoneNumbers(String token) {
         return extractClaim(token, Claims::getSubject);
     }

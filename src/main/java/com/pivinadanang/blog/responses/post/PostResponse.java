@@ -18,6 +18,7 @@ public class PostResponse extends BaseResponse {
 
     private String slug;
 
+    @JsonProperty("thumbnail_url")
     private String thumbnailUrl;
 
     @JsonProperty("category_id")
