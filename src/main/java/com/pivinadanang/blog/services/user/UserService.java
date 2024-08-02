@@ -1,9 +1,10 @@
 package com.pivinadanang.blog.services.user;
 
 import com.pivinadanang.blog.components.JwtTokenUtils;
-import com.pivinadanang.blog.converters.LocalizationUtils;
+import com.pivinadanang.blog.components.converters.LocalizationUtils;
 import com.pivinadanang.blog.dtos.UserDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
+import com.pivinadanang.blog.exceptions.ExpiredTokenException;
 import com.pivinadanang.blog.exceptions.PermissionDenyException;
 import com.pivinadanang.blog.models.RoleEntity;
 import com.pivinadanang.blog.models.UserEntity;
@@ -19,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+
+import static com.pivinadanang.blog.ultils.ValidationUtils.isValidEmail;
 
 @Service
 @RequiredArgsConstructor
@@ -67,6 +70,20 @@ public class UserService implements IUserService{
         }
         return userRepository.save(newUser);
 
+    }
+
+    @Override
+    public UserEntity getUserDetailsFromToken(String token) throws Exception {
+        if(jwtTokenUtil.isTokenExpired(token)) {
+            throw new ExpiredTokenException("Token is expired");
+        }
+        String subject = jwtTokenUtil.getSubject(token);
+        Optional<UserEntity> user;
+        user = userRepository.findByPhoneNumber(subject);
+        if (user.isEmpty() && isValidEmail(subject)) {
+            user = userRepository.findByEmail(subject);
+        }
+        return user.orElseThrow(() -> new Exception("User not found"));
     }
 
     @Override

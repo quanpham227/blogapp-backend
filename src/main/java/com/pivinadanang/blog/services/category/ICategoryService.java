@@ -8,10 +8,10 @@ import com.pivinadanang.blog.responses.post.PostResponse;
 import java.util.List;
 
 public interface ICategoryService {
-    CategoryEntity createCategory(CategoryDTO category);
+    CategoryResponse createCategory(CategoryDTO category);
     CategoryEntity getCategoryById(long id);
     List<CategoryResponse> getAllCategories();
-    CategoryEntity updateCategory(long categoryId, CategoryDTO category);
+    CategoryResponse updateCategory(long categoryId, CategoryDTO category);
     CategoryEntity deleteCategory(long id) throws Exception;
 
 }

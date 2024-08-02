@@ -40,12 +40,14 @@ public class WebSecurityConfig {
                                     String.format("%s/categories/**", apiPrefix)).permitAll()
                             .requestMatchers(POST,
                                     String.format("%s/posts/**", apiPrefix)).hasRole("ADMIN")
-                            .requestMatchers(PUT,
+                            .requestMatchers(PATCH,
                                     String.format("%s/posts/**", apiPrefix)).hasRole("ADMIN")
                             .requestMatchers(DELETE,
                                     String.format("%s/posts/**", apiPrefix)).hasRole("ADMIN")
                             .requestMatchers(POST,
                                     String.format("%s/categories/**", apiPrefix)).hasRole("ADMIN")
+                            .requestMatchers(POST,
+                                    String.format("%s/categories", apiPrefix)).hasRole("ADMIN")
                             .requestMatchers(PUT,
                                     String.format("%s/categories/**", apiPrefix)).hasRole("ADMIN")
                             .requestMatchers(DELETE,

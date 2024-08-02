@@ -1,6 +1,6 @@
 package com.pivinadanang.blog.controller;
 
-import com.pivinadanang.blog.converters.LocalizationUtils;
+import com.pivinadanang.blog.components.converters.LocalizationUtils;
 import com.pivinadanang.blog.dtos.CategoryDTO;
 import com.pivinadanang.blog.models.CategoryEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
@@ -28,7 +29,7 @@ public class CategoryController {
 
 
     @PostMapping("")
-    public ResponseEntity<?> insertCategory(@Valid @RequestBody CategoryDTO categoryDTO, BindingResult result){
+    public ResponseEntity<ResponseObject> insertCategory(@Valid @RequestBody CategoryDTO categoryDTO, BindingResult result){
         if(result.hasErrors()) {
             List<String> errorMessages = result.getFieldErrors()
                     .stream()
@@ -41,9 +42,9 @@ public class CategoryController {
                     .build());
 
         }
-        CategoryEntity category = categoryService.createCategory(categoryDTO);
+        CategoryResponse category = categoryService.createCategory(categoryDTO);
         return ResponseEntity.ok().body(ResponseObject.builder()
-                .message("Create category successfully")
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_CATEGORY_SUCCESSFULLY))
                 .status(HttpStatus.OK)
                 .data(category)
                 .build());
@@ -56,6 +57,7 @@ public class CategoryController {
             @RequestParam("limit")    int limit
     ) {
         List<CategoryResponse> categories = categoryService.getAllCategories();
+
         return ResponseEntity.ok(ResponseObject.builder()
                 .message("Get list of categories successfully")
                 .status(HttpStatus.OK)
@@ -80,10 +82,11 @@ public class CategoryController {
             @PathVariable Long id,
             @Valid @RequestBody CategoryDTO categoryDTO
     ) {
-        categoryService.updateCategory(id, categoryDTO);
+       CategoryResponse categoryResponse =  categoryService.updateCategory(id, categoryDTO);
         return ResponseEntity.ok(ResponseObject
                 .builder()
-                .data(categoryService.getCategoryById(id))
+                .status(HttpStatus.OK)
+                .data(categoryResponse)
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_CATEGORY_SUCCESSFULLY))
                 .build());
     }
@@ -93,7 +96,7 @@ public class CategoryController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message("Delete category successfully")
+                        .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_CATEGORY_SUCCESSFULLY))
                         .build());
     }
 }

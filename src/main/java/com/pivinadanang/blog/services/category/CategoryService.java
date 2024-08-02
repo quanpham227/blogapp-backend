@@ -11,6 +11,7 @@ import java.util.List;
 
 
 import com.pivinadanang.blog.responses.category.CategoryResponse;
+import com.pivinadanang.blog.responses.post.PostResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
@@ -26,14 +27,15 @@ public class CategoryService implements ICategoryService{
 
     @Override
     @Transactional
-    public CategoryEntity createCategory(CategoryDTO categoryDTO) {
+    public CategoryResponse createCategory(CategoryDTO categoryDTO) {
         categoryDTO.generateSlug();
         CategoryEntity newCategory = CategoryEntity
                 .builder()
                 .name(categoryDTO.getName())
                 .code(categoryDTO.getCode())
                 .build();
-        return categoryRepository.save(newCategory);
+        CategoryEntity category =  categoryRepository.save(newCategory);
+        return CategoryResponse.fromCategory(category);
     }
 
     @Override
@@ -49,16 +51,15 @@ public class CategoryService implements ICategoryService{
 
     @Override
     @Transactional
-    public CategoryEntity updateCategory(long categoryId, CategoryDTO categoryDTO) {
+    public CategoryResponse updateCategory(long categoryId, CategoryDTO categoryDTO) {
         CategoryEntity existingCategory = getCategoryById(categoryId);
-
         // Cập nhật name và code từ DTO
         existingCategory.setName(categoryDTO.getName());
         categoryDTO.generateSlug();
         existingCategory.setCode(categoryDTO.getCode());
 
-        categoryRepository.save(existingCategory);
-        return existingCategory;
+        CategoryEntity category = categoryRepository.save(existingCategory);
+        return CategoryResponse.fromCategory(category);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.pivinadanang.blog.controller;
 
 import com.github.javafaker.Faker;
+import com.pivinadanang.blog.components.converters.LocalizationUtils;
 import com.pivinadanang.blog.dtos.GoogleDriveDTO;
 import com.pivinadanang.blog.dtos.PostDTO;
 import com.pivinadanang.blog.dtos.PostImageDTO;
@@ -11,6 +12,7 @@ import com.pivinadanang.blog.responses.post.PostResponse;
 import com.pivinadanang.blog.services.google.IGoogleService;
 import com.pivinadanang.blog.services.post.IPostService;
 import com.pivinadanang.blog.ultils.FileUtils;
+import com.pivinadanang.blog.ultils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,7 +37,7 @@ import java.util.List;
 public class PostController {
     private final IPostService postService;
     private final IGoogleService googleService;
-
+    private final LocalizationUtils localizationUtils;
 
 
     @PostMapping(consumes = {MediaType.APPLICATION_JSON_VALUE,
@@ -77,30 +79,29 @@ public class PostController {
             // Add logging here to inspect the postEntity
             System.out.println("PostEntity: " + postResponse);
 
-            return ResponseEntity.ok(
-                    ResponseObject.builder()
-                            .message("Create new post successfully")
+            return ResponseEntity.ok(ResponseObject.builder()
                             .status(HttpStatus.CREATED)
                             .data(postResponse)
-                            .build());
+                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_SUCCESSFULLY))
+                    .build());
         } catch (Exception exception){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ResponseObject.builder()
-                            .message("An error occurred: " + exception.getMessage())
+                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_FAILED))
                             .status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .build());
         }
     }
     @GetMapping("/{id}")
-    public ResponseEntity<?> getPostById(@PathVariable Long id){
-        try {
-            PostEntity existingPost = postService.getPostById(id);
-            return ResponseEntity.ok(PostResponse.fromPost(existingPost));
-        }catch (Exception exception){
-            return ResponseEntity.badRequest().body(exception.getMessage());
-        }
+    public ResponseEntity<ResponseObject> getPostById(@PathVariable Long id) throws Exception {
+        PostEntity existingPost = postService.getPostById(id);
+        return ResponseEntity.ok(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .data(PostResponse.fromPost(existingPost))
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
+                .build());
     }
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<ResponseObject> updatePost(@Valid @ModelAttribute PostDTO postDTO,
                                                      @PathVariable Long id,
                                                      @RequestParam (value = "category_id", required = false) Long categoryId,
@@ -134,7 +135,7 @@ public class PostController {
             PostResponse postResponse = postService.updatePost(id,postDTO);
             return ResponseEntity.ok(
                     ResponseObject.builder()
-                            .message("Update post successfully")
+                            .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_POST_SUCCESSFULLY))
                             .status(HttpStatus.CREATED)
                             .data(postResponse)
                             .build());
@@ -147,13 +148,13 @@ public class PostController {
         }
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deletePost(@PathVariable Long id){
-        try {
+    public ResponseEntity<ResponseObject> deletePost(@PathVariable Long id) throws Exception{
             postService.deletePost(id);
-            return ResponseEntity.ok(String.format("Deleted post with %s", id + " successfully"));
-        }catch (Exception exception){
-            return ResponseEntity.badRequest().body(exception.getMessage());
-        }
+            return ResponseEntity.ok(ResponseObject.builder()
+                            .data(null)
+                            .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_POST_SUCCESSFULLY))
+                            .status(HttpStatus.OK)
+                    .build());
     }
 
     @GetMapping("")
