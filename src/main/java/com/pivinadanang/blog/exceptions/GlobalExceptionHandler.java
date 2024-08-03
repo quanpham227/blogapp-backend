@@ -1,11 +1,14 @@
 package com.pivinadanang.blog.exceptions;
 
-
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import com.pivinadanang.blog.responses.ResponseObject;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice // Chỉ định lớp này xử lý ngoại lệ chung
 public class GlobalExceptionHandler {
@@ -93,11 +96,17 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                .status(HttpStatus.BAD_REQUEST)
-                .message(exception.getBindingResult().getAllErrors().get(0).getDefaultMessage())
-                .build());
+    public ResponseEntity<ResponseObject> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
+        List<String> errorMessages = exception.getBindingResult().getAllErrors().stream()
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .message(String.join(", ", errorMessages))
+                        .build()
+        );
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
