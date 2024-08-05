@@ -16,5 +16,9 @@ public interface IPostService {
     void deletePost(long id);
     List<PostEntity> findPostsByIds(List<Long> postIds);
     boolean existsPostByTitle(String title);
+    PostEntity getPostByTitle(String title);
+    List<PostEntity> findFavoritePostsByUserId(Long userId);
+    Page<PostResponse> searchPosts(Long categoryId, String keyword, PageRequest pageRequest);
+    PostEntity getDetailPost(Long postId);
 
 }

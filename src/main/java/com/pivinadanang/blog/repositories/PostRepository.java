@@ -20,9 +20,8 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     @Query("SELECT p FROM PostEntity p WHERE " +
             "(:categoryId IS NULL OR :categoryId = 0 OR p.category.id = :categoryId) " +
             "AND (:keyword IS NULL OR :keyword = '' OR p.title LIKE %:keyword% OR p.content LIKE %:keyword%)")
-    Page<PostEntity> searchPosts
-            (@Param("categoryId") Long categoryId,
-             @Param("keyword") String keyword, Pageable pageable);
+    Page<PostEntity> searchPosts(@Param("categoryId") Long categoryId, @Param("keyword") String keyword, Pageable pageable);
+
     @Query("SELECT p FROM PostEntity p LEFT JOIN FETCH p.image WHERE p.id = :postId")
     Optional<PostEntity> getDetailPost(@Param("postId") Long postId);
 
@@ -31,4 +30,8 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     @Query("SELECT p FROM PostEntity p JOIN p.favorites f WHERE f.user.id = :userId")
     List<PostEntity> findFavoritePostsByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT p FROM PostEntity p WHERE p.title = :title")
+    PostEntity getPostByTitle(@Param("title") String title);
+
 }

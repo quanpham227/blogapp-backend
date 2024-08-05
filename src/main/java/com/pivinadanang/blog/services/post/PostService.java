@@ -123,4 +123,24 @@ public class PostService implements IPostService {
         return postRepository.existsByTitle(title);
     }
 
+    @Override
+    public PostEntity getPostByTitle(String title) {
+        return  postRepository.getPostByTitle(title);
+    }
+
+    @Override
+    public List<PostEntity> findFavoritePostsByUserId(Long userId) {
+        return List.of();
+    }
+
+    @Override
+    public Page<PostResponse> searchPosts(Long categoryId, String keyword, PageRequest pageRequest) {
+        return null;
+    }
+
+    @Override
+    public PostEntity getDetailPost(Long postId) {
+        return null;
+    }
+
 }
