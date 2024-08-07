@@ -84,8 +84,8 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ResponseObject> login (@Valid @RequestBody UserLoginDTO userLoginDTO,
-                                                 HttpServletRequest request) throws Exception{
+    public ResponseEntity<ResponseObject> login (@Valid @RequestBody UserLoginDTO userLoginDTO
+                                                ) throws Exception{
         String token = userService.login(userLoginDTO.getPhoneNumber(), userLoginDTO.getPassword());
         UserEntity userDetail = userService.getUserDetailsFromToken(token);
         LoginResponse loginResponse = LoginResponse.builder()

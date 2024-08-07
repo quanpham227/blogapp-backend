@@ -31,7 +31,7 @@ import java.io.File;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/posts")
+@RequestMapping("${api.prefix}/posts")
 @Validated
 @RequiredArgsConstructor
 public class PostController {
