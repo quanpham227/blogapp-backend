@@ -6,10 +6,13 @@ import com.pivinadanang.blog.dtos.GoogleDriveDTO;
 import com.pivinadanang.blog.dtos.PostDTO;
 import com.pivinadanang.blog.dtos.PostImageDTO;
 import com.pivinadanang.blog.models.PostEntity;
+import com.pivinadanang.blog.models.PostImageContent;
+import com.pivinadanang.blog.models.PostImageEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.post.PostListResponse;
 import com.pivinadanang.blog.responses.post.PostResponse;
 import com.pivinadanang.blog.services.google.IGoogleService;
+import com.pivinadanang.blog.services.image.IPostImageContentService;
 import com.pivinadanang.blog.services.post.IPostService;
 import com.pivinadanang.blog.ultils.FileUtils;
 import com.pivinadanang.blog.ultils.MessageKeys;
@@ -28,6 +31,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.List;
 
 @RestController
@@ -38,12 +43,10 @@ public class PostController {
     private final IPostService postService;
     private final IGoogleService googleService;
     private final LocalizationUtils localizationUtils;
+    private final IPostImageContentService postImageContentService;
 
 
-    @PostMapping(consumes = {MediaType.APPLICATION_JSON_VALUE,
-            MediaType.APPLICATION_FORM_URLENCODED_VALUE,
-            MediaType.MULTIPART_FORM_DATA_VALUE},
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseObject> createPost(@Valid @ModelAttribute PostDTO postDTO,
                                                      @RequestParam ("category_id") Long categoryId,
                                                      @RequestParam ("thumbnail") MultipartFile file,
@@ -60,25 +63,35 @@ public class PostController {
                             .data(errorMessages)
                             .build());
         }
+        // Kiểm tra kích thước file và định dạng
+        if(file.getSize() > 5 * 1024 * 1024) { // Kích thước > 10MB
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .body(ResponseObject.builder()
+                            .message(localizationUtils
+                                    .getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_LARGE))
+                            .status(HttpStatus.PAYLOAD_TOO_LARGE)
+                            .build());
+        }
+        String contentType = file.getContentType();
+        if(contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                    .body(ResponseObject.builder()
+                            .message(localizationUtils
+                                    .getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_MUST_BE_IMAGE))
+                            .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                            .build());
+        }
         try {
             postDTO.setCategoryId(categoryId);
-            //handleFile
             File tempFile = FileUtils.handleFile(file);
-            // Upload file lên Google Drive
             GoogleDriveDTO googleDriveDTO = googleService.uploadImageToDrive(tempFile);
-            // Xoá file tạm sau khi upload
-            tempFile.delete();
-            // Lưu thông tin bài viết (bao gồm URL ảnh từ Google Drive)
             PostImageDTO postImageDTO =  PostImageDTO.builder()
                     .imageUrl(googleDriveDTO.getUrl())
                     .fileId(googleDriveDTO.getFileId())
                     .build();
             postDTO.setPostImage(postImageDTO);
-
             PostResponse postResponse = postService.createPost(postDTO);
-            // Add logging here to inspect the postEntity
             System.out.println("PostEntity: " + postResponse);
-
             return ResponseEntity.ok(ResponseObject.builder()
                             .status(HttpStatus.CREATED)
                             .data(postResponse)
@@ -122,9 +135,25 @@ public class PostController {
         try {
             PostImageDTO postImageDTO = null;
             if(file != null && !file.isEmpty()){
+                if(file.getSize() > 5 * 1024 * 1024) { // Kích thước > 10MB
+                    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                            .body(ResponseObject.builder()
+                                    .message(localizationUtils
+                                            .getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_LARGE))
+                                    .status(HttpStatus.PAYLOAD_TOO_LARGE)
+                                    .build());
+                }
+                String contentType = file.getContentType();
+                if(contentType == null || !contentType.startsWith("image/")) {
+                    return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                            .body(ResponseObject.builder()
+                                    .message(localizationUtils
+                                            .getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_MUST_BE_IMAGE))
+                                    .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                                    .build());
+                }
                 File tempFile = FileUtils.handleFile(file);
                 GoogleDriveDTO googleDriveDTO = googleService.uploadImageToDrive(tempFile);
-                tempFile.delete();
                  postImageDTO =  PostImageDTO.builder()
                         .imageUrl(googleDriveDTO.getUrl())
                         .fileId(googleDriveDTO.getFileId())
@@ -218,4 +247,53 @@ public class PostController {
         }
         return ResponseEntity.ok("Posts generated successfully");
     }
+
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseObject> uploadImage(@RequestParam("image") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(ResponseObject.builder()
+                            .message("Please select a file to upload")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+        if (file.getSize() > 5 * 1024 * 1024) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .body(ResponseObject.builder()
+                            .message("File size must be less than 5MB")
+                            .status(HttpStatus.PAYLOAD_TOO_LARGE)
+                            .build());
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                    .body(ResponseObject.builder()
+                            .message("File must be an image")
+                            .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                            .build());
+        }
+        try {
+            File tempFile = FileUtils.handleFile(file);
+            GoogleDriveDTO googleDriveDTO = googleService.uploadImageToDrive(tempFile);
+            PostImageContent postImageContent = PostImageContent.builder()
+                    .imageUrl(googleDriveDTO.getUrl())
+                    .fileId(googleDriveDTO.getFileId())
+                    .build();
+
+            PostImageContent postImageContentResponse =  postImageContentService.createPostImageContent(postImageContent);
+
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .status(HttpStatus.CREATED)
+                    .data(postImageContentResponse)
+                    .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
+                    .build());
+        } catch (Exception exception) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseObject.builder()
+                            .message("Failed to upload image")
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .build());
+        }
+    }
+
 }

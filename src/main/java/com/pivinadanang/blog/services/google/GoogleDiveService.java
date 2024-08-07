@@ -19,12 +19,17 @@ import com.google.api.services.drive.DriveScopes;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import java.io.InputStream;
 import java.util.Collections;
 @Service
 public class GoogleDiveService implements IGoogleService{
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
+    private static final String TEST_URL = "http://www.google.com"; // URL kiểm tra kết nối
+
 
     @Value("${google.drive.credentials}")
     private Resource credentialsResource;
@@ -38,6 +43,9 @@ public class GoogleDiveService implements IGoogleService{
         GoogleDriveDTO googleDriveDTO = new GoogleDriveDTO();
 
         try {
+            if (!isInternetAvailable()) {
+                throw new RuntimeException("No internet connection");
+            }
             String folderId = "1QoqlIPH2VJzazmVl0A0f5Y8FXXtn8j_7";
             Drive drive = createDriveService();
             com.google.api.services.drive.model.File fileMetaData = new com.google.api.services.drive.model.File();
@@ -49,15 +57,21 @@ public class GoogleDiveService implements IGoogleService{
             String fileId = uploadedFile.getId();
             String imageUrl = "https://drive.google.com/uc?export=view&id=" + uploadedFile.getId();
             System.out.println("IMAGE URL: " + imageUrl);
-            file.delete();
 
             return googleDriveDTO.builder()
                     .url(imageUrl)
                     .fileId(fileId)
                     .build();
-        } catch (Exception exception) {
-            throw new RuntimeException("Failed to upload image to Google Drive", exception);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload image to Google Drive due to network error", e);
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException("Security error occurred while creating Google Drive service", e);
+        }finally {
+            if (file.exists()) {
+                file.delete();
+            }
         }
+
     }
 
     @Override
@@ -75,5 +89,18 @@ public class GoogleDiveService implements IGoogleService{
                 JSON_FACTORY,
                 credential)
                 .build();
+    }
+    public static boolean isInternetAvailable() {
+        try {
+            URL url = new URL(TEST_URL);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(3000); // Thời gian chờ kết nối (3 giây)
+            connection.setReadTimeout(3000); // Thời gian chờ đọc (3 giây)
+            int responseCode = connection.getResponseCode();
+            return responseCode == HttpURLConnection.HTTP_OK;
+        } catch (IOException e) {
+            return false; // Nếu xảy ra lỗi, không có kết nối internet
+        }
     }
 }

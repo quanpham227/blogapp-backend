@@ -24,7 +24,7 @@ public class MessageKeys {
 
 
 
-    public static final String UPLOAD_IMAGES_MAX_5 = "post.upload_images.error_max_5_images";
+    public static final String UPLOAD_IMAGE_SUCCESSFULLY = "post.upload_images.successfully";
     public static final String UPLOAD_IMAGES_FILE_LARGE = "post.upload_images.file_large";
     public static final String UPLOAD_IMAGES_FILE_MUST_BE_IMAGE = "post.upload_images.file_must_be_image";
 

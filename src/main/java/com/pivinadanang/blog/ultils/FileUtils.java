@@ -29,4 +29,5 @@ public class FileUtils {
         String mimeType = java.nio.file.Files.probeContentType(file.toPath());
         return mimeType != null && mimeType.startsWith("image");
     }
+
 }

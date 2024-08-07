@@ -32,7 +32,8 @@ public class PostEntity extends BaseEntity{
     @JsonBackReference
     private CategoryEntity category;
 
-    @OneToOne(orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToOne(orphanRemoval = true,
+            fetch = FetchType.LAZY)
     @JoinColumn(name = "post_image_id")
     private PostImageEntity image;
 
@@ -40,15 +41,25 @@ public class PostEntity extends BaseEntity{
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "post",
+            orphanRemoval = true,
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<CommentEntity> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "post",
+            orphanRemoval = true,
             cascade = CascadeType.ALL,
             fetch = FetchType.LAZY)
     private List<FavouriteEntity> favorites = new ArrayList<>();
 
 
+    @OneToMany(mappedBy = "post",
+            orphanRemoval = true,
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List<PostImageContent> postContentImages = new ArrayList<>();
 
 }
