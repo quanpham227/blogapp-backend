@@ -16,11 +16,14 @@ public class CategoryResponse  {
 
     private String code;
 
+    private int postCount;
+
     public static CategoryResponse fromCategory (CategoryEntity category){
         return CategoryResponse.builder()
                 .id(category.getId())
                 .name(category.getName())
                 .code(category.getCode())
+                .postCount(category.getPosts().size())
                 .build();
 
     }

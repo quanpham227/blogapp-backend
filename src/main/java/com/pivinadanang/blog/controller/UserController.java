@@ -86,7 +86,7 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<ResponseObject> login (@Valid @RequestBody UserLoginDTO userLoginDTO
                                                 ) throws Exception{
-        String token = userService.login(userLoginDTO.getPhoneNumber(), userLoginDTO.getPassword());
+        String token = userService.login(userLoginDTO.getPhoneNumber(), userLoginDTO.getPassword(),userLoginDTO.getRoleId());
         UserEntity userDetail = userService.getUserDetailsFromToken(token);
         LoginResponse loginResponse = LoginResponse.builder()
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_SUCCESSFULLY))

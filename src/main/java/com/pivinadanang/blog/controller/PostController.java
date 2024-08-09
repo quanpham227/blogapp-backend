@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("${api.prefix}/posts")
@@ -195,12 +196,14 @@ public class PostController {
         //productRedisService.clear();
         // Tạo Pageable từ thông tin trang và giới hạn
         PageRequest pageRequest = PageRequest.of(page, limit,
-                //Sort.by("createdAt").descending()
-                Sort.by("id").ascending()
+                Sort.by("createdAt").descending()
         );
-        Page<PostResponse> postPage = postService.getAllPosts( pageRequest);
+        Page<PostResponse> postPage = postService.getAllPosts( keyword, categoryId, pageRequest);
+        // Lấy tổng số trang
         int totalPages = postPage.getTotalPages();
         List<PostResponse> posts = postPage.getContent();
+
+
         return ResponseEntity.ok(PostListResponse
                 .builder()
                 .posts(posts)
@@ -209,22 +212,32 @@ public class PostController {
 
     }
 
+    @GetMapping("/recent")
+    public ResponseEntity<PostListResponse> getRecentPosts(@RequestParam(defaultValue = "5") int limit) {
+        List<PostResponse> recentPosts = postService.getRecentPosts(limit);
+
+        return ResponseEntity.ok(PostListResponse
+                .builder()
+                .posts(recentPosts)
+                .build());
+    }
+
     @PostMapping("/generateFakePosts")
     public ResponseEntity<String> generateFakePosts(){
-        Faker faker = new Faker();
-        for(int i = 0; i < 100000; i++){
-            String title = faker.book().title() + " - " + faker.book().title();
+        Faker faker = new Faker(new Locale("vi"));
+        for(int i = 0; i < 1000; i++){
+            String title = faker.book().title() + " - " + faker.book().title() + " - " + faker.book().title();
             if(postService.existsPostByTitle(title)){
                 continue;
             }
             String content = faker.lorem().paragraphs(3).toString();
             Long categoryId = (long) faker.number().numberBetween(1,5);
             String[] imageUrls = {
-                    "https://drive.google.com/uc?export=view&id=1Xj4C6eKfVL1krZ6ylNvhXFIp8X2Xzx5e",
-                    "https://drive.google.com/uc?export=view&id=15He3o1pAAVGujxlHBc7ef2YK-4moa9if",
-                    "https://drive.google.com/uc?export=view&id=139rjuisL9A1XP0blu1hXgkmyfqDh5suE",
-                    "https://drive.google.com/uc?export=view&id=1PtPUaw92MJF1Ph_zBYgeoW3nCKo_JKjP",
-                    "https://drive.google.com/uc?export=view&id=1KMxf6wpWO4ry_DtWkWvs-IgimycOmDQv"
+                   "https://drive.google.com/thumbnail?id=1Xj4C6eKfVL1krZ6ylNvhXFIp8X2Xzx5e&sz=w4000",
+                    "https://drive.google.com/thumbnail?id=15He3o1pAAVGujxlHBc7ef2YK-4moa9if&sz=w4000",
+                    "https://drive.google.com/thumbnail?id=139rjuisL9A1XP0blu1hXgkmyfqDh5suE&sz=w4000",
+                    "https://drive.google.com/thumbnail?id=1PtPUaw92MJF1Ph_zBYgeoW3nCKo_JKjP&sz=w4000",
+                    "https://drive.google.com/thumbnail?id=1KMxf6wpWO4ry_DtWkWvs-IgimycOmDQv&sz=w4000"
             };
             String imageUrl = imageUrls[faker.random().nextInt(imageUrls.length)];
             String fileId = "1Xj4C6eKfVL1krZ6ylNvhXFIp8X2Xzx5e";

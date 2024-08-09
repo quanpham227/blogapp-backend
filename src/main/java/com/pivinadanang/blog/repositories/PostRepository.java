@@ -17,10 +17,12 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     boolean existsByTitle(String title);
     Page<PostEntity> findAll(Pageable pageable);//phân trang
     List<PostEntity> findByCategory(CategoryEntity category);
+
     @Query("SELECT p FROM PostEntity p WHERE " +
             "(:categoryId IS NULL OR :categoryId = 0 OR p.category.id = :categoryId) " +
             "AND (:keyword IS NULL OR :keyword = '' OR p.title LIKE %:keyword% OR p.content LIKE %:keyword%)")
     Page<PostEntity> searchPosts(@Param("categoryId") Long categoryId, @Param("keyword") String keyword, Pageable pageable);
+
 
     @Query("SELECT p FROM PostEntity p LEFT JOIN FETCH p.image WHERE p.id = :postId")
     Optional<PostEntity> getDetailPost(@Param("postId") Long postId);
@@ -33,5 +35,9 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     @Query("SELECT p FROM PostEntity p WHERE p.title = :title")
     PostEntity getPostByTitle(@Param("title") String title);
+
+
+    @Query(value = "SELECT * FROM posts ORDER BY created_at DESC LIMIT ?1", nativeQuery = true)
+    List<PostEntity> findTopNRecentPosts(int limit);
 
 }

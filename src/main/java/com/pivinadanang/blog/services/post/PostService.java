@@ -77,9 +77,11 @@ public class PostService implements IPostService {
     }
 
     @Override
-    public Page<PostResponse> getAllPosts(PageRequest pageRequest) {
-        return postRepository.findAll(pageRequest)
-                .map(PostResponse::fromPost);
+    public Page<PostResponse> getAllPosts(String keyword, Long categoryId,PageRequest pageRequest) {
+        // Lấy danh sách bài viết theo trang, giới hạn số lượng bài viết trên mỗi trang, categoryId nếu có
+        Page<PostEntity> postsPage;
+        postsPage = postRepository.searchPosts(categoryId, keyword, pageRequest);
+        return postsPage.map(PostResponse::fromPost);
     }
 
     @Override
@@ -193,6 +195,13 @@ public class PostService implements IPostService {
     @Override
     public PostEntity getDetailPost(Long postId) {
         return null;
+    }
+
+    @Override
+    public List<PostResponse> getRecentPosts(int limit) {
+        return  postRepository.findTopNRecentPosts(limit).stream()
+                .map(PostResponse::fromPost)
+                .collect(Collectors.toList());
     }
 
 

@@ -24,6 +24,7 @@ public class PostResponse extends BaseResponse {
     @JsonProperty("category_id")
     private Long categoryId;
 
+
     public static PostResponse fromPost (PostEntity post){
         PostResponse postResponse = PostResponse.builder()
                 .id(post.getId())
