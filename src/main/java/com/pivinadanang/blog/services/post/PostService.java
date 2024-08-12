@@ -35,8 +35,6 @@ public class PostService implements IPostService {
         // Kiểm tra và lấy thông tin CategoryEntity
         CategoryEntity existingCategory = categoryRepository.findById(postDTO.getCategoryId())
                 .orElseThrow(() -> new DataNotFoundException("Cannot find category with id " + postDTO.getCategoryId()));
-        // Tạo slug cho bài viết
-        postDTO.generateSlug();
         // Tạo PostImageEntity từ PostImageDTO
         PostImageEntity postImageEntity = PostImageEntity.builder()
                 .imageUrl(postDTO.getPostImage().getImageUrl())
@@ -48,7 +46,6 @@ public class PostService implements IPostService {
         PostEntity newPost = PostEntity.builder()
                 .title(postDTO.getTitle())
                 .content(postDTO.getContent())
-                .slug(postDTO.getSlug())
                 .category(existingCategory)
                 .image(savedPostImageEntity)  // Gán PostImageEntity đã lưu vào PostEntity
                 .build();
@@ -95,8 +92,6 @@ public class PostService implements IPostService {
         // Cập nhật thông tin bài viết
         existingPost.setTitle(postDTO.getTitle());
         existingPost.setContent(postDTO.getContent());
-        postDTO.generateSlug();
-        existingPost.setSlug(postDTO.getSlug());
         existingPost.setCategory(existingCategory);
 
         // Cập nhật hoặc thêm mới PostImageEntity nếu có
@@ -178,8 +173,10 @@ public class PostService implements IPostService {
     }
 
     @Override
-    public PostEntity getPostByTitle(String title) {
-        return  postRepository.getPostByTitle(title);
+    public PostEntity getPostBySlug( String slug) throws DataNotFoundException {
+        PostEntity postEntity =  postRepository.findPostBySlug( slug)
+                .orElseThrow(() -> new DataNotFoundException("Post not found with slug " + slug));
+        return postEntity;
     }
 
     @Override

@@ -18,6 +18,8 @@ public class PostResponse extends BaseResponse {
 
     private String slug;
 
+    private String excerpt;
+
     @JsonProperty("thumbnail_url")
     private String thumbnailUrl;
 
@@ -31,6 +33,7 @@ public class PostResponse extends BaseResponse {
                 .title(post.getTitle())
                 .content(post.getContent())
                 .slug(post.getSlug())
+                .excerpt(post.getExcerpt())
                 .categoryId(post.getCategory().getId())
                 .thumbnailUrl(post.getImage().getImageUrl())
                 .build();

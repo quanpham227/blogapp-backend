@@ -21,14 +21,9 @@ public class PostDTO {
     @NotBlank(message = "content is required")
     private String content;
 
-    private String slug;
-
     private Long categoryId;
 
     private PostImageDTO postImage;
 
-    public void generateSlug() {
-        this.slug = SlugUtil.toSlug(this.title);
-    }
 
 }

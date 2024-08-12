@@ -2,7 +2,10 @@ package com.pivinadanang.blog.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import java.text.Normalizer;
+import java.util.regex.Pattern;
 import jakarta.persistence.*;
+
 import lombok.*;
 
 import java.util.*;
@@ -26,6 +29,9 @@ public class PostEntity extends BaseEntity{
 
     @Column(name = "slug", columnDefinition = "TEXT")
     private String slug;
+
+    @Column(name = "excerpt", columnDefinition = "TEXT")
+    private String excerpt;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
@@ -62,4 +68,30 @@ public class PostEntity extends BaseEntity{
     @JsonManagedReference
     private List<PostImageContent> postContentImages = new ArrayList<>();
 
+    @PrePersist
+    @PreUpdate
+    public void prePersistAndUpdate() {
+        if (this.title != null) {
+            this.slug = generateSlug(this.title);
+        }
+        if (this.content != null) {
+            this.excerpt = generateExcerpt(this.content);
+        }
+    }
+
+    private String generateSlug(String title) {
+        // Bước 1: Chuẩn hóa chuỗi, loại bỏ dấu và chuyển thành chữ thường
+        String normalizedTitle = Normalizer.normalize(title, Normalizer.Form.NFD);
+        String slug = Pattern.compile("\\p{InCombiningDiacriticalMarks}+").matcher(normalizedTitle).replaceAll("");
+        // Bước 2: Chuyển đổi thành chữ thường, loại bỏ ký tự đặc biệt, và thay thế khoảng trắng bằng dấu gạch ngang
+        slug = slug.toLowerCase().trim().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
+        return slug;
+    }
+
+    private String generateExcerpt(String content) {
+        // Loại bỏ URL hình ảnh hoặc các URL khác
+        String plainTextContent = content.replaceAll("http[s]?://\\S+\\.(png|jpg|jpeg|gif|svg)", "");
+        // Cắt đoạn trích theo độ dài
+        return plainTextContent.length() > 200 ? plainTextContent.substring(0, 200) + "..." : plainTextContent;
+    }
 }

@@ -19,7 +19,6 @@ import com.google.api.services.drive.DriveScopes;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -28,7 +27,10 @@ import java.util.Collections;
 @Service
 public class GoogleDiveService implements IGoogleService{
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
+
     private static final String TEST_URL = "http://www.google.com"; // URL kiểm tra kết nối
+    private static final String APPLICATION_NAME = "pidn-blogapp"; // Cài đặt tên ứng dụng
+
 
 
     @Value("${google.drive.credentials}")
@@ -88,6 +90,7 @@ public class GoogleDiveService implements IGoogleService{
                 GoogleNetHttpTransport.newTrustedTransport(),
                 JSON_FACTORY,
                 credential)
+                .setApplicationName(APPLICATION_NAME)
                 .build();
     }
     public static boolean isInternetAvailable() {

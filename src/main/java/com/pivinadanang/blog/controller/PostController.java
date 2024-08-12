@@ -64,6 +64,13 @@ public class PostController {
                             .data(errorMessages)
                             .build());
         }
+        if(postService.existsPostByTitle(postDTO.getTitle())){
+            return ResponseEntity.badRequest()
+                    .body(ResponseObject.builder()
+                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_ALREADY_EXISTS))
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
         // Kiểm tra kích thước file và định dạng
         if(file.getSize() > 5 * 1024 * 1024) { // Kích thước > 10MB
             return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
@@ -92,7 +99,6 @@ public class PostController {
                     .build();
             postDTO.setPostImage(postImageDTO);
             PostResponse postResponse = postService.createPost(postDTO);
-            System.out.println("PostEntity: " + postResponse);
             return ResponseEntity.ok(ResponseObject.builder()
                             .status(HttpStatus.CREATED)
                             .data(postResponse)
@@ -106,7 +112,7 @@ public class PostController {
                             .build());
         }
     }
-    @GetMapping("/{id}")
+    @GetMapping("/id/{id}")
     public ResponseEntity<ResponseObject> getPostById(@PathVariable Long id) throws Exception {
         PostEntity existingPost = postService.getPostById(id);
         return ResponseEntity.ok(ResponseObject.builder()
@@ -115,7 +121,7 @@ public class PostController {
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
                 .build());
     }
-    @PatchMapping("/{id}")
+    @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseObject> updatePost(@Valid @ModelAttribute PostDTO postDTO,
                                                      @PathVariable Long id,
                                                      @RequestParam (value = "category_id", required = false) Long categoryId,
@@ -131,6 +137,13 @@ public class PostController {
                             .message("Validation errors")
                             .status(HttpStatus.BAD_REQUEST)
                             .data(errorMessages)
+                            .build());
+        }
+        if(postService.existsPostByTitle(postDTO.getTitle())){
+            return ResponseEntity.badRequest()
+                    .body(ResponseObject.builder()
+                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_ALREADY_EXISTS))
+                            .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
         try {
@@ -222,6 +235,17 @@ public class PostController {
                 .build());
     }
 
+    @GetMapping("/{slug}")
+    public ResponseEntity<ResponseObject> getPostBySlug(@PathVariable String slug) throws Exception {
+        PostEntity postEntity = postService.getPostBySlug(slug);
+        return ResponseEntity.ok(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .data(PostResponse.fromPost(postEntity))
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
+                .build());
+    }
+
+
     @PostMapping("/generateFakePosts")
     public ResponseEntity<String> generateFakePosts(){
         Faker faker = new Faker(new Locale("vi"));
@@ -251,7 +275,6 @@ public class PostController {
                     .categoryId(categoryId)
                     .postImage(postImage)
                     .build();
-            postDTO.generateSlug();
             try {
                 postService.createPost(postDTO);
             }catch (Exception exception){
