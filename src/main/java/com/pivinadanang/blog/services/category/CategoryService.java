@@ -1,6 +1,7 @@
 package com.pivinadanang.blog.services.category;
 
 import com.pivinadanang.blog.dtos.CategoryDTO;
+import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.models.CategoryEntity;
 import com.pivinadanang.blog.models.PostEntity;
 import com.pivinadanang.blog.repositories.CategoryRepository;
@@ -28,11 +29,9 @@ public class CategoryService implements ICategoryService{
     @Override
     @Transactional
     public CategoryResponse createCategory(CategoryDTO categoryDTO) {
-        categoryDTO.generateSlug();
         CategoryEntity newCategory = CategoryEntity
                 .builder()
                 .name(categoryDTO.getName())
-                .code(categoryDTO.getCode())
                 .build();
         CategoryEntity category =  categoryRepository.save(newCategory);
         return CategoryResponse.fromCategory(category);
@@ -53,11 +52,8 @@ public class CategoryService implements ICategoryService{
     @Transactional
     public CategoryResponse updateCategory(long categoryId, CategoryDTO categoryDTO) {
         CategoryEntity existingCategory = getCategoryById(categoryId);
-        // Cập nhật name và code từ DTO
+        // Cập nhật name từ DTO
         existingCategory.setName(categoryDTO.getName());
-        categoryDTO.generateSlug();
-        existingCategory.setCode(categoryDTO.getCode());
-
         CategoryEntity category = categoryRepository.save(existingCategory);
         return CategoryResponse.fromCategory(category);
     }
@@ -66,7 +62,7 @@ public class CategoryService implements ICategoryService{
     @Transactional
     public CategoryEntity deleteCategory(long id) throws Exception {
         CategoryEntity category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ChangeSetPersister.NotFoundException());
+                .orElseThrow(() -> new DataNotFoundException("Category not found"));
 
         List<PostEntity> posts = postRepository.findByCategory(category);
         if (!posts.isEmpty()) {

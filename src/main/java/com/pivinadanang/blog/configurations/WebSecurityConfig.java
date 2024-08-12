@@ -59,16 +59,14 @@ public class WebSecurityConfig {
                                     String.format("%s/posts/**", apiPrefix)).hasRole("ADMIN")
                             .requestMatchers(POST,
                                     String.format("%s/categories/**", apiPrefix)).hasRole("ADMIN")
-                            .requestMatchers(POST,
-                                    String.format("%s/categories", apiPrefix)).hasRole("ADMIN")
                             .requestMatchers(PUT,
+                                    String.format("%s/categories/**", apiPrefix)).hasRole("ADMIN")
+                            .requestMatchers(PATCH,
                                     String.format("%s/categories/**", apiPrefix)).hasRole("ADMIN")
                             .requestMatchers(DELETE,
                                     String.format("%s/categories/**", apiPrefix)).hasRole("ADMIN")
                             .requestMatchers(POST,
                                     String.format("%s/clients/**", apiPrefix)).hasRole("ADMIN")
-                            .requestMatchers(POST,
-                                    String.format("%s/clients", apiPrefix)).hasRole("ADMIN")
                             .requestMatchers(PUT,
                                     String.format("%s/clients/**", apiPrefix)).hasRole("ADMIN")
                             .requestMatchers(PATCH,

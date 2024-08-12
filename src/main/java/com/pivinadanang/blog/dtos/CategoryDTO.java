@@ -12,11 +12,4 @@ import lombok.*;
 public class CategoryDTO {
     @NotEmpty(message = "Category cannot be empty")
     private String name;
-
-    private String code;
-
-    // Phương thức tạo slug từ name sử dụng SlugUtil
-    public void generateSlug() {
-        this.code = SlugUtil.toSlug(this.name);
-    }
 }

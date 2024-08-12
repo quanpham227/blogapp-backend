@@ -23,7 +23,7 @@ public class CategoryResponse  {
                 .id(category.getId())
                 .name(category.getName())
                 .code(category.getCode())
-                .postCount(category.getPosts().size())
+                .postCount(category.getPosts() != null ? category.getPosts().size() : 0) // Kiểm tra null trước khi gọi size()
                 .build();
 
     }
