@@ -1,6 +1,7 @@
 package com.pivinadanang.blog.controller;
 
 import com.pivinadanang.blog.components.converters.LocalizationUtils;
+import com.pivinadanang.blog.dtos.UpdateUserDTO;
 import com.pivinadanang.blog.dtos.UserDTO;
 import com.pivinadanang.blog.dtos.UserLoginDTO;
 import com.pivinadanang.blog.models.UserEntity;
@@ -103,11 +104,31 @@ public class UserController {
       }
 
     @PostMapping("/details")
-    public ResponseEntity<UserResponse> getUserDetails(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<UserResponse> getUserDetails(@RequestHeader("Authorization") String auhorizationHeader) {
         try {
-            String extractedToken = token.substring(7); // Loại bỏ "Bearer " từ chuỗi token
+            String extractedToken = auhorizationHeader.substring(7); // Loại bỏ "Bearer " từ chuỗi token
             UserEntity user = userService.getUserDetailsFromToken(extractedToken);
             return ResponseEntity.ok(UserResponse.fromUser(user));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/details/{userId}")
+    public ResponseEntity<UserResponse> updateUserDetails(
+            @PathVariable Long userId,
+            @RequestBody UpdateUserDTO updatedUserDTO,
+            @RequestHeader("Authorization") String authorizationHeader
+    ) {
+        try {
+            String extractedToken = authorizationHeader.substring(7);
+            UserEntity user = userService.getUserDetailsFromToken(extractedToken);
+            // Ensure that the user making the request matches the user being updated
+            if (user.getId() != userId) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            UserEntity updatedUser = userService.updateUser(userId, updatedUserDTO);
+            return ResponseEntity.ok(UserResponse.fromUser(updatedUser));
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }

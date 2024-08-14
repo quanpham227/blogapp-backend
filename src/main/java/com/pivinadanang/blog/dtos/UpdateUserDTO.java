@@ -12,18 +12,18 @@ import java.util.Date;
 @NoArgsConstructor
 @Getter
 @Setter
-public class UpdateUserDTO extends SocialAccountDTO{
+public class UpdateUserDTO {
     @JsonProperty("fullname")
     private String fullName;
 
-    @JsonProperty("email")
-    private String email;
+    @JsonProperty("phone_number")
+    private String phoneNumber;
 
-    @JsonProperty("password")
     private String password;
 
-    @JsonProperty("retype_password")
-    private String retypePassword;
+    @JsonProperty("facebook_account_id")
+    private String facebookAccountId;
 
-
+    @JsonProperty("google_account_id")
+    private String googleAccountId;
 }
