@@ -70,7 +70,7 @@ public class UserEntity extends BaseEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return phoneNumber;
+        return email;
     }
 
     @Override

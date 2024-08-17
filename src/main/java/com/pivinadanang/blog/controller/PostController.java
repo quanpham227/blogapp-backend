@@ -18,12 +18,15 @@ import com.pivinadanang.blog.ultils.FileUtils;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
@@ -45,9 +48,11 @@ public class PostController {
     private final IGoogleService googleService;
     private final LocalizationUtils localizationUtils;
     private final IPostImageContentService postImageContentService;
+    private  static final Logger logger = LoggerFactory.getLogger(PostController.class);
 
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> createPost(@Valid @ModelAttribute PostDTO postDTO,
                                                      @RequestParam ("category_id") Long categoryId,
                                                      @RequestParam ("thumbnail") MultipartFile file,
@@ -122,6 +127,7 @@ public class PostController {
                 .build());
     }
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> updatePost(@Valid @ModelAttribute PostDTO postDTO,
                                                      @PathVariable Long id,
                                                      @RequestParam (value = "category_id", required = false) Long categoryId,
@@ -191,6 +197,7 @@ public class PostController {
         }
     }
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> deletePost(@PathVariable Long id) throws Exception{
             postService.deletePost(id);
             return ResponseEntity.ok(ResponseObject.builder()
@@ -211,6 +218,7 @@ public class PostController {
         PageRequest pageRequest = PageRequest.of(page, limit,
                 Sort.by("createdAt").descending()
         );
+        logger.info(String.format("keyword: %s, categoryId: %d, page: %d, limit: %d", keyword, categoryId, page, limit));
         Page<PostResponse> postPage = postService.getAllPosts( keyword, categoryId, pageRequest);
         // Lấy tổng số trang
         int totalPages = postPage.getTotalPages();

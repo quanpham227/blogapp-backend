@@ -18,11 +18,11 @@ public class UserResponse {
     @JsonProperty("fullname")
     private String fullName;
 
-    @JsonProperty("phone_number")
-    private String phoneNumber;
-
     @JsonProperty("email")
     private String email;
+
+    @JsonProperty("phone_number")
+    private String phoneNumber;
 
     @JsonProperty("profile_image")
     private String profileImage;
@@ -42,8 +42,8 @@ public class UserResponse {
         return UserResponse.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
-                .phoneNumber(user.getPhoneNumber())
                 .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
                 .profileImage(user.getProfileImage())
                 .active(user.isActive())
                 .facebookAccountId(user.getFacebookAccountId())

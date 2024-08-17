@@ -22,11 +22,11 @@ public class SecurityConfig {
     //user's detail object
     @Bean
     public UserDetailsService userDetailsService() {
-        return phoneNumber -> {
-           UserEntity existingUser = userRepository.findByPhoneNumber(phoneNumber)
+        return email -> {
+           UserEntity existingUser = userRepository.findByEmail(email)
                     .orElseThrow(() ->
                             new UsernameNotFoundException(
-                                    "Cannot find user with phone number: " + phoneNumber));
+                                    "Cannot find user with email: " + email));
             return (UserDetails) existingUser;
         };
     }

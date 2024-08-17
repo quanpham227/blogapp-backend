@@ -12,8 +12,8 @@ import lombok.*;
 @Setter
 public class UserLoginDTO {
 
-    @JsonProperty("phone_number")
-    private String phoneNumber;
+//    @JsonProperty("phone_number")
+//    private String phoneNumber;
 
     @JsonProperty("email")
     private String email;

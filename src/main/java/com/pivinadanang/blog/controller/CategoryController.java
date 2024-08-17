@@ -29,6 +29,7 @@ public class CategoryController {
 
 
     @PostMapping("")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> insertCategory(@Valid @RequestBody CategoryDTO categoryDTO, BindingResult result){
         if(result.hasErrors()) {
             List<String> errorMessages = result.getFieldErrors()
@@ -78,6 +79,7 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody CategoryDTO categoryDTO
@@ -91,6 +93,7 @@ public class CategoryController {
                 .build());
     }
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> deleteCategory(@PathVariable Long id) throws Exception{
         categoryService.deleteCategory(id);
         return ResponseEntity.ok(

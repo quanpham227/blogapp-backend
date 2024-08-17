@@ -49,11 +49,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 return;
             }
             final String token = authHeader.substring(7);
-            final String phoneNumber = jwtTokenUtil.getSubject(token);
+            final String email = jwtTokenUtil.getSubject(token);
 
-            if (phoneNumber != null
+            if (email != null
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserEntity userDetails = (UserEntity) userDetailsService.loadUserByUsername(phoneNumber);
+                UserEntity userDetails = (UserEntity) userDetailsService.loadUserByUsername(email);
                 if(jwtTokenUtil.validateToken(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authenticationToken =
                             new UsernamePasswordAuthenticationToken(

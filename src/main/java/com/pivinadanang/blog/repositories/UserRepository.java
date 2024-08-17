@@ -12,15 +12,15 @@ import java.util.List;
 import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
-    boolean existsByPhoneNumber(String phoneNumber);
     boolean existsByEmail(String email);
-    Optional<UserEntity> findByPhoneNumber(String phoneNumber);
+    boolean existsByPhoneNumber(String email);
+
     Optional<UserEntity> findByEmail(String email);
     //SELECT * FROM users WHERE phoneNumber=?
     //query command
     @Query("SELECT o FROM UserEntity o WHERE o.active = true AND (:keyword IS NULL OR :keyword = '' OR " +
             "o.fullName LIKE %:keyword% " +
-            "OR o.phoneNumber LIKE %:keyword%) " +
+            "OR o.email LIKE %:keyword%) " +
             "AND LOWER(o.role.name) = 'user'")
     Page<UserEntity> findAll(@Param("keyword") String keyword, Pageable pageable);
     List<UserEntity> findByRoleId(Long roleId);

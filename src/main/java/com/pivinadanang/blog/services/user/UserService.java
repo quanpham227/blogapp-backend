@@ -24,8 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-import static com.pivinadanang.blog.ultils.ValidationUtils.isValidEmail;
-
 @Service
 @RequiredArgsConstructor
 public class UserService implements IUserService{
@@ -39,9 +37,7 @@ public class UserService implements IUserService{
     private final LocalizationUtils localizationUtils;
     @Override
     public UserEntity createUser(UserDTO userDTO) throws Exception {
-        if (!userDTO.getPhoneNumber().isBlank() && userRepository.existsByPhoneNumber(userDTO.getPhoneNumber())) {
-            throw new DataIntegrityViolationException("Phone number already exists");
-        }
+
         if (!userDTO.getEmail().isBlank() && userRepository.existsByEmail(userDTO.getEmail())) {
             throw new DataIntegrityViolationException("Email already exists");
         }
@@ -56,8 +52,8 @@ public class UserService implements IUserService{
         //convert from userDTO => user
         UserEntity newUser = UserEntity.builder()
                 .fullName(userDTO.getFullName())
-                .phoneNumber(userDTO.getPhoneNumber())
                 .email(userDTO.getEmail())
+                .phoneNumber(userDTO.getPhoneNumber())
                 .password(userDTO.getPassword())
                 .facebookAccountId(userDTO.getFacebookAccountId())
                 .googleAccountId(userDTO.getGoogleAccountId())
@@ -80,9 +76,9 @@ public class UserService implements IUserService{
         if(jwtTokenUtil.isTokenExpired(token)) {
             throw new ExpiredTokenException("Token is expired");
         }
-        String phoneNumber = jwtTokenUtil.extractPhoneNumbers(token);
+        String email = jwtTokenUtil.extractEmails(token);
         Optional<UserEntity> user;
-        user = userRepository.findByPhoneNumber(phoneNumber);
+        user = userRepository.findByEmail(email);
         if (user.isPresent()) {
            return user.get();
         }else{
@@ -93,9 +89,9 @@ public class UserService implements IUserService{
 
     @Override
     public String login(String phoneNumber, String password, Long roleId) throws Exception {
-        Optional<UserEntity> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
+        Optional<UserEntity> optionalUser = userRepository.findByEmail(phoneNumber);
         if(optionalUser.isEmpty()){
-            throw new DataNotFoundException("Invalid phone number or password");
+            throw new DataNotFoundException("Invalid email or password");
         }
         UserEntity existingUser = optionalUser.get();
 
@@ -103,7 +99,7 @@ public class UserService implements IUserService{
         if ((existingUser.getFacebookAccountId() == null || existingUser.getFacebookAccountId().isEmpty()) &&
                 (existingUser.getGoogleAccountId() == null || existingUser.getGoogleAccountId().isEmpty())) {
             if (!passwordEncoder.matches(password, existingUser.getPassword())) {
-                throw new BadCredentialsException("Wrong phone number or password");
+                throw new BadCredentialsException("Wrong email or password");
             }
         }
         Optional<RoleEntity> optionalRole = roleRepository.findById(roleId);
@@ -129,9 +125,9 @@ public class UserService implements IUserService{
                 .orElseThrow(() -> new DataNotFoundException("User not found"));
 
         // Check if the phone number is being changed and if it already exists for another user
-        String newPhoneNumber = updatedUserDTO.getPhoneNumber();
-        if (!existingUser.getPhoneNumber().equals(newPhoneNumber) &&
-                userRepository.existsByPhoneNumber(newPhoneNumber)) {
+        String phoneNumber = updatedUserDTO.getPhoneNumber();
+        if (!existingUser.getPhoneNumber().equals(phoneNumber) &&
+                userRepository.existsByPhoneNumber(phoneNumber)) {
             throw new DataIntegrityViolationException("Phone number already exists");
         }
 
@@ -139,8 +135,8 @@ public class UserService implements IUserService{
         if (updatedUserDTO.getFullName() != null) {
             existingUser.setFullName(updatedUserDTO.getFullName());
         }
-        if (newPhoneNumber != null) {
-            existingUser.setPhoneNumber(newPhoneNumber);
+        if (phoneNumber != null) {
+            existingUser.setPhoneNumber(phoneNumber);
         }
 
         if (updatedUserDTO.getFacebookAccountId() != null) {
@@ -153,6 +149,9 @@ public class UserService implements IUserService{
         // Update the password if it is provided in the DTO
         if (updatedUserDTO.getPassword() != null
                 && !updatedUserDTO.getPassword().isEmpty()) {
+            if(!updatedUserDTO.getPassword().equals(updatedUserDTO.getRetypePassword())){
+                throw new DataIntegrityViolationException("Password not match");
+            }
             String newPassword = updatedUserDTO.getPassword();
             String encodedPassword = passwordEncoder.encode(newPassword);
             existingUser.setPassword(encodedPassword);

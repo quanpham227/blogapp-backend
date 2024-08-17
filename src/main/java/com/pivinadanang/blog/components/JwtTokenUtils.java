@@ -34,12 +34,12 @@ public class JwtTokenUtils {
     public String generateToken(UserEntity user) {
             //properties => claims
         Map<String, Object> claims = new HashMap<>();
-        claims.put("phoneNumber", user.getPhoneNumber());
+        claims.put("phoneNumber", user.getEmail());
         claims.put("userId", user.getRole().getId());
             try {
                 String token = Jwts.builder()
                         .setClaims(claims)
-                        .setSubject(user.getPhoneNumber())
+                        .setSubject(user.getEmail())
                         .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000L))
                         .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                         .compact();
@@ -78,12 +78,12 @@ public class JwtTokenUtils {
     }
 
     public boolean validateToken(String token, UserDetails userDetails) {
-      String phoneNumber = extractPhoneNumbers(token);
-      return (phoneNumber.equals(userDetails.getUsername()))
+      String email = extractEmails(token);
+      return (email.equals(userDetails.getUsername()))
               && !isTokenExpired(token);
     }
 
-    public String extractPhoneNumbers(String token) {
+    public String extractEmails(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 }

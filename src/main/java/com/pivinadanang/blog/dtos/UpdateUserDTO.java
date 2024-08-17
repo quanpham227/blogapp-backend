@@ -19,7 +19,11 @@ public class UpdateUserDTO {
     @JsonProperty("phone_number")
     private String phoneNumber;
 
+    @JsonProperty("password")
     private String password;
+
+    @JsonProperty("retype_password")
+    private String retypePassword;
 
     @JsonProperty("facebook_account_id")
     private String facebookAccountId;
