@@ -1,7 +1,9 @@
 package com.pivinadanang.blog.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @Getter
@@ -17,6 +19,8 @@ public class ClientDTO {
 
     private String logo;
 
-
     private String fileId;
+
+    @JsonIgnore
+    private MultipartFile file;
 }

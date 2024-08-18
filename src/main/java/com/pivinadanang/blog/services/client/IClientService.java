@@ -2,7 +2,7 @@ package com.pivinadanang.blog.services.client;
 
 import com.pivinadanang.blog.dtos.ClientDTO;
 import com.pivinadanang.blog.models.ClientEntity;
-import com.pivinadanang.blog.responses.ClientResponse;
+import com.pivinadanang.blog.responses.client.ClientResponse;
 
 import java.util.List;
 

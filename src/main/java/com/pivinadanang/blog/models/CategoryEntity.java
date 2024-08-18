@@ -45,9 +45,9 @@ public class CategoryEntity {
         }
 
     }
-    private String generateCode(String code) {
+    private String generateCode(String categoryName) {
         // Bước 1: Chuẩn hóa chuỗi, loại bỏ dấu và chuyển thành chữ thường
-        String normalizedTitle = Normalizer.normalize(code, Normalizer.Form.NFD);
+        String normalizedTitle = Normalizer.normalize(categoryName, Normalizer.Form.NFD);
         String slug = Pattern.compile("\\p{InCombiningDiacriticalMarks}+").matcher(normalizedTitle).replaceAll("");
         // Bước 2: Chuyển đổi thành chữ thường, loại bỏ ký tự đặc biệt, và thay thế khoảng trắng bằng dấu gạch ngang
         slug = slug.toLowerCase().trim().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");

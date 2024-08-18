@@ -54,11 +54,8 @@ public class CategoryController {
     //Hiện tất cả các categories
     @GetMapping("")
     public ResponseEntity<ResponseObject> getAllCategories(
-            @RequestParam("page")     int page,
-            @RequestParam("limit")    int limit
     ) {
         List<CategoryResponse> categories = categoryService.getAllCategories();
-
         return ResponseEntity.ok(ResponseObject.builder()
                 .message("Get list of categories successfully")
                 .status(HttpStatus.OK)

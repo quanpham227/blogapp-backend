@@ -1,4 +1,4 @@
-package com.pivinadanang.blog.responses;
+package com.pivinadanang.blog.responses.client;
 
 import com.pivinadanang.blog.models.ClientEntity;
 import lombok.*;

@@ -23,10 +23,10 @@ public class ClientEntity {
     @Column (name="description",columnDefinition = "TEXT")
     private String description;
 
-    @Column (name="logo", nullable = false, length = 100)
+    @Column (name="logo", nullable = false)
     private String logo;
 
-    @Column (name="file_id", nullable = false)
-    private String fileId;
+    @Column (name="public_id", nullable = false)
+    private String publicId;
 
 }
