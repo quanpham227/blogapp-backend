@@ -3,6 +3,7 @@ package com.pivinadanang.blog.controller;
 import com.github.javafaker.Faker;
 import com.pivinadanang.blog.components.converters.LocalizationUtils;
 import com.pivinadanang.blog.dtos.PostDTO;
+import com.pivinadanang.blog.dtos.UpdatePostDTO;
 import com.pivinadanang.blog.models.PostEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.post.PostListResponse;
@@ -86,7 +87,7 @@ public class PostController {
     }
     @PatchMapping(value = "/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody PostDTO postDTO, @PathVariable Long id, BindingResult result) throws Exception {
+    public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody UpdatePostDTO postDTO, @PathVariable Long id, BindingResult result) throws Exception {
         if (result.hasErrors()) {
             List<String> errorMessages = result.getFieldErrors()
                     .stream()
@@ -97,13 +98,6 @@ public class PostController {
                             .message("Validation errors")
                             .status(HttpStatus.BAD_REQUEST)
                             .data(errorMessages)
-                            .build());
-        }
-        if(postService.existsPostByTitle(postDTO.getTitle())){
-            return ResponseEntity.badRequest()
-                    .body(ResponseObject.builder()
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_ALREADY_EXISTS))
-                            .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
         PostResponse postResponse = postService.updatePost(id,postDTO);

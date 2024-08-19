@@ -34,7 +34,7 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     List<PostEntity> findFavoritePostsByUserId(@Param("userId") Long userId);
 
     @Query("SELECT p FROM PostEntity p WHERE p.slug = :slug")
-    Optional<PostEntity> findPostBySlug(@Param("slug") String slug);
+    List<PostEntity> findPostsBySlug(@Param("slug") String slug);
 
     @Query(value = "SELECT * FROM posts ORDER BY created_at DESC LIMIT ?1", nativeQuery = true)
     List<PostEntity> findTopNRecentPosts(int limit);

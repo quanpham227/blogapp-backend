@@ -1,10 +1,10 @@
 package com.pivinadanang.blog.dtos;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pivinadanang.blog.enums.PostStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Data
@@ -13,12 +13,9 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class PostDTO {
-    @NotBlank(message = "Title is required")
-    @Size(min = 3, max = 200, message = "Name must be between 3 and 200 characters")
+public class UpdatePostDTO {
     private String title;
 
-    @NotBlank(message = "content is required")
     private String content;
 
     @JsonProperty("category_id")

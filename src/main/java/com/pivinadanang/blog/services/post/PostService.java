@@ -1,6 +1,7 @@
 package com.pivinadanang.blog.services.post;
 
 import com.pivinadanang.blog.dtos.PostDTO;
+import com.pivinadanang.blog.dtos.UpdatePostDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.models.CategoryEntity;
 import com.pivinadanang.blog.models.PostEntity;
@@ -59,12 +60,17 @@ public class PostService implements IPostService {
 
     @Override
     @Transactional
-    public PostResponse updatePost(long id, PostDTO postDTO) throws Exception {
+    public PostResponse updatePost(long id, UpdatePostDTO postDTO) throws Exception {
         // Lấy thông tin bài viết hiện có
         PostEntity existingPost = getPostById(id);
         // Lấy thông tin Category hiện có
-        CategoryEntity existingCategory = categoryRepository.findById(postDTO.getCategoryId())
-                .orElseThrow(() -> new DataNotFoundException("Cannot find category with id " + postDTO.getCategoryId()));
+        if(postDTO.getCategoryId() != null ){
+            CategoryEntity existingCategory = categoryRepository.findById(postDTO.getCategoryId())
+                    .orElseThrow(() -> new DataNotFoundException("Cannot find category with id " + postDTO.getCategoryId()));
+            existingPost.setCategory(existingCategory);
+
+        }
+
         // Cập nhật thông tin bài viết
         // Cập nhật thông tin bài viết chỉ nếu không null hoặc không trống
         if (postDTO.getTitle() != null && !postDTO.getTitle().isEmpty()) {
@@ -83,9 +89,6 @@ public class PostService implements IPostService {
             existingPost.setThumbnail(postDTO.getThumbnail());
         }
 
-        if (existingCategory != null) {
-            existingPost.setCategory(existingCategory);
-        }
 
 
         PostEntity updatedPost = postRepository.save(existingPost);
@@ -107,9 +110,15 @@ public class PostService implements IPostService {
 
     @Override
     public PostEntity getPostBySlug( String slug) throws DataNotFoundException {
-        PostEntity postEntity =  postRepository.findPostBySlug( slug)
-                .orElseThrow(() -> new DataNotFoundException("Post not found with slug " + slug));
-        return postEntity;
+        List<PostEntity> posts = postRepository.findPostsBySlug(slug);
+        if (posts.isEmpty()) {
+            throw new DataNotFoundException("Post not found with slug " + slug);
+        }
+        if (posts.size() > 1) {
+            // Log or handle duplicates as necessary
+            throw new DataNotFoundException("Multiple posts found with slug " + slug);
+        }
+        return posts.get(0);
     }
 
     @Override

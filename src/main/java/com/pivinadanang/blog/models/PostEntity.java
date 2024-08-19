@@ -29,7 +29,7 @@ public class PostEntity extends BaseEntity{
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "slug", length = 255)
+    @Column(name = "slug", unique = true,nullable = false)
     private String slug;
 
     @Column(name = "excerpt", columnDefinition = "TEXT")
