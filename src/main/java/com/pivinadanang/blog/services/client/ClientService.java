@@ -1,5 +1,6 @@
 package com.pivinadanang.blog.services.client;
 
+import com.pivinadanang.blog.components.ImageSizeConfig;
 import com.pivinadanang.blog.components.converters.LocalizationUtils;
 import com.pivinadanang.blog.dtos.ClientDTO;
 import com.pivinadanang.blog.dtos.CloudinaryDTO;
@@ -29,6 +30,8 @@ public class ClientService implements IClientService{
     private final ClientRepository clientRepository;
     private final ICloudinaryService iCloudinaryService;
     private final LocalizationUtils localizationUtils;
+    private final ImageSizeConfig imageSizeConfig; // Inject the configuration class
+
 
     @Override
     public boolean exitsByName(String name) {
@@ -44,6 +47,7 @@ public class ClientService implements IClientService{
     @Override
     @Transactional
     public ClientResponse createClient(ClientDTO clientDTO) throws IOException {
+        String objectType = "clients";
         // Kiểm tra kích thước file và định dạng
         if (clientDTO.getFile().getSize() > 5 * 1024 * 1024) { // Kích thước > 5MB
          throw new FileSizeExceededException(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_LARGE));
@@ -53,7 +57,12 @@ public class ClientService implements IClientService{
             throw new InvalidFileTypeException(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_MUST_BE_IMAGE));
         }
         File file = FileUtils.handleFile(clientDTO.getFile());
-        CloudinaryDTO cloudinaryDTO = iCloudinaryService.upload(clientDTO.getFile(), "clients");
+
+
+        int[] dimensions = imageSizeConfig.getSizeConfig(objectType);
+        int width = dimensions[0];
+        int height = dimensions[1];
+        CloudinaryDTO cloudinaryDTO = iCloudinaryService.upload(clientDTO.getFile(), objectType, width, height);
 
         ClientEntity newClient = ClientEntity.builder()
                 .name(clientDTO.getName())
@@ -73,6 +82,7 @@ public class ClientService implements IClientService{
     @Override
     @Transactional
     public ClientResponse updateClient(long clientId, ClientDTO clientDTO) throws DataNotFoundException, IOException {
+        String objectType = "clients";
         ClientEntity exitsClient = clientRepository.findById(clientId)
                 .orElseThrow(() -> new DataNotFoundException("Cannot find client with id " + clientId));
         if((clientDTO.getFile() != null) && (!clientDTO.getFile().isEmpty())){
@@ -86,12 +96,22 @@ public class ClientService implements IClientService{
             }
             FileUtils.handleFile(clientDTO.getFile());
 
-            CloudinaryDTO cloudinaryDTO = iCloudinaryService.update(exitsClient.getPublicId(), clientDTO.getFile());
+
+            int[] dimensions = imageSizeConfig.getSizeConfig(objectType);
+            int width = dimensions[0];
+            int height = dimensions[1];
+
+            CloudinaryDTO cloudinaryDTO = iCloudinaryService.update(exitsClient.getPublicId(), clientDTO.getFile(), width, height);
             exitsClient.setLogo(cloudinaryDTO.getUrl());
             exitsClient.setPublicId(cloudinaryDTO.getPublicId());
         }
-        exitsClient.setName(clientDTO.getName());
-        exitsClient.setDescription(clientDTO.getDescription());
+        if (clientDTO.getName() != null || !clientDTO.getName().isEmpty()) {
+            exitsClient.setName(clientDTO.getName());
+        }
+        if ( clientDTO.getDescription() != null || !clientDTO.getDescription().isEmpty()){
+            exitsClient.setDescription(clientDTO.getDescription());
+        }
+
        ClientEntity clientEntity =  clientRepository.save(exitsClient);
        return  ClientResponse.fromClient(clientEntity);
     }

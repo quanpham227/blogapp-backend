@@ -2,6 +2,7 @@ package com.pivinadanang.blog.dtos;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.pivinadanang.blog.enums.PostStatus;
 import com.pivinadanang.blog.ultils.SlugUtil;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -23,7 +24,8 @@ public class PostDTO {
 
     private Long categoryId;
 
-    private PostImageDTO postImage;
+    private String thumbnail;
 
+    private PostStatus status;
 
 }

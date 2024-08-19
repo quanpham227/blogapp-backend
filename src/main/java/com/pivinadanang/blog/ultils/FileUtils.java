@@ -10,9 +10,6 @@ import java.io.InputStream;
 public class FileUtils {
 
     public static File handleFile(MultipartFile file) throws IOException {
-        if (file.isEmpty()) {
-            throw new IOException("File is empty");
-        }
 
         String fileName = file.getOriginalFilename();
         if (fileName == null || fileName.isEmpty()) {

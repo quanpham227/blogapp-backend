@@ -2,19 +2,12 @@ package com.pivinadanang.blog.controller;
 
 import com.github.javafaker.Faker;
 import com.pivinadanang.blog.components.converters.LocalizationUtils;
-import com.pivinadanang.blog.dtos.GoogleDriveDTO;
 import com.pivinadanang.blog.dtos.PostDTO;
-import com.pivinadanang.blog.dtos.PostImageDTO;
 import com.pivinadanang.blog.models.PostEntity;
-import com.pivinadanang.blog.models.PostImageContent;
-import com.pivinadanang.blog.models.PostImageEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.post.PostListResponse;
 import com.pivinadanang.blog.responses.post.PostResponse;
-import com.pivinadanang.blog.services.google.IGoogleService;
-import com.pivinadanang.blog.services.image.IPostImageContentService;
 import com.pivinadanang.blog.services.post.IPostService;
-import com.pivinadanang.blog.ultils.FileUtils;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,18 +17,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Locale;
 
@@ -45,18 +33,13 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class PostController {
     private final IPostService postService;
-    private final IGoogleService googleService;
     private final LocalizationUtils localizationUtils;
-    private final IPostImageContentService postImageContentService;
     private  static final Logger logger = LoggerFactory.getLogger(PostController.class);
 
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> createPost(@Valid @ModelAttribute PostDTO postDTO,
-                                                     @RequestParam ("category_id") Long categoryId,
-                                                     @RequestParam ("thumbnail") MultipartFile file,
-                                                     BindingResult result){
+    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO, BindingResult result){
         if (result.hasErrors()) {
             List<String> errorMessages = result.getFieldErrors()
                     .stream()
@@ -76,33 +59,8 @@ public class PostController {
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
-        // Kiểm tra kích thước file và định dạng
-        if(file.getSize() > 5 * 1024 * 1024) { // Kích thước > 10MB
-            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                    .body(ResponseObject.builder()
-                            .message(localizationUtils
-                                    .getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_LARGE))
-                            .status(HttpStatus.PAYLOAD_TOO_LARGE)
-                            .build());
-        }
-        String contentType = file.getContentType();
-        if(contentType == null || !contentType.startsWith("image/")) {
-            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                    .body(ResponseObject.builder()
-                            .message(localizationUtils
-                                    .getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_MUST_BE_IMAGE))
-                            .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                            .build());
-        }
+
         try {
-            postDTO.setCategoryId(categoryId);
-            File tempFile = FileUtils.handleFile(file);
-            GoogleDriveDTO googleDriveDTO = googleService.uploadImageToDrive(tempFile);
-            PostImageDTO postImageDTO =  PostImageDTO.builder()
-                    .imageUrl(googleDriveDTO.getUrl())
-                    .fileId(googleDriveDTO.getFileId())
-                    .build();
-            postDTO.setPostImage(postImageDTO);
             PostResponse postResponse = postService.createPost(postDTO);
             return ResponseEntity.ok(ResponseObject.builder()
                             .status(HttpStatus.CREATED)
@@ -126,13 +84,9 @@ public class PostController {
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
                 .build());
     }
-    @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(value = "/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> updatePost(@Valid @ModelAttribute PostDTO postDTO,
-                                                     @PathVariable Long id,
-                                                     @RequestParam (value = "category_id", required = false) Long categoryId,
-                                                     @RequestParam (value = "thumbnail", required = false) MultipartFile file,
-                                                     BindingResult result){
+    public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody PostDTO postDTO, @PathVariable Long id, BindingResult result) throws Exception {
         if (result.hasErrors()) {
             List<String> errorMessages = result.getFieldErrors()
                     .stream()
@@ -152,49 +106,13 @@ public class PostController {
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
-        try {
-            PostImageDTO postImageDTO = null;
-            if(file != null && !file.isEmpty()){
-                if(file.getSize() > 5 * 1024 * 1024) { // Kích thước > 10MB
-                    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                            .body(ResponseObject.builder()
-                                    .message(localizationUtils
-                                            .getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_LARGE))
-                                    .status(HttpStatus.PAYLOAD_TOO_LARGE)
-                                    .build());
-                }
-                String contentType = file.getContentType();
-                if(contentType == null || !contentType.startsWith("image/")) {
-                    return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                            .body(ResponseObject.builder()
-                                    .message(localizationUtils
-                                            .getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_MUST_BE_IMAGE))
-                                    .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                                    .build());
-                }
-                File tempFile = FileUtils.handleFile(file);
-                GoogleDriveDTO googleDriveDTO = googleService.uploadImageToDrive(tempFile);
-                 postImageDTO =  PostImageDTO.builder()
-                        .imageUrl(googleDriveDTO.getUrl())
-                        .fileId(googleDriveDTO.getFileId())
-                        .build();
-                postDTO.setPostImage(postImageDTO);
-            }
-            postDTO.setCategoryId(categoryId);
-            PostResponse postResponse = postService.updatePost(id,postDTO);
-            return ResponseEntity.ok(
-                    ResponseObject.builder()
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_POST_SUCCESSFULLY))
-                            .status(HttpStatus.CREATED)
-                            .data(postResponse)
-                            .build());
-        }catch (Exception exception){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseObject.builder()
-                            .message("An error occurred: " + exception.getMessage())
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .build());
-        }
+        PostResponse postResponse = postService.updatePost(id,postDTO);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_POST_SUCCESSFULLY))
+                        .status(HttpStatus.CREATED)
+                        .data(postResponse)
+                        .build());
     }
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -272,16 +190,10 @@ public class PostController {
                     "https://drive.google.com/thumbnail?id=1KMxf6wpWO4ry_DtWkWvs-IgimycOmDQv&sz=w4000"
             };
             String imageUrl = imageUrls[faker.random().nextInt(imageUrls.length)];
-            String fileId = "1Xj4C6eKfVL1krZ6ylNvhXFIp8X2Xzx5e";
-            PostImageDTO postImage = PostImageDTO.builder()
-                    .imageUrl(imageUrl)
-                    .fileId(fileId)
-                    .build();
             PostDTO postDTO = PostDTO.builder()
                     .title(title)
                     .content(content)
                     .categoryId(categoryId)
-                    .postImage(postImage)
                     .build();
             try {
                 postService.createPost(postDTO);
@@ -290,54 +202,6 @@ public class PostController {
             }
         }
         return ResponseEntity.ok("Posts generated successfully");
-    }
-
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseObject> uploadImage(@RequestParam("image") MultipartFile file) {
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(ResponseObject.builder()
-                            .message("Please select a file to upload")
-                            .status(HttpStatus.BAD_REQUEST)
-                            .build());
-        }
-        if (file.getSize() > 5 * 1024 * 1024) {
-            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                    .body(ResponseObject.builder()
-                            .message("File size must be less than 5MB")
-                            .status(HttpStatus.PAYLOAD_TOO_LARGE)
-                            .build());
-        }
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                    .body(ResponseObject.builder()
-                            .message("File must be an image")
-                            .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                            .build());
-        }
-        try {
-            File tempFile = FileUtils.handleFile(file);
-            GoogleDriveDTO googleDriveDTO = googleService.uploadImageToDrive(tempFile);
-            PostImageContent postImageContent = PostImageContent.builder()
-                    .imageUrl(googleDriveDTO.getUrl())
-                    .fileId(googleDriveDTO.getFileId())
-                    .build();
-
-            PostImageContent postImageContentResponse =  postImageContentService.createPostImageContent(postImageContent);
-
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .status(HttpStatus.CREATED)
-                    .data(postImageContentResponse)
-                    .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
-                    .build());
-        } catch (Exception exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseObject.builder()
-                            .message("Failed to upload image")
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .build());
-        }
     }
 
 }

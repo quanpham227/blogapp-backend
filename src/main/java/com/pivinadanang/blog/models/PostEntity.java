@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import java.text.Normalizer;
 import java.util.regex.Pattern;
+
+import com.pivinadanang.blog.enums.PostStatus;
 import jakarta.persistence.*;
 
 import lombok.*;
@@ -21,27 +23,30 @@ public class PostEntity extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="title",columnDefinition = "TEXT")
+    @Column(name="title", length = 255)
     private String title;
 
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "slug", columnDefinition = "TEXT")
+    @Column(name = "slug", length = 255)
     private String slug;
 
     @Column(name = "excerpt", columnDefinition = "TEXT")
     private String excerpt;
+
+    @Column(name = "thumbnail", length = 2048)
+    private String thumbnail;
+
+    @Column(name = "status")
+    private PostStatus status;
+
 
     @ManyToOne
     @JoinColumn(name = "category_id")
     @JsonBackReference
     private CategoryEntity category;
 
-    @OneToOne(orphanRemoval = true,
-            fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_image_id")
-    private PostImageEntity image;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -60,13 +65,6 @@ public class PostEntity extends BaseEntity{
             fetch = FetchType.LAZY)
     private List<FavouriteEntity> favorites = new ArrayList<>();
 
-
-    @OneToMany(mappedBy = "post",
-            orphanRemoval = true,
-            cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY)
-    @JsonManagedReference
-    private List<PostImageContent> postContentImages = new ArrayList<>();
 
     @PrePersist
     @PreUpdate

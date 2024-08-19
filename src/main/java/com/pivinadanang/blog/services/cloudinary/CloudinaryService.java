@@ -19,14 +19,20 @@ import java.util.Map;
 public class CloudinaryService  implements ICloudinaryService{
     private final Cloudinary cloudinary;
     @Override
-    public CloudinaryDTO upload(MultipartFile file, String folderName) {
+    public CloudinaryDTO upload(MultipartFile file, String folderName, int width, int height) {
         try {
-            Map<?,?> uploadResult = cloudinary.uploader().upload(file.getBytes(),
-                    ObjectUtils.asMap("folder", "blogapp/" + folderName, "resource_type", "auto"));
-            CloudinaryDTO cloudinaryDTO = new CloudinaryDTO();
-            cloudinaryDTO.setPublicId(uploadResult.get("public_id").toString());
-            cloudinaryDTO.setUrl((String) uploadResult.get("secure_url"));
-            return cloudinaryDTO;
+            // Tạo biến Transformation để thay đổi kích thước ảnh
+            Transformation transformation = new Transformation()
+                    .width(width)
+                    .height(height)
+                    .crop("scale"); // Crop để đảm bảo ảnh có kích thước chính xác
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "blogapp/" + folderName,
+                            "resource_type", "auto",
+                            "transformation", transformation
+                    ));
+            return mapUploadResultToDTO(uploadResult, file.getOriginalFilename());
 
         } catch (Exception ex) {
             throw new CloudinaryException("failed to load to Cloudinary the image file: ", ex);
@@ -34,15 +40,26 @@ public class CloudinaryService  implements ICloudinaryService{
     }
 
     @Override
-    public CloudinaryDTO update(String publicId, MultipartFile file) {
+    public CloudinaryDTO update(String publicId, MultipartFile file, int width, int height) {
         try {
-            Map<?,?> uploadResult = cloudinary.uploader().upload(file.getBytes(),
-                    ObjectUtils.asMap("public_id", publicId, "resource_type", "auto"));
+            // Thiết lập các tham số chuyển đổi
+            Map<String, Object> uploadOptions = ObjectUtils.asMap(
+                    "public_id", publicId,
+                    "resource_type", "auto",
+                    "transformation", new Transformation().width(width).height(height).crop("fit")
+            );
+
+            // Upload ảnh với các tham số chuyển đổi
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadOptions);
+
+            // Tạo đối tượng CloudinaryDTO từ kết quả upload
             CloudinaryDTO cloudinaryDTO = new CloudinaryDTO();
             cloudinaryDTO.setPublicId(uploadResult.get("public_id").toString());
             cloudinaryDTO.setUrl((String) uploadResult.get("secure_url"));
+            cloudinaryDTO.setFileName(file.getOriginalFilename());
+            cloudinaryDTO.setFileSize(Long.parseLong(uploadResult.get("bytes").toString())); // Kích thước file từ Cloudinary
             return cloudinaryDTO;
-        }catch (Exception exception){
+        } catch (Exception exception) {
             throw new CloudinaryException("Failed to update image on Cloudinary with public ID " + publicId, exception);
         }
     }
@@ -79,5 +96,14 @@ public class CloudinaryService  implements ICloudinaryService{
             throw new CloudinaryException("failed to download image from Cloudinary with public ID " + publicId, ex);
         }
     }
-
+    private CloudinaryDTO mapUploadResultToDTO(Map<?, ?> uploadResult, String originalFileName) {
+        CloudinaryDTO cloudinaryDTO = new CloudinaryDTO();
+        cloudinaryDTO.setPublicId(uploadResult.get("public_id").toString());
+        cloudinaryDTO.setUrl((String) uploadResult.get("secure_url"));
+        if (originalFileName != null) {
+            cloudinaryDTO.setFileName(originalFileName);
+        }
+        cloudinaryDTO.setFileSize(Long.parseLong(uploadResult.get("bytes").toString()));
+        return cloudinaryDTO;
+    }
 }

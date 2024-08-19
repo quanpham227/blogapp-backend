@@ -24,8 +24,8 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     Page<PostEntity> searchPosts(@Param("categoryId") Long categoryId, @Param("keyword") String keyword, Pageable pageable);
 
 
-    @Query("SELECT p FROM PostEntity p LEFT JOIN FETCH p.image WHERE p.id = :postId")
-    Optional<PostEntity> getDetailPost(@Param("postId") Long postId);
+    @Query("SELECT p FROM PostEntity p WHERE p.id = :postId")
+    Optional<PostEntity> findPostById(@Param("postId") Long postId);
 
     @Query("SELECT p FROM PostEntity p WHERE p.id IN :postIds")
     List<PostEntity> findPostsByIds(@Param("postIds") List<Long> postIds);

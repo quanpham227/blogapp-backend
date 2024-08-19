@@ -36,10 +36,13 @@ public class MessageKeys {
 
 
 
-    public static final String UPLOAD_IMAGE_SUCCESSFULLY = "post.upload_images.successfully";
-    public static final String UPLOAD_IMAGES_FILE_LARGE = "post.upload_images.file_large";
-    public static final String UPLOAD_IMAGES_FILE_MUST_BE_IMAGE = "post.upload_images.file_must_be_image";
-
+    public static final String UPLOAD_IMAGE_SUCCESSFULLY = "upload_images.successfully";
+    public static final String UPLOAD_IMAGES_FILE_LARGE = "upload_images.file_large";
+    public static final String UPLOAD_IMAGES_FILE_MUST_BE_IMAGE = "upload_images.file_must_be_image";
+    public static final String UPLOAD_IMAGES_MAX_5 = "upload_images.max_5";
+    public static final String UPLOAD_IMAGE_FILE_NOTFOUND = "upload_images.file_not_found";
+    public static final String DELETE_IMAGE_SUCCESSFULLY = "delete_image.successfully";
+    public static final String DELETE_IMAGE_FAILED = "delete_image.failed";
 
     public static final String ROLE_DOES_NOT_EXISTS = "user.login.role_not_exist";
 

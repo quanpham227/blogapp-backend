@@ -14,12 +14,7 @@ public interface IPostService {
     Page<PostResponse> getAllPosts( String keyword ,Long categoryId, PageRequest pageRequest);
     PostResponse updatePost(long id, PostDTO postDTO) throws Exception;
     void deletePost(long id);
-    List<PostEntity> findPostsByIds(List<Long> postIds);
     boolean existsPostByTitle(String title);
     PostEntity getPostBySlug( String slug) throws Exception;
-    List<PostEntity> findFavoritePostsByUserId(Long userId);
-    Page<PostResponse> searchPosts(Long categoryId, String keyword, PageRequest pageRequest);
-    PostEntity getDetailPost(Long postId);
-
     List<PostResponse> getRecentPosts(int limit);
 }

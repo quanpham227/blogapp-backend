@@ -26,6 +26,7 @@ public class PostResponse extends BaseResponse {
     @JsonProperty("category_id")
     private Long categoryId;
 
+    private String status;
 
     public static PostResponse fromPost (PostEntity post){
         PostResponse postResponse = PostResponse.builder()
@@ -34,8 +35,9 @@ public class PostResponse extends BaseResponse {
                 .content(post.getContent())
                 .slug(post.getSlug())
                 .excerpt(post.getExcerpt())
+                .thumbnailUrl(post.getThumbnail())
+                .status(post.getStatus().name())
                 .categoryId(post.getCategory().getId())
-                .thumbnailUrl(post.getImage().getImageUrl())
                 .build();
         postResponse.setCreatedAt(post.getCreatedAt());
         postResponse.setUpdatedAt(post.getUpdatedAt());
