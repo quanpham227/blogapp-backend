@@ -31,7 +31,7 @@ public class CategoryEntity {
     private String code;
 
 
-    @OneToMany(mappedBy = "category")
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonManagedReference
     private Set<PostEntity> posts = new HashSet<>();
 

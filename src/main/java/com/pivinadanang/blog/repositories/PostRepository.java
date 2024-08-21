@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     boolean existsByTitle(String title);
-    Page<PostEntity> findAll(Pageable pageable);//phân trang
+
     List<PostEntity> findByCategory(CategoryEntity category);
 
     @Query("SELECT p FROM PostEntity p WHERE " +
@@ -23,18 +23,13 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
             "AND (:keyword IS NULL OR :keyword = '' OR p.title LIKE %:keyword% OR p.content LIKE %:keyword%)")
     Page<PostEntity> searchPosts(@Param("categoryId") Long categoryId, @Param("keyword") String keyword, Pageable pageable);
 
-
-    @Query("SELECT p FROM PostEntity p WHERE p.id = :postId")
+    @Query("SELECT p FROM PostEntity p " +
+            "LEFT JOIN FETCH p.category c " +
+            "WHERE p.id = :postId")
     Optional<PostEntity> findPostById(@Param("postId") Long postId);
 
-    @Query("SELECT p FROM PostEntity p WHERE p.id IN :postIds")
-    List<PostEntity> findPostsByIds(@Param("postIds") List<Long> postIds);
-
-    @Query("SELECT p FROM PostEntity p JOIN p.favorites f WHERE f.user.id = :userId")
-    List<PostEntity> findFavoritePostsByUserId(@Param("userId") Long userId);
-
     @Query("SELECT p FROM PostEntity p WHERE p.slug = :slug")
-    List<PostEntity> findPostsBySlug(@Param("slug") String slug);
+    Optional<PostEntity> findPostsBySlug(@Param("slug") String slug);
 
     @Query(value = "SELECT * FROM posts ORDER BY created_at DESC LIMIT ?1", nativeQuery = true)
     List<PostEntity> findTopNRecentPosts(int limit);

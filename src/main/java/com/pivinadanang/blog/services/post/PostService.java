@@ -46,8 +46,10 @@ public class PostService implements IPostService {
 
     @Override
     public PostEntity getPostById(long postId) throws Exception {
-        return postRepository.findById(postId)
+
+        PostEntity post =   postRepository.findPostById(postId)
                 .orElseThrow(() -> new DataNotFoundException("Cannot find post with id " + postId));
+        return post;
     }
 
     @Override
@@ -110,15 +112,8 @@ public class PostService implements IPostService {
 
     @Override
     public PostEntity getPostBySlug( String slug) throws DataNotFoundException {
-        List<PostEntity> posts = postRepository.findPostsBySlug(slug);
-        if (posts.isEmpty()) {
-            throw new DataNotFoundException("Post not found with slug " + slug);
-        }
-        if (posts.size() > 1) {
-            // Log or handle duplicates as necessary
-            throw new DataNotFoundException("Multiple posts found with slug " + slug);
-        }
-        return posts.get(0);
+        return postRepository.findPostsBySlug(slug)
+                .orElseThrow(() -> new DataNotFoundException("Cannot find post with slug " + slug));
     }
 
     @Override
