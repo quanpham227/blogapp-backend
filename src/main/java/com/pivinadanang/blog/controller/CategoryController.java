@@ -43,6 +43,15 @@ public class CategoryController {
                     .build());
 
         }
+
+        if(categoryService.existsCategoryByName(categoryDTO.getName())){
+            return ResponseEntity.badRequest()
+                    .body(ResponseObject.builder()
+                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_CATEGORY_ALREADY_EXISTS))
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+
+        }
         CategoryResponse category = categoryService.createCategory(categoryDTO);
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_CATEGORY_SUCCESSFULLY))
@@ -96,7 +105,7 @@ public class CategoryController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_CATEGORY_SUCCESSFULLY))
+                        .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_CATEGORY_SUCCESSFULLY, id))
                         .build());
     }
 }

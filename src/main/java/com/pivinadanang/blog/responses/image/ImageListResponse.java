@@ -1,6 +1,7 @@
-package com.pivinadanang.blog.responses.post;
+package com.pivinadanang.blog.responses.image;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.pivinadanang.blog.responses.post.PostResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,8 +14,8 @@ import java.util.List;
 @Data
 @Builder
 @NoArgsConstructor
-public class PostListResponse {
-    private List<PostResponse> posts;
+public class ImageListResponse {
+    private List<ImageResponse> images;
     private int totalPages;
     private HttpStatus status;
 }

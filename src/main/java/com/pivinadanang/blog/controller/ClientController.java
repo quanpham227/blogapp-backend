@@ -57,6 +57,7 @@ public class ClientController {
                     .stream()
                     .map(FieldError::getDefaultMessage)
                     .toList();
+
             return ResponseEntity.ok().body(ResponseObject.builder()
                     .message(errorMessages.toString())
                     .status(HttpStatus.BAD_REQUEST)
@@ -130,10 +131,9 @@ public class ClientController {
                     .data(null)
                     .build());
         } catch (Exception exception) {
-            exception.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ResponseObject.builder()
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_CLIENT_FAILED))
+                            .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_CLIENT_FAILED, id))
                             .status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .build());
         }

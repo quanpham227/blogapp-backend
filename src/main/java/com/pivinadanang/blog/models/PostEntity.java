@@ -18,6 +18,7 @@ import java.util.*;
 @Getter
 @Setter
 @Builder
+//@EntityListeners(PostEntity.class)
 public class PostEntity extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

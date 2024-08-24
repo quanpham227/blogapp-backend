@@ -72,4 +72,9 @@ public class CategoryService implements ICategoryService{
             return  category;
         }
     }
+
+    @Override
+    public boolean existsCategoryByName(String name) {
+        return categoryRepository.exitstsByName(name);
+    }
 }

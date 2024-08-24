@@ -12,4 +12,6 @@ public interface ICategoryService {
     List<CategoryResponse> getAllCategories();
     CategoryResponse updateCategory(long categoryId, CategoryDTO category);
     CategoryEntity deleteCategory(long id) throws Exception;
+
+    boolean existsCategoryByName(String name);
 }

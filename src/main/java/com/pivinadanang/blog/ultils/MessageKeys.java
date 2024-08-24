@@ -10,6 +10,7 @@ public class MessageKeys {
 
     public static final String INSERT_CATEGORY_SUCCESSFULLY = "category.create_category.create_successfully";
     public static final String INSERT_CATEGORY_FAILED = "category.create_category.create_failed";
+    public static final String INSERT_CATEGORY_ALREADY_EXISTS = "category.create_category.create_already_exists";
     public static final String UPDATE_CATEGORY_SUCCESSFULLY = "category.update_category.update_successfully";
     public static final String DELETE_CATEGORY_FAILED = "category.delete_category.delete_failed";
     public static final String DELETE_CATEGORY_SUCCESSFULLY = "category.delete_category.delete_successfully";

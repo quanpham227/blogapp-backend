@@ -139,8 +139,9 @@ public class PostController {
 
         return ResponseEntity.ok(PostListResponse
                 .builder()
-                .posts(posts)
-                .totalPages(totalPages)
+                        .status(HttpStatus.OK)
+                        .posts(posts)
+                        .totalPages(totalPages)
                 .build());
 
     }
