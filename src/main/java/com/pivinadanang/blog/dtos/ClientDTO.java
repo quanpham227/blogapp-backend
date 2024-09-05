@@ -21,6 +21,4 @@ public class ClientDTO {
 
     private String fileId;
 
-    @JsonIgnore
-    private MultipartFile file;
 }

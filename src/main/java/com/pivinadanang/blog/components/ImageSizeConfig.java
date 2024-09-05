@@ -7,7 +7,7 @@ import java.util.Map;
 @Component
 public class ImageSizeConfig {
     private static final Map<String, int[]> SIZE_CONFIG = Map.of(
-            "posts", new int[]{1440, 900},
+            "posts", new int[]{1200, 628},
             "clients", new int[]{400, 141},
             "slides", new int[]{1733, 759}
     );

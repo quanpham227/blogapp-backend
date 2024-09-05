@@ -14,6 +14,7 @@ import com.pivinadanang.blog.responses.client.ClientResponse;
 import com.pivinadanang.blog.services.cloudinary.ICloudinaryService;
 import com.pivinadanang.blog.services.google.GoogleDiveService;
 import com.pivinadanang.blog.ultils.FileUtils;
+import com.pivinadanang.blog.ultils.HtmlSanitizer;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class ClientService implements IClientService{
@@ -47,28 +50,13 @@ public class ClientService implements IClientService{
     @Override
     @Transactional
     public ClientResponse createClient(ClientDTO clientDTO) throws IOException {
-        String objectType = "clients";
-        // Kiểm tra kích thước file và định dạng
-        if (clientDTO.getFile().getSize() > 5 * 1024 * 1024) { // Kích thước > 5MB
-         throw new FileSizeExceededException(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_LARGE));
-        }
-        String contentType = clientDTO.getFile().getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new InvalidFileTypeException(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_MUST_BE_IMAGE));
-        }
-        File file = FileUtils.handleFile(clientDTO.getFile());
-
-
-        int[] dimensions = imageSizeConfig.getSizeConfig(objectType);
-        int width = dimensions[0];
-        int height = dimensions[1];
-        CloudinaryDTO cloudinaryDTO = iCloudinaryService.upload(clientDTO.getFile(), objectType, width, height);
-
+        String fileId = FileUtils.extractFileIdFromUrl(clientDTO.getLogo());
+        String sanitizedDescription = HtmlSanitizer.sanitize(clientDTO.getDescription());
         ClientEntity newClient = ClientEntity.builder()
                 .name(clientDTO.getName())
-                .logo(cloudinaryDTO.getUrl())
-                .publicId(cloudinaryDTO.getPublicId())
-                .description(clientDTO.getDescription())
+                .logo(clientDTO.getLogo())
+                .publicId(fileId)
+                .description(sanitizedDescription)
                 .build();
         ClientEntity clientEntity = clientRepository.save(newClient);
         return ClientResponse.fromClient(clientEntity);
@@ -82,34 +70,27 @@ public class ClientService implements IClientService{
     @Override
     @Transactional
     public ClientResponse updateClient(long clientId, ClientDTO clientDTO) throws DataNotFoundException, IOException {
-        String objectType = "clients";
         ClientEntity exitsClient = clientRepository.findById(clientId)
                 .orElseThrow(() -> new DataNotFoundException("Cannot find client with id " + clientId));
-        if((clientDTO.getFile() != null) && (!clientDTO.getFile().isEmpty())){
-            // Kiểm tra kích thước file và định dạng
-            if (clientDTO.getFile().getSize() > 5 * 1024 * 1024) { // Kích thước > 5MB
-                throw new FileSizeExceededException(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_LARGE));
-            }
-            String contentType = clientDTO.getFile().getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                throw new InvalidFileTypeException(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_MUST_BE_IMAGE));
-            }
-            FileUtils.handleFile(clientDTO.getFile());
 
-
-            int[] dimensions = imageSizeConfig.getSizeConfig(objectType);
-            int width = dimensions[0];
-            int height = dimensions[1];
-
-            CloudinaryDTO cloudinaryDTO = iCloudinaryService.update(exitsClient.getPublicId(), clientDTO.getFile(), width, height);
-            exitsClient.setLogo(cloudinaryDTO.getUrl());
-            exitsClient.setPublicId(cloudinaryDTO.getPublicId());
-        }
         if (clientDTO.getName() != null || !clientDTO.getName().isEmpty()) {
+            if (!exitsClient.getName().equals(clientDTO.getName())) {
+                boolean isNameExists = clientRepository.existsByName(clientDTO.getName());
+                if (isNameExists) {
+                    throw new IllegalArgumentException("Name already exists"); // Ném ngoại lệ nếu tên đã tồn tại
+                }
+            }
             exitsClient.setName(clientDTO.getName());
         }
         if ( clientDTO.getDescription() != null || !clientDTO.getDescription().isEmpty()){
-            exitsClient.setDescription(clientDTO.getDescription());
+            String sanitizedDescription = HtmlSanitizer.sanitize(clientDTO.getDescription());
+            exitsClient.setDescription(sanitizedDescription);
+        }
+
+        if (clientDTO.getLogo() != null || !clientDTO.getLogo().isEmpty()) {
+            String fileId = FileUtils.extractFileIdFromUrl(clientDTO.getLogo());
+            exitsClient.setLogo(clientDTO.getLogo());
+            exitsClient.setPublicId(fileId);
         }
 
        ClientEntity clientEntity =  clientRepository.save(exitsClient);

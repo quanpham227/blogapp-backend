@@ -22,6 +22,8 @@ public class PostResponse extends BaseResponse {
 
     @JsonProperty("thumbnail_url")
     private String thumbnailUrl;
+    // Thêm trường totalPages
+    private int totalPages;
 
     @JsonProperty("category_id")
     private Long categoryId;
@@ -30,6 +32,8 @@ public class PostResponse extends BaseResponse {
     private String categoryName;
 
     private String status;
+
+
 
     public static PostResponse fromPost (PostEntity post){
         PostResponse postResponse = PostResponse.builder()

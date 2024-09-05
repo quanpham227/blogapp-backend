@@ -41,5 +41,30 @@ public class FileUtils {
         String mimeType = java.nio.file.Files.probeContentType(file.toPath());
         return mimeType != null && mimeType.startsWith("image");
     }
-
+    public static String extractFileIdFromUrl(String url) {
+        if (url != null && url.contains("image/upload/")) {
+            // Tách phần sau `image/upload/`
+            String[] parts = url.split("image/upload/");
+            if (parts.length > 1) {
+                // Lấy phần tiếp theo sau `image/upload/`
+                String fileIdWithVersionAndExtension = parts[1];
+                // Tách phần phiên bản (v<version>) và mở rộng
+                String[] fileIdParts = fileIdWithVersionAndExtension.split("/", 2);
+                if (fileIdParts.length > 1) {
+                    // Lấy phần đầu tiên (fileId với phần mở rộng)
+                    String fileIdWithExtension = fileIdParts[1];
+                    // Tách phần mở rộng nếu có
+                    int dotIndex = fileIdWithExtension.indexOf('.');
+                    if (dotIndex > 0) {
+                        // Trả về fileId không bao gồm phần mở rộng
+                        return fileIdWithExtension.substring(0, dotIndex);
+                    } else {
+                        // Nếu không có phần mở rộng, trả về toàn bộ phần còn lại
+                        return fileIdWithExtension;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 }

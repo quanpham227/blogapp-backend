@@ -1,14 +1,17 @@
 package com.pivinadanang.blog.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.javafaker.Faker;
 import com.pivinadanang.blog.components.converters.LocalizationUtils;
 import com.pivinadanang.blog.dtos.PostDTO;
 import com.pivinadanang.blog.dtos.UpdatePostDTO;
 import com.pivinadanang.blog.models.PostEntity;
+import com.pivinadanang.blog.repositories.PostRepository;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.post.PostListResponse;
 import com.pivinadanang.blog.responses.post.PostResponse;
 import com.pivinadanang.blog.services.post.IPostService;
+import com.pivinadanang.blog.services.post.PostRedisService;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,10 +36,11 @@ import java.util.Locale;
 @Validated
 @RequiredArgsConstructor
 public class PostController {
+    private  static final Logger logger = LoggerFactory.getLogger(PostController.class);
     private final IPostService postService;
     private final LocalizationUtils localizationUtils;
-    private  static final Logger logger = LoggerFactory.getLogger(PostController.class);
-
+    private final PostRedisService productRedisService;
+    private final PostRepository postRepository;
 
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
@@ -124,23 +128,25 @@ public class PostController {
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "0", name = "category_id") Long categoryId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int limit)  {
+            @RequestParam(defaultValue = "10") int limit) throws JsonProcessingException {
+        int totalPages = 0;
         //productRedisService.clear();
         // Tạo Pageable từ thông tin trang và giới hạn
         PageRequest pageRequest = PageRequest.of(page, limit,
                 Sort.by("createdAt").descending()
         );
         logger.info(String.format("keyword: %s, categoryId: %d, page: %d, limit: %d", keyword, categoryId, page, limit));
-        Page<PostResponse> postPage = postService.getAllPosts( keyword, categoryId, pageRequest);
-        // Lấy tổng số trang
-        int totalPages = postPage.getTotalPages();
-        List<PostResponse> posts = postPage.getContent();
-
-
+        List<PostResponse> postResponses = productRedisService.getAllPosts(keyword, categoryId, pageRequest);
+        if(postResponses == null){
+            Page<PostResponse> postPage = postService.getAllPosts( keyword, categoryId, pageRequest);
+            totalPages = postPage.getTotalPages();
+            postResponses = postPage.getContent();
+            productRedisService.saveAllPosts(postResponses, keyword, categoryId, pageRequest);
+        }
         return ResponseEntity.ok(PostListResponse
                 .builder()
                         .status(HttpStatus.OK)
-                        .posts(posts)
+                        .posts(postResponses)
                         .totalPages(totalPages)
                 .build());
 

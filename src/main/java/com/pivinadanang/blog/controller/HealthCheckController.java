@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.InetAddress;
 import java.util.List;
 
 @RestController
@@ -21,7 +22,8 @@ public class HealthCheckController {
     public ResponseEntity<?> healthCheck() {
         try {
             List<CategoryResponse> categories = categoryService.getAllCategories();
-            return ResponseEntity.ok("ok");
+            String computerName = InetAddress.getLocalHost().getHostName();
+            return ResponseEntity.ok("ok, computerName" + computerName);
         }catch (Exception e) {
             return ResponseEntity.badRequest().body("failed");
         }

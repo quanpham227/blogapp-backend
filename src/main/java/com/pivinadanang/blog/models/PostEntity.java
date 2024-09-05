@@ -18,7 +18,8 @@ import java.util.*;
 @Getter
 @Setter
 @Builder
-//@EntityListeners(PostEntity.class)
+//Event-driven approach with Spring Data JPA
+@EntityListeners(PostListener.class)
 public class PostEntity extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

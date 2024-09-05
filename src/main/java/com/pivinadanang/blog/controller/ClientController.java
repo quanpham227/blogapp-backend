@@ -5,6 +5,7 @@ import com.pivinadanang.blog.dtos.ClientDTO;
 import com.pivinadanang.blog.dtos.CloudinaryDTO;
 import com.pivinadanang.blog.dtos.GoogleDriveDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
+import com.pivinadanang.blog.models.CategoryEntity;
 import com.pivinadanang.blog.models.ClientEntity;
 import com.pivinadanang.blog.responses.client.ClientResponse;
 import com.pivinadanang.blog.responses.ResponseObject;
@@ -47,11 +48,18 @@ public class ClientController {
                 .data(clients)
                 .build());
     }
-    @PostMapping(consumes = {MediaType.APPLICATION_JSON_VALUE,
-            MediaType.APPLICATION_FORM_URLENCODED_VALUE,
-            MediaType.MULTIPART_FORM_DATA_VALUE},
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseObject> insertClient(@Valid @ModelAttribute ClientDTO clientDTO, BindingResult result) {
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ResponseObject> getClientById(@PathVariable("id") Long clienttId) throws Exception {
+        ClientEntity client = clientService.findById(clienttId);
+        return ResponseEntity.ok(ResponseObject.builder()
+                .data(client)
+                .message("Get client information successfully")
+                .status(HttpStatus.OK)
+                .build());
+    }
+    @PostMapping("")
+    public ResponseEntity<ResponseObject> insertClient(@Valid @RequestBody ClientDTO clientDTO, BindingResult result) {
         if (result.hasErrors()) {
             List<String> errorMessages = result.getFieldErrors()
                     .stream()
@@ -86,12 +94,8 @@ public class ClientController {
                             .build());
         }
     }
-    @PatchMapping(value = "{id}",
-            consumes = {MediaType.APPLICATION_JSON_VALUE,
-                        MediaType.APPLICATION_FORM_URLENCODED_VALUE,
-                        MediaType.MULTIPART_FORM_DATA_VALUE},
-            produces =  MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseObject> updateClient(@Valid @ModelAttribute ClientDTO clientDTO,
+    @PutMapping(value = "{id}")
+    public ResponseEntity<ResponseObject> updateClient(@Valid @RequestBody ClientDTO clientDTO,
                                                        @PathVariable  Long id,
                                                        BindingResult result) throws DataNotFoundException, IOException {
         if (result.hasErrors()) {
@@ -106,16 +110,9 @@ public class ClientController {
                     .build());
 
         }
-        if (clientService.exitsByName(clientDTO.getName())) {
-            return ResponseEntity.badRequest()
-                    .body(ResponseObject.builder()
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.CLIENT_ALREADY_EXISTS))
-                            .status(HttpStatus.BAD_REQUEST)
-                            .build());
-        }
         ClientResponse client = clientService.updateClient(id, clientDTO);
         return ResponseEntity.ok().body(ResponseObject.builder()
-                .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_CLIENT_SUCCESSFULLY))
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_CLIENT_SUCCESSFULLY, id))
                 .status(HttpStatus.OK)
                 .data(client)
                 .build());
@@ -126,7 +123,7 @@ public class ClientController {
         try {
              clientService.deleteClients(id);
             return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_CLIENT_SUCCESSFULLY))
+                    .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_CLIENT_SUCCESSFULLY, id))
                     .status(HttpStatus.OK)
                     .data(null)
                     .build());

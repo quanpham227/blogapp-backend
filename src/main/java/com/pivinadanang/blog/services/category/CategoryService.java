@@ -52,8 +52,14 @@ public class CategoryService implements ICategoryService{
     @Transactional
     public CategoryResponse updateCategory(long categoryId, CategoryDTO categoryDTO) {
         CategoryEntity existingCategory = getCategoryById(categoryId);
-        // Cập nhật name từ DTO
-        existingCategory.setName(categoryDTO.getName());
+        if(categoryDTO.getName() != null || !categoryDTO.getName().isEmpty()){
+            if(!existingCategory.getName().equals(categoryDTO.getName())){
+                if(categoryRepository.exitstsByName(categoryDTO.getName())){
+                    throw new IllegalStateException("Category with name " + categoryDTO.getName() + " already exists");
+                }
+            }
+            existingCategory.setName(categoryDTO.getName());
+        }
         CategoryEntity category = categoryRepository.save(existingCategory);
         return CategoryResponse.fromCategory(category);
     }
