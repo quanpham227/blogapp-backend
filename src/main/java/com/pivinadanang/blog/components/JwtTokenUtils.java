@@ -1,10 +1,13 @@
 package com.pivinadanang.blog.components;
 
+import com.pivinadanang.blog.exceptions.InvalidParamException;
+import com.pivinadanang.blog.models.Token;
 import com.pivinadanang.blog.models.UserEntity;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,11 +35,11 @@ public class JwtTokenUtils {
     private String secretKey;
 
 
-    public String generateToken(UserEntity user) {
+    public String generateToken(UserEntity user) throws Exception {
             //properties => claims
         Map<String, Object> claims = new HashMap<>();
-        claims.put("phoneNumber", user.getEmail());
-        claims.put("userId", user.getRole().getId());
+        claims.put("email", user.getEmail());
+        claims.put("userId", user.getId());
             try {
                 String token = Jwts.builder()
                         .setClaims(claims)
@@ -46,8 +50,7 @@ public class JwtTokenUtils {
                 return token;
             }catch (Exception e){
                 //logger
-                System.err.println("Cannot create jwt token , error: " + e.getMessage());
-                return null;
+                throw new InvalidParamException("Cannot create jwt token, error: "+e.getMessage());
             }
     }
     private SecretKey getSignInKey() {
@@ -55,14 +58,20 @@ public class JwtTokenUtils {
         //Keys.hmacShaKeyFor(Decoders.BASE64.decode("TaqlmGv1iEDMRiFp/pHuID1+T84IABfuA0xXh4GhiUI="));
         return Keys.hmacShaKeyFor(bytes);
     }
-
+    private String generateSecretKey() {
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[32]; // 256-bit key
+        random.nextBytes(keyBytes);
+        String secretKey = Encoders.BASE64.encode(keyBytes);
+        return secretKey;
+    }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()// Khởi tạo JwtParserBuilder
-                .verifyWith(getSignInKey())  // Sử dụng verifyWith() để thiết lập signing key
-                .build()  // Xây dựng JwtParser
-                .parseSignedClaims(token)  // Phân tích token đã ký
-                .getPayload();  // Lấy phần body của JWT, chứa claims
+        return Jwts.parserBuilder()
+                .setSigningKey(getSignInKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public  <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -77,13 +86,13 @@ public class JwtTokenUtils {
         return  extractClaim(token, Claims::getSubject);
     }
 
-    public boolean validateToken(String token, UserDetails userDetails) {
-      String email = extractEmails(token);
-      return (email.equals(userDetails.getUsername()))
-              && !isTokenExpired(token);
-    }
-
     public String extractEmails(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public boolean validateToken(String token, UserDetails userDetails) {
+        String email = extractEmails(token);
+        return (email.equals(userDetails.getUsername()))
+                && !isTokenExpired(token);
     }
 }

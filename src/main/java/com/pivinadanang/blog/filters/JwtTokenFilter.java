@@ -17,31 +17,30 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.*;
 
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+
+
 @Component
 @RequiredArgsConstructor
-public class JwtTokenFilter extends OncePerRequestFilter {
+public class JwtTokenFilter extends OncePerRequestFilter{
     @Value("${api.prefix}")
     private String apiPrefix;
     private final UserDetailsService userDetailsService;
     private final JwtTokenUtils jwtTokenUtil;
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request,
+    protected void doFilterInternal(@NonNull  HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            if(isBypassToken(request)){
+            if(isBypassToken(request)) {
                 filterChain.doFilter(request, response); //enable bypass
                 return;
             }
             final String authHeader = request.getHeader("Authorization");
-
-            // Kiểm tra nếu header Authorization không tồn tại hoặc không bắt đầu với "Bearer "
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 response.sendError(
                         HttpServletResponse.SC_UNAUTHORIZED,
@@ -49,10 +48,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 return;
             }
             final String token = authHeader.substring(7);
-            final String email = jwtTokenUtil.getSubject(token);
-
-            if (email != null
-                    && SecurityContextHolder.getContext().getAuthentication() == null) {
+            final String email = jwtTokenUtil.extractEmails(token);
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserEntity userDetails = (UserEntity) userDetailsService.loadUserByUsername(email);
                 if(jwtTokenUtil.validateToken(token, userDetails)) {
                     UsernamePasswordAuthenticationToken authenticationToken =
@@ -63,42 +60,64 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                             );
                     authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                }else {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 }
             }
-            filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response); //enable bypass
         }catch (Exception e) {
             //response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write(e.getMessage());
         }
-        // Kiểm tra nếu là yêu cầu không cần xác thực
 
     }
 
+
     private boolean isBypassToken(@NonNull HttpServletRequest request) {
         final List<Pair<String, String>> bypassTokens = Arrays.asList(
-                Pair.of(String.format("%s/posts", apiPrefix), "GET"),
-                Pair.of(String.format("%s/posts/**", apiPrefix), "GET"),
-                Pair.of(String.format("%s/roles", apiPrefix), "GET"),
-                Pair.of(String.format("%s/roles/**", apiPrefix), "GET"),
-                Pair.of(String.format("%s/categories", apiPrefix), "GET"),
-                Pair.of(String.format("%s/categories/**", apiPrefix), "GET"),
-                Pair.of(String.format("%s/clients", apiPrefix), "GET"),
-                Pair.of(String.format("%s/clients/**", apiPrefix), "GET"),
-                Pair.of(String.format("%s/images", apiPrefix), "GET"),
-                Pair.of(String.format("%s/images/**", apiPrefix), "GET"),
-                Pair.of(String.format("%s/users/register", apiPrefix), "POST"),
-                Pair.of(String.format("%s/users/login", apiPrefix), "POST")
+                Pair.of(String.format("/%s/healthcheck/health", apiPrefix), "GET"),
+                Pair.of(String.format("/%s/actuator**", apiPrefix), "GET"),
+                Pair.of(String.format("/%s/roles**", apiPrefix), "GET"),
+                Pair.of(String.format("/%s/posts**", apiPrefix), "GET"),
+                Pair.of(String.format("/%s/categories**", apiPrefix), "GET"),
+                Pair.of(String.format("/%s/images**", apiPrefix), "GET"),
+                Pair.of(String.format("/%s/slides**", apiPrefix), "GET"),
+                Pair.of(String.format("/%s/clients**", apiPrefix), "GET"),
+                Pair.of(String.format("/%s/users/forget-password", apiPrefix), "POST"),
+                Pair.of(String.format("/%s/users/register", apiPrefix), "POST"),
+                Pair.of(String.format("/%s/users/login", apiPrefix), "POST"),
+                // Swagger
+                // Swagger
+                Pair.of("/api-docs","GET"),
+                Pair.of("/api-docs/**","GET"),
+                Pair.of("/swagger-resources","GET"),
+                Pair.of("/swagger-resources/**","GET"),
+                Pair.of("/configuration/ui","GET"),
+                Pair.of("/configuration/security","GET"),
+                Pair.of("/swagger-ui/**","GET"),
+                Pair.of("/swagger-ui.html", "GET"),
+                Pair.of("/swagger-ui/index.html", "GET")
         );
-        for ( Pair<String, String> bypassToken : bypassTokens) {
-            System.out.println("Servlet Path: " + request.getServletPath());
-            System.out.println("Bypass Path: " + bypassToken.getFirst());
-            if(request.getServletPath().contains(bypassToken.getFirst()) &&
-                    request.getMethod().equals(bypassToken.getSecond())) {
-                return true;
 
+        String requestPath = request.getServletPath();
+        String requestMethod = request.getMethod();
+
+        System.out.println("API Prefix: " + apiPrefix);
+        System.out.println("Request Path: " + requestPath);
+        System.out.println("Request Method: " + requestMethod);
+
+        for (Pair<String, String> token : bypassTokens) {
+            String path = token.getFirst();
+            String method = token.getSecond();
+
+            // Check if the request URI starts with the bypass path
+            if (requestPath.matches(path.replace("**", ".*"))
+                    && requestMethod.equalsIgnoreCase(method)) {
+                return true;
             }
         }
         return false;
     }
+
 }

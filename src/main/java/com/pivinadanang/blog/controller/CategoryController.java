@@ -30,7 +30,7 @@ public class CategoryController {
 
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> insertCategory(@Valid @RequestBody CategoryDTO categoryDTO, BindingResult result){
+    public ResponseEntity<ResponseObject> insertCategory(@Valid @RequestBody CategoryDTO categoryDTO, BindingResult result) throws Exception {
         if(result.hasErrors()) {
             List<String> errorMessages = result.getFieldErrors()
                     .stream()
@@ -86,10 +86,10 @@ public class CategoryController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> updateCategory(
+    public ResponseEntity<ResponseObject> updateCategory (
             @PathVariable Long id,
             @Valid @RequestBody CategoryDTO categoryDTO
-    ) {
+    ) throws Exception {
        CategoryResponse categoryResponse =  categoryService.updateCategory(id, categoryDTO);
         return ResponseEntity.ok(ResponseObject
                 .builder()

@@ -4,6 +4,7 @@ import com.pivinadanang.blog.components.converters.LocalizationUtils;
 import com.pivinadanang.blog.dtos.UpdateUserDTO;
 import com.pivinadanang.blog.dtos.UserDTO;
 import com.pivinadanang.blog.dtos.UserLoginDTO;
+import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.models.UserEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.user.LoginResponse;
@@ -13,6 +14,7 @@ import com.pivinadanang.blog.ultils.MessageKeys;
 import com.pivinadanang.blog.ultils.ValidationUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -113,7 +115,7 @@ public class UserController {
       }
 
     @PostMapping("/details")
-    //@PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
     public ResponseEntity<UserResponse> getUserDetails(@RequestHeader("Authorization") String auhorizationHeader) {
         try {
             String extractedToken = auhorizationHeader.substring(7); // Loại bỏ "Bearer " từ chuỗi token
@@ -125,12 +127,12 @@ public class UserController {
     }
 
     @PutMapping("/details/{userId}")
-    //@PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
     public ResponseEntity<UserResponse> updateUserDetails(
             @PathVariable Long userId,
             @RequestBody UpdateUserDTO updatedUserDTO,
             @RequestHeader("Authorization") String authorizationHeader
-    ) {
+    ) throws Exception {
         try {
             String extractedToken = authorizationHeader.substring(7);
             UserEntity user = userService.getUserDetailsFromToken(extractedToken);
@@ -140,8 +142,12 @@ public class UserController {
             }
             UserEntity updatedUser = userService.updateUser(userId, updatedUserDTO);
             return ResponseEntity.ok(UserResponse.fromUser(updatedUser));
+        }catch (DataIntegrityViolationException e) {
+                throw new DataIntegrityViolationException ("Password not match");
+        } catch (DataNotFoundException e) {
+            throw new DataNotFoundException("User not found");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+           throw new Exception("Error updating user");
         }
     }
 

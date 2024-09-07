@@ -7,8 +7,8 @@ import com.pivinadanang.blog.responses.category.CategoryResponse;
 import java.util.List;
 
 public interface ICategoryService {
-    CategoryResponse createCategory(CategoryDTO category);
-    CategoryEntity getCategoryById(long id);
+    CategoryResponse createCategory(CategoryDTO category) throws Exception;
+    CategoryEntity getCategoryById(long id) throws Exception;
     List<CategoryResponse> getAllCategories();
     CategoryResponse updateCategory(long categoryId, CategoryDTO category);
     CategoryEntity deleteCategory(long id) throws Exception;

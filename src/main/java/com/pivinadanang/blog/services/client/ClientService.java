@@ -3,38 +3,25 @@ package com.pivinadanang.blog.services.client;
 import com.pivinadanang.blog.components.ImageSizeConfig;
 import com.pivinadanang.blog.components.converters.LocalizationUtils;
 import com.pivinadanang.blog.dtos.ClientDTO;
-import com.pivinadanang.blog.dtos.CloudinaryDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
-import com.pivinadanang.blog.exceptions.FileSizeExceededException;
-import com.pivinadanang.blog.exceptions.InvalidFileTypeException;
 import com.pivinadanang.blog.models.ClientEntity;
 import com.pivinadanang.blog.repositories.ClientRepository;
-import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.client.ClientResponse;
 import com.pivinadanang.blog.services.cloudinary.ICloudinaryService;
-import com.pivinadanang.blog.services.google.GoogleDiveService;
 import com.pivinadanang.blog.ultils.FileUtils;
 import com.pivinadanang.blog.ultils.HtmlSanitizer;
-import com.pivinadanang.blog.ultils.MessageKeys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class ClientService implements IClientService{
     private final ClientRepository clientRepository;
     private final ICloudinaryService iCloudinaryService;
-    private final LocalizationUtils localizationUtils;
-    private final ImageSizeConfig imageSizeConfig; // Inject the configuration class
-
 
     @Override
     public boolean exitsByName(String name) {

@@ -89,7 +89,7 @@ public class PostController {
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
                 .build());
     }
-    @PatchMapping(value = "/{id}")
+    @PutMapping(value = "/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody UpdatePostDTO postDTO, @PathVariable Long id, BindingResult result) throws Exception {
         if (result.hasErrors()) {
@@ -174,6 +174,7 @@ public class PostController {
 
 
     @PostMapping("/generateFakePosts")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> generateFakePosts(){
         Faker faker = new Faker(new Locale("vi"));
         for(int i = 0; i < 1000; i++){

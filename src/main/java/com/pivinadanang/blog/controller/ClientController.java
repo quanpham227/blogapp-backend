@@ -11,23 +11,18 @@ import com.pivinadanang.blog.responses.client.ClientResponse;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.services.client.ClientService;
 import com.pivinadanang.blog.services.cloudinary.ICloudinaryService;
-import com.pivinadanang.blog.services.google.IGoogleService;
-import com.pivinadanang.blog.ultils.FileUtils;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.List;
 
 @RestController
@@ -50,6 +45,7 @@ public class ClientController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') ")
     public ResponseEntity<ResponseObject> getClientById(@PathVariable("id") Long clienttId) throws Exception {
         ClientEntity client = clientService.findById(clienttId);
         return ResponseEntity.ok(ResponseObject.builder()
@@ -59,6 +55,7 @@ public class ClientController {
                 .build());
     }
     @PostMapping("")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> insertClient(@Valid @RequestBody ClientDTO clientDTO, BindingResult result) {
         if (result.hasErrors()) {
             List<String> errorMessages = result.getFieldErrors()
@@ -95,6 +92,7 @@ public class ClientController {
         }
     }
     @PutMapping(value = "{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> updateClient(@Valid @RequestBody ClientDTO clientDTO,
                                                        @PathVariable  Long id,
                                                        BindingResult result) throws DataNotFoundException, IOException {
@@ -119,6 +117,7 @@ public class ClientController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> deleteClient(@PathVariable Long id) {
         try {
              clientService.deleteClients(id);
