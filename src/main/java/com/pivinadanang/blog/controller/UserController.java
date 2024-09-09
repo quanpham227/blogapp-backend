@@ -9,9 +9,11 @@ import com.pivinadanang.blog.models.UserEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.user.LoginResponse;
 import com.pivinadanang.blog.responses.user.UserResponse;
+import com.pivinadanang.blog.services.token.ITokenService;
 import com.pivinadanang.blog.services.user.IUserService;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import com.pivinadanang.blog.ultils.ValidationUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -32,6 +34,8 @@ import java.util.List;
 public class UserController {
     private final IUserService userService;
     private final LocalizationUtils localizationUtils;
+    private final ITokenService tokenService;
+
 
     @PostMapping("/register")
     public ResponseEntity<ResponseObject> createUser(@Valid @RequestBody UserDTO userDTO,
@@ -93,26 +97,49 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ResponseObject> login (@Valid @RequestBody UserLoginDTO userLoginDTO
+    public ResponseEntity<ResponseObject> login (@Valid @RequestBody UserLoginDTO userLoginDTO,
+                                                 HttpServletRequest request
                                                 ) throws Exception{
-        String token = userService.login(
-                userLoginDTO.getEmail(),
-                userLoginDTO.getPassword(),
-                userLoginDTO.getRoleId() == null ? 2 : userLoginDTO.getRoleId());
-        UserEntity userDetail = userService.getUserDetailsFromToken(token);
-        LoginResponse loginResponse = LoginResponse.builder()
-                .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_SUCCESSFULLY))
-                .token(token)
-                .username(userDetail.getUsername())
-                .roles(userDetail.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()) //method reference
-                .id(userDetail.getId())
-                .build();
-        return  ResponseEntity.ok(ResponseObject.builder()
+        // Kiểm tra thông tin đăng nhập và sinh token
+        try {
+
+            String token = userService.login(
+                    userLoginDTO.getEmail(),
+                    userLoginDTO.getPassword(),
+                    userLoginDTO.getRoleId() == null ? 2 : userLoginDTO.getRoleId());
+            // Lấy thông tin user từ token
+            String userAgent = request.getHeader("User-Agent");
+            UserEntity user = userService.getUserDetailsFromToken(token);
+            tokenService.addToken(user, token, isMobileDevice(userAgent));
+
+            LoginResponse loginResponse = LoginResponse.builder()
+                    .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_SUCCESSFULLY))
+                    .token(token)
+                    .username(user.getUsername())
+                    .roles(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()) //method reference
+                    .id(user.getId())
+                    .build();
+
+            // Trả về token trong response
+            return  ResponseEntity.ok(ResponseObject.builder()
                     .message("Login successfully")
                     .data(loginResponse)
                     .status(HttpStatus.OK)
-                .build());
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseObject.builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .data(null)
+                    .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_FAILED))
+                    .build());
+        }
       }
+
+    private boolean isMobileDevice(String userAgent) {
+        // Kiểm tra User-Agent header để xác định thiết bị di động
+        // Ví dụ đơn giản:
+        return userAgent.toLowerCase().contains("mobile");
+    }
 
     @PostMapping("/details")
     @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")

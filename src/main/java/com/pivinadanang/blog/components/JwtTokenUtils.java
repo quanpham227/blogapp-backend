@@ -3,6 +3,7 @@ package com.pivinadanang.blog.components;
 import com.pivinadanang.blog.exceptions.InvalidParamException;
 import com.pivinadanang.blog.models.Token;
 import com.pivinadanang.blog.models.UserEntity;
+import com.pivinadanang.blog.repositories.TokenRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -34,6 +35,7 @@ public class JwtTokenUtils {
     @Value("${jwt.secretKey}")
     private String secretKey;
 
+    private final TokenRepository tokenRepository;
 
     public String generateToken(UserEntity user) throws Exception {
             //properties => claims
@@ -92,6 +94,10 @@ public class JwtTokenUtils {
 
     public boolean validateToken(String token, UserDetails userDetails) {
         String email = extractEmails(token);
+        Token existingToken = tokenRepository.findByToken(token);
+        if(existingToken == null || existingToken.isRevoked() == true) {
+            return false;
+        }
         return (email.equals(userDetails.getUsername()))
                 && !isTokenExpired(token);
     }
