@@ -1,10 +1,12 @@
 package com.pivinadanang.blog.controller;
 
 import com.pivinadanang.blog.components.converters.LocalizationUtils;
+import com.pivinadanang.blog.dtos.RefreshTokenDTO;
 import com.pivinadanang.blog.dtos.UpdateUserDTO;
 import com.pivinadanang.blog.dtos.UserDTO;
 import com.pivinadanang.blog.dtos.UserLoginDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
+import com.pivinadanang.blog.models.Token;
 import com.pivinadanang.blog.models.UserEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.user.LoginResponse;
@@ -109,15 +111,16 @@ public class UserController {
                     userLoginDTO.getRoleId() == null ? 2 : userLoginDTO.getRoleId());
             // Lấy thông tin user từ token
             String userAgent = request.getHeader("User-Agent");
-            UserEntity user = userService.getUserDetailsFromToken(token);
-            tokenService.addToken(user, token, isMobileDevice(userAgent));
+            UserEntity userDetail = userService.getUserDetailsFromToken(token);
+            Token jwtToken =  tokenService.addToken(userDetail, token, isMobileDevice(userAgent));
 
             LoginResponse loginResponse = LoginResponse.builder()
                     .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_SUCCESSFULLY))
                     .token(token)
-                    .username(user.getUsername())
-                    .roles(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()) //method reference
-                    .id(user.getId())
+                    .refreshToken(jwtToken.getRefreshToken())
+                    .username(userDetail.getUsername())
+                    .roles(userDetail.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()) //method reference
+                    .id(userDetail.getId())
                     .build();
 
             // Trả về token trong response
@@ -134,7 +137,36 @@ public class UserController {
                     .build());
         }
       }
+    @PostMapping("/refreshToken")
+    public ResponseEntity<ResponseObject> refreshToken(
+            @Valid @RequestBody RefreshTokenDTO refreshTokenDTO
+    ) throws Exception {
+        if(refreshTokenDTO.getRefreshToken() == null || refreshTokenDTO.getRefreshToken().isBlank()){
+            return ResponseEntity.badRequest().body(ResponseObject.builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .data(null)
+                    .message("Refresh token is required")
+                    .build());
 
+        }
+        UserEntity userDetail = userService.getUserDetailsFromRefreshToken(refreshTokenDTO.getRefreshToken());
+        Token jwtToken = tokenService.refreshToken(refreshTokenDTO.getRefreshToken(), userDetail);
+        LoginResponse loginResponse = LoginResponse.builder()
+                .message("Refresh token successfully")
+                .token(jwtToken.getToken())
+                .tokenType(jwtToken.getTokenType())
+                .refreshToken(jwtToken.getRefreshToken())
+                .username(userDetail.getUsername())
+                .roles(userDetail.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
+                .id(userDetail.getId()).build();
+        return ResponseEntity.ok().body(
+                ResponseObject.builder()
+                        .data(loginResponse)
+                        .message(loginResponse.getMessage())
+                        .status(HttpStatus.OK)
+                        .build());
+
+    }
     private boolean isMobileDevice(String userAgent) {
         // Kiểm tra User-Agent header để xác định thiết bị di động
         // Ví dụ đơn giản:

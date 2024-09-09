@@ -8,8 +8,10 @@ import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.exceptions.ExpiredTokenException;
 import com.pivinadanang.blog.exceptions.PermissionDenyException;
 import com.pivinadanang.blog.models.RoleEntity;
+import com.pivinadanang.blog.models.Token;
 import com.pivinadanang.blog.models.UserEntity;
 import com.pivinadanang.blog.repositories.RoleRepository;
+import com.pivinadanang.blog.repositories.TokenRepository;
 import com.pivinadanang.blog.repositories.UserRepository;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ import java.util.Optional;
 public class UserService implements IUserService{
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtils jwtTokenUtil;
     private final AuthenticationManager authenticationManager;
@@ -85,6 +88,17 @@ public class UserService implements IUserService{
             throw new DataNotFoundException("User not found");
         }
 
+    }
+
+    @Override
+    public UserEntity getUserDetailsFromRefreshToken(String refreshToken) throws Exception {
+        Token existingToken = tokenRepository.findByRefreshToken(refreshToken);
+        // Kiểm tra nếu token không được tìm thấy
+        if (existingToken == null) {
+            throw new Exception("Refresh token không hợp lệ hoặc đã hết hạn.");
+        }
+
+        return getUserDetailsFromToken(existingToken.getToken());
     }
 
     @Override
