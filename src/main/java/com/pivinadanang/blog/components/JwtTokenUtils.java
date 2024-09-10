@@ -4,9 +4,7 @@ import com.pivinadanang.blog.exceptions.InvalidParamException;
 import com.pivinadanang.blog.models.Token;
 import com.pivinadanang.blog.models.UserEntity;
 import com.pivinadanang.blog.repositories.TokenRepository;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
@@ -14,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.SecretKey;
 import java.security.SecureRandom;
@@ -36,6 +36,8 @@ public class JwtTokenUtils {
     private String secretKey;
 
     private final TokenRepository tokenRepository;
+    private static final Logger logger = LoggerFactory.getLogger(JwtTokenUtils.class);
+
 
     public String generateToken(UserEntity user) throws Exception {
             //properties => claims
@@ -92,13 +94,29 @@ public class JwtTokenUtils {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public boolean validateToken(String token, UserDetails userDetails) {
-        String email = extractEmails(token);
-        Token existingToken = tokenRepository.findByToken(token);
-        if(existingToken == null || existingToken.isRevoked() == true) {
-            return false;
+    public boolean validateToken(String token, UserEntity userDetails) {
+
+        try {
+            String subject = extractClaim(token, Claims::getSubject);
+            //subject is phoneNumber or email
+            Token existingToken = tokenRepository.findByToken(token);
+            if(existingToken == null ||
+                    existingToken.isRevoked() == true || !userDetails.isActive()
+            ) {
+                return false;
+            }
+            return (subject.equals(userDetails.getUsername()))
+                    && !isTokenExpired(token);
+        } catch (MalformedJwtException e) {
+            logger.error("Invalid JWT token: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            logger.error("JWT token is expired: {}", e.getMessage());
+        } catch (UnsupportedJwtException e) {
+            logger.error("JWT token is unsupported: {}", e.getMessage());
+        } catch (IllegalArgumentException e) {
+            logger.error("JWT claims string is empty: {}", e.getMessage());
         }
-        return (email.equals(userDetails.getUsername()))
-                && !isTokenExpired(token);
+
+        return false;
     }
 }

@@ -6,10 +6,12 @@ import com.pivinadanang.blog.dtos.UpdateUserDTO;
 import com.pivinadanang.blog.dtos.UserDTO;
 import com.pivinadanang.blog.dtos.UserLoginDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
+import com.pivinadanang.blog.exceptions.InvalidPasswordException;
 import com.pivinadanang.blog.models.Token;
 import com.pivinadanang.blog.models.UserEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.user.LoginResponse;
+import com.pivinadanang.blog.responses.user.UserListResponse;
 import com.pivinadanang.blog.responses.user.UserResponse;
 import com.pivinadanang.blog.services.token.ITokenService;
 import com.pivinadanang.blog.services.user.IUserService;
@@ -19,6 +21,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,6 +34,7 @@ import org.springframework.security.core.GrantedAuthority;
 
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("${api.prefix}/users")
@@ -38,6 +44,37 @@ public class UserController {
     private final LocalizationUtils localizationUtils;
     private final ITokenService tokenService;
 
+
+    @GetMapping("")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ResponseObject> getAllUser(
+            @RequestParam(defaultValue = "", required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int limit
+    ) throws Exception{
+        // Tạo Pageable từ thông tin trang và giới hạn
+        PageRequest pageRequest = PageRequest.of(
+                page, limit,
+                //Sort.by("createdAt").descending()
+                Sort.by("id").ascending()
+        );
+        Page<UserResponse> userPage = userService.findAll(keyword, pageRequest)
+                .map(UserResponse::fromUser);
+
+        // Lấy tổng số trang
+        int totalPages = userPage.getTotalPages();
+        List<UserResponse> userResponses = userPage.getContent();
+        UserListResponse userListResponse = UserListResponse
+                .builder()
+                .users(userResponses)
+                .totalPages(totalPages)
+                .build();
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message("Get user list successfully")
+                .status(HttpStatus.OK)
+                .data(userListResponse)
+                .build());
+    }
 
     @PostMapping("/register")
     public ResponseEntity<ResponseObject> createUser(@Valid @RequestBody UserDTO userDTO,
@@ -103,7 +140,7 @@ public class UserController {
                                                  HttpServletRequest request
                                                 ) throws Exception{
         // Kiểm tra thông tin đăng nhập và sinh token
-        try {
+
 
             String token = userService.login(
                     userLoginDTO.getEmail(),
@@ -129,13 +166,7 @@ public class UserController {
                     .data(loginResponse)
                     .status(HttpStatus.OK)
                     .build());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseObject.builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data(null)
-                    .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_FAILED))
-                    .build());
-        }
+
       }
     @PostMapping("/refreshToken")
     public ResponseEntity<ResponseObject> refreshToken(
@@ -208,6 +239,46 @@ public class UserController {
         } catch (Exception e) {
            throw new Exception("Error updating user");
         }
+    }
+    @PutMapping("/reset-password/{userId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ResponseObject> resetPassword(@Valid @PathVariable long userId) {
+        try {
+            String newPassword = UUID.randomUUID().toString().substring(0, 5); // Tạo mật khẩu mới
+            userService.resetPassword(userId, newPassword);
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .message("Reset password successfully")
+                    .data(newPassword)
+                    .status(HttpStatus.OK)
+                    .build());
+        } catch (InvalidPasswordException e) {
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .message("Invalid password")
+                    .data("")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build());
+        } catch (DataNotFoundException e) {
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .message("User not found")
+                    .data("")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build());
+        }
+    }
+
+    @PutMapping("/block/{userId}/{active}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ResponseObject> blockOrEnable(
+            @Valid @PathVariable long userId,
+            @Valid @PathVariable int active
+    ) throws Exception {
+        userService.blockOrEnable(userId, active > 0);
+        String message = active > 0 ? "Successfully enabled the user." : "Successfully blocked the user.";
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message(message)
+                .status(HttpStatus.OK)
+                .data(null)
+                .build());
     }
 
 }

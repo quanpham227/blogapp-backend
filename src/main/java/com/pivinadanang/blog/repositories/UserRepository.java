@@ -21,7 +21,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     @Query("SELECT o FROM UserEntity o WHERE o.active = true AND (:keyword IS NULL OR :keyword = '' OR " +
             "o.fullName LIKE %:keyword% " +
             "OR o.email LIKE %:keyword%) " +
-            "AND LOWER(o.role.name) = 'user'")
+            "AND LOWER(o.role.name) = 'user'") //khoong lay tai khoan admin
     Page<UserEntity> findAll(@Param("keyword") String keyword, Pageable pageable);
     List<UserEntity> findByRoleId(Long roleId);
 

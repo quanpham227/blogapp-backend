@@ -80,7 +80,7 @@ public class PostController {
                             .build());
         }
     }
-    @GetMapping("/id/{id}")
+    @GetMapping("/details/{id}")
     public ResponseEntity<ResponseObject> getPostById(@PathVariable Long id) throws Exception {
         PostEntity existingPost = postService.getPostById(id);
         return ResponseEntity.ok(ResponseObject.builder()
@@ -124,7 +124,7 @@ public class PostController {
     }
 
     @GetMapping("")
-    public ResponseEntity<PostListResponse> getPosts(
+    public ResponseEntity<ResponseObject> getPosts(
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "0", name = "category_id") Long categoryId,
             @RequestParam(defaultValue = "0") int page,
@@ -137,18 +137,38 @@ public class PostController {
         );
         logger.info(String.format("keyword: %s, categoryId: %d, page: %d, limit: %d", keyword, categoryId, page, limit));
         List<PostResponse> postResponses = productRedisService.getAllPosts(keyword, categoryId, pageRequest);
+        if (postResponses!=null && !postResponses.isEmpty()) {
+            totalPages = postResponses.get(0).getTotalPages();
+        }
         if(postResponses == null){
             Page<PostResponse> postPage = postService.getAllPosts( keyword, categoryId, pageRequest);
+            // Lấy tổng số trang
             totalPages = postPage.getTotalPages();
             postResponses = postPage.getContent();
-            productRedisService.saveAllPosts(postResponses, keyword, categoryId, pageRequest);
+            // Bổ sung totalPages vào các đối tượng ProductResponse
+            for (PostResponse posts : postResponses) {
+                posts.setTotalPages(totalPages);
+            }
+            productRedisService.saveAllPosts(
+                    postResponses,
+                    keyword,
+                    categoryId,
+                    pageRequest
+            );
         }
-        return ResponseEntity.ok(PostListResponse
+        PostListResponse postListResponse = PostListResponse
                 .builder()
+                .posts(postResponses)
+                .totalPages(totalPages)
+                .build();
+
+        return ResponseEntity.ok(ResponseObject.builder()
+                        .message("Get posts successfully")
                         .status(HttpStatus.OK)
-                        .posts(postResponses)
-                        .totalPages(totalPages)
-                .build());
+                        .data(postListResponse)
+                        .build()
+        );
+
 
     }
 
