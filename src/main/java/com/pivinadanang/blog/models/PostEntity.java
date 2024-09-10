@@ -56,7 +56,7 @@ public class PostEntity extends BaseEntity{
 
     @OneToMany(mappedBy = "post",
             orphanRemoval = true,
-            cascade = CascadeType.ALL,
+            cascade = CascadeType.ALL, //(vis duj xoas 1 post thi xoa het comment)
             fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<CommentEntity> comments = new ArrayList<>();
