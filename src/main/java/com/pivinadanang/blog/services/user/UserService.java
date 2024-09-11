@@ -1,9 +1,10 @@
 package com.pivinadanang.blog.services.user;
 
 import com.pivinadanang.blog.components.JwtTokenUtils;
-import com.pivinadanang.blog.components.converters.LocalizationUtils;
+import com.pivinadanang.blog.components.LocalizationUtils;
 import com.pivinadanang.blog.dtos.UpdateUserDTO;
 import com.pivinadanang.blog.dtos.UserDTO;
+import com.pivinadanang.blog.dtos.UserLoginDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.exceptions.ExpiredTokenException;
 import com.pivinadanang.blog.exceptions.InvalidPasswordException;
@@ -30,6 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import static com.pivinadanang.blog.ultils.ValidationUtils.isValidEmail;
+import static com.pivinadanang.blog.ultils.ValidationUtils.isValidPhoneNumber;
+
 @Service
 @RequiredArgsConstructor
 public class UserService implements IUserService{
@@ -44,7 +48,9 @@ public class UserService implements IUserService{
     private final LocalizationUtils localizationUtils;
     @Override
     public UserEntity createUser(UserDTO userDTO) throws Exception {
-
+        if (!userDTO.getPhoneNumber().isBlank() && userRepository.existsByPhoneNumber(userDTO.getPhoneNumber())) {
+            throw new DataIntegrityViolationException("Phone number already exists");
+        }
         if (!userDTO.getEmail().isBlank() && userRepository.existsByEmail(userDTO.getEmail())) {
             throw new DataIntegrityViolationException("Email already exists");
         }
@@ -83,14 +89,13 @@ public class UserService implements IUserService{
         if(jwtTokenUtil.isTokenExpired(token)) {
             throw new ExpiredTokenException("Token is expired");
         }
-        String email = jwtTokenUtil.extractEmails(token);
+        String subject = jwtTokenUtil.getSubject(token);
         Optional<UserEntity> user;
-        user = userRepository.findByEmail(email);
-        if (user.isPresent()) {
-           return user.get();
-        }else{
-            throw new DataNotFoundException("User not found");
+        user = userRepository.findByEmail(subject);
+        if (user.isEmpty() && isValidPhoneNumber(subject)) {
+            user = userRepository.findByPhoneNumber(subject);
         }
+        return user.orElseThrow(() -> new Exception("User not found"));
 
     }
 
@@ -106,29 +111,42 @@ public class UserService implements IUserService{
     }
 
     @Override
-    public String login(String phoneNumber, String password, Long roleId) throws Exception {
-        Optional<UserEntity> optionalUser = userRepository.findByEmail(phoneNumber);
-        if(optionalUser.isEmpty()){
-            throw new DataNotFoundException("Invalid email or password");
+    public String login(UserLoginDTO userLoginDTO) throws Exception {
+        Optional<UserEntity> optionalUser = Optional.empty();
+        String subject = null;
+        // Check if the user exists by email
+        if (userLoginDTO.getEmail() != null && !userLoginDTO.getEmail().isBlank()) {
+            optionalUser = userRepository.findByEmail(userLoginDTO.getEmail());
+            subject = userLoginDTO.getEmail();
         }
+
+        // If the user is not found by email, check by  phone number
+        if (optionalUser.isEmpty() && userLoginDTO.getPhoneNumber() != null) {
+            optionalUser = userRepository.findByPhoneNumber(userLoginDTO.getPhoneNumber());
+            subject = userLoginDTO.getPhoneNumber();
+        }
+
+        // If user is not found, throw an exception
+        if (optionalUser.isEmpty()) {
+            throw new DataNotFoundException(localizationUtils.getLocalizedMessage(MessageKeys.WRONG_PHONE_PASSWORD));
+        }
+
+        // Get the existing user
         UserEntity existingUser = optionalUser.get();
 
         //check password
         if ((existingUser.getFacebookAccountId() == null || existingUser.getFacebookAccountId().isEmpty()) &&
                 (existingUser.getGoogleAccountId() == null || existingUser.getGoogleAccountId().isEmpty())) {
-            if (!passwordEncoder.matches(password, existingUser.getPassword())) {
+            if (!passwordEncoder.matches(userLoginDTO.getPassword(), existingUser.getPassword())) {
                 throw new BadCredentialsException("Wrong email or password");
             }
         }
-//        Optional<RoleEntity> optionalRole = roleRepository.findById(roleId);
-//        if(optionalRole.isEmpty() || !roleId.equals(existingUser.getRole().getId())) {
-//            throw new DataNotFoundException(localizationUtils.getLocalizedMessage(MessageKeys.ROLE_DOES_NOT_EXISTS));
-//        }
-        if(!optionalUser.get().isActive()) {
+
+        if(!existingUser.isActive()) {
             throw new DataNotFoundException(localizationUtils.getLocalizedMessage(MessageKeys.USER_IS_LOCKED));
         }
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-              phoneNumber, password,
+                subject, userLoginDTO.getPassword(),
                 existingUser.getAuthorities()
         );
         //authenticate with Java Spring security

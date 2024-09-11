@@ -12,14 +12,13 @@ import lombok.*;
 @Setter
 public class UserLoginDTO {
 
-//    @JsonProperty("phone_number")
-//    private String phoneNumber;
+    @JsonProperty("phone_number")
+    private String phoneNumber;
 
     @JsonProperty("email")
     private String email;
 
-    // Password may not be needed for social login but required for traditional login
-    //@NotBlank(message = "Password cannot be blank")
+    @NotBlank(message = "Password cannot be blank")
     private String password;
 
     @Min(value = 1, message = "You must enter role's Id")

@@ -42,12 +42,15 @@ public class JwtTokenUtils {
     public String generateToken(UserEntity user) throws Exception {
             //properties => claims
         Map<String, Object> claims = new HashMap<>();
-        claims.put("email", user.getEmail());
+        // Add subject identifier (phone number or email)
+        String subject = getSubject(user);
+        claims.put("subject", subject);
+        // Add user ID
         claims.put("userId", user.getId());
             try {
                 String token = Jwts.builder()
                         .setClaims(claims)
-                        .setSubject(user.getEmail())
+                        .setSubject(subject)
                         .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000L))
                         .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                         .compact();
@@ -56,6 +59,15 @@ public class JwtTokenUtils {
                 //logger
                 throw new InvalidParamException("Cannot create jwt token, error: "+e.getMessage());
             }
+    }
+    private static String getSubject(UserEntity user) {
+        // Determine subject identifier (phone number or email)
+        String subject = user.getEmail();
+        if (subject == null || subject.isBlank()) {
+            // If phone number is null or blank, use email as subject
+            subject = user.getPhoneNumber();
+        }
+        return subject;
     }
     private SecretKey getSignInKey() {
         byte[] bytes = Decoders.BASE64.decode(secretKey);

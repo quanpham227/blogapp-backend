@@ -15,6 +15,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Optional;
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -22,12 +24,19 @@ public class SecurityConfig {
     //user's detail object
     @Bean
     public UserDetailsService userDetailsService() {
-        return email -> {
-           UserEntity existingUser = userRepository.findByEmail(email)
-                    .orElseThrow(() ->
-                            new UsernameNotFoundException(
-                                    "Cannot find user with email: " + email));
-            return (UserDetails) existingUser;
+        return subject -> {
+            // Attempt to find user by email
+           Optional<UserEntity> userByEmail = userRepository.findByEmail(subject);
+            if (userByEmail.isPresent()) {
+                return userByEmail.get(); // Return UserDetails if found
+            }
+            // If user not found by email, attempt to find by phone
+            Optional<UserEntity> userByPhoneNumber = userRepository.findByPhoneNumber(subject);
+            if (userByPhoneNumber.isPresent()) {
+                return userByPhoneNumber.get(); // Return UserDetails if found
+            }
+            // If user not found by either phone number or email, throw UsernameNotFoundException
+            throw new UsernameNotFoundException("User not found with subject: " + subject);
         };
     }
 

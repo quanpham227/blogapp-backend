@@ -1,6 +1,6 @@
 package com.pivinadanang.blog.controller;
 
-import com.pivinadanang.blog.components.converters.LocalizationUtils;
+import com.pivinadanang.blog.components.LocalizationUtils;
 import com.pivinadanang.blog.dtos.RefreshTokenDTO;
 import com.pivinadanang.blog.dtos.UpdateUserDTO;
 import com.pivinadanang.blog.dtos.UserDTO;
@@ -92,31 +92,25 @@ public class UserController {
 
         }
 
-        // Kiểm tra xem email có trống hoặc chỉ chứa khoảng trắng không
-        if ((userDTO.getEmail()== null || userDTO.getEmail().isBlank())) {
-            return ResponseEntity.badRequest().body(ResponseObject.builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data(null)
-                    .message("Email  is required")
-                    .build());
-        }
-        // Kiểm tra xem số điện thoại có trống hoặc chỉ chứa khoảng trắng không
-        if ((userDTO.getPhoneNumber() == null || userDTO.getPhoneNumber().trim().isBlank())) {
-            return ResponseEntity.badRequest().body(ResponseObject.builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data(null)
-                    .message("Phone  number is required")
-                    .build());
-        }
 
-        // Kiểm tra định dạng email
-        if (!ValidationUtils.isValidEmail(userDTO.getEmail())) {
-            throw new Exception("Invalid email");
-        }
-
-        // Kiểm tra định dạng số điện thoại
-        if (!ValidationUtils.isValidPhoneNumber(userDTO.getPhoneNumber())) {
-            throw new Exception("Invalid email format");
+        if (userDTO.getEmail() == null || userDTO.getEmail().trim().isBlank()) {
+            if (userDTO.getPhoneNumber() == null || userDTO.getPhoneNumber().isBlank()) {
+                return ResponseEntity.badRequest().body(ResponseObject.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .data(null)
+                        .message("At least email or phone number is required")
+                        .build());
+            } else {
+                //phone number not blank
+                if (!ValidationUtils.isValidPhoneNumber(userDTO.getPhoneNumber())) {
+                    throw new Exception("Invalid phone number");
+                }
+            }
+        } else {
+            //Email not blank
+            if (!ValidationUtils.isValidEmail(userDTO.getEmail())) {
+                throw new Exception("Invalid email format");
+            }
         }
         // Kiểm tra mật khẩu và xác nhận mật khẩu có trùng khớp không
         if(!userDTO.getPassword().equals(userDTO.getRetypePassword())){
@@ -142,10 +136,7 @@ public class UserController {
         // Kiểm tra thông tin đăng nhập và sinh token
 
 
-            String token = userService.login(
-                    userLoginDTO.getEmail(),
-                    userLoginDTO.getPassword(),
-                    userLoginDTO.getRoleId() == null ? 2 : userLoginDTO.getRoleId());
+            String token = userService.login(userLoginDTO);
             // Lấy thông tin user từ token
             String userAgent = request.getHeader("User-Agent");
             UserEntity userDetail = userService.getUserDetailsFromToken(token);
@@ -154,6 +145,7 @@ public class UserController {
             LoginResponse loginResponse = LoginResponse.builder()
                     .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_SUCCESSFULLY))
                     .token(token)
+                    .tokenType(jwtToken.getTokenType())
                     .refreshToken(jwtToken.getRefreshToken())
                     .username(userDetail.getUsername())
                     .roles(userDetail.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()) //method reference
@@ -206,39 +198,37 @@ public class UserController {
 
     @PostMapping("/details")
     @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
-    public ResponseEntity<UserResponse> getUserDetails(@RequestHeader("Authorization") String auhorizationHeader) {
-        try {
+    public ResponseEntity<ResponseObject> getUserDetails(@RequestHeader("Authorization") String auhorizationHeader) throws Exception {
+
             String extractedToken = auhorizationHeader.substring(7); // Loại bỏ "Bearer " từ chuỗi token
             UserEntity user = userService.getUserDetailsFromToken(extractedToken);
-            return ResponseEntity.ok(UserResponse.fromUser(user));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+            return ResponseEntity.ok().body(ResponseObject.builder()
+                    .message("Get user details successfully")
+                    .data(UserResponse.fromUser(user))
+                    .status(HttpStatus.OK)
+                    .build());
+
     }
 
     @PutMapping("/details/{userId}")
     @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
-    public ResponseEntity<UserResponse> updateUserDetails(
+    public ResponseEntity<ResponseObject> updateUserDetails(
             @PathVariable Long userId,
             @RequestBody UpdateUserDTO updatedUserDTO,
             @RequestHeader("Authorization") String authorizationHeader
     ) throws Exception {
-        try {
-            String extractedToken = authorizationHeader.substring(7);
-            UserEntity user = userService.getUserDetailsFromToken(extractedToken);
-            // Ensure that the user making the request matches the user being updated
-            if (user.getId() != userId) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-            UserEntity updatedUser = userService.updateUser(userId, updatedUserDTO);
-            return ResponseEntity.ok(UserResponse.fromUser(updatedUser));
-        }catch (DataIntegrityViolationException e) {
-                throw new DataIntegrityViolationException ("Password not match");
-        } catch (DataNotFoundException e) {
-            throw new DataNotFoundException("User not found");
-        } catch (Exception e) {
-           throw new Exception("Error updating user");
+        String extractedToken = authorizationHeader.substring(7);
+        UserEntity user = userService.getUserDetailsFromToken(extractedToken);
+        // Ensure that the user making the request matches the user being updated
+        if (user.getId() != userId) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+        UserEntity updatedUser = userService.updateUser(userId, updatedUserDTO);
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message("Update user details successfully")
+                .data(UserResponse.fromUser(updatedUser))
+                .status(HttpStatus.OK)
+                .build());
     }
     @PutMapping("/reset-password/{userId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")

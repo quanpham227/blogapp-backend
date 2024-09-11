@@ -2,7 +2,7 @@ package com.pivinadanang.blog.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.javafaker.Faker;
-import com.pivinadanang.blog.components.converters.LocalizationUtils;
+import com.pivinadanang.blog.components.LocalizationUtils;
 import com.pivinadanang.blog.dtos.PostDTO;
 import com.pivinadanang.blog.dtos.UpdatePostDTO;
 import com.pivinadanang.blog.models.PostEntity;
@@ -44,7 +44,7 @@ public class PostController {
 
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO, BindingResult result){
+    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO, BindingResult result) throws Exception{
         if (result.hasErrors()) {
             List<String> errorMessages = result.getFieldErrors()
                     .stream()
@@ -65,20 +65,12 @@ public class PostController {
                             .build());
         }
 
-        try {
-            PostResponse postResponse = postService.createPost(postDTO);
-            return ResponseEntity.ok(ResponseObject.builder()
-                            .status(HttpStatus.CREATED)
-                            .data(postResponse)
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_SUCCESSFULLY))
-                    .build());
-        } catch (Exception exception){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseObject.builder()
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_FAILED))
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .build());
-        }
+        PostResponse postResponse = postService.createPost(postDTO);
+        return ResponseEntity.ok(ResponseObject.builder()
+                .status(HttpStatus.CREATED)
+                .data(postResponse)
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_SUCCESSFULLY))
+                .build());
     }
     @GetMapping("/details/{id}")
     public ResponseEntity<ResponseObject> getPostById(@PathVariable Long id) throws Exception {

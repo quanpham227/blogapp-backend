@@ -1,7 +1,5 @@
 package com.pivinadanang.blog.services.client;
 
-import com.pivinadanang.blog.components.ImageSizeConfig;
-import com.pivinadanang.blog.components.converters.LocalizationUtils;
 import com.pivinadanang.blog.dtos.ClientDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.models.ClientEntity;

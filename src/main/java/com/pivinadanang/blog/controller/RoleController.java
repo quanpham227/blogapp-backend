@@ -1,6 +1,6 @@
 package com.pivinadanang.blog.controller;
 
-import com.pivinadanang.blog.components.converters.LocalizationUtils;
+import com.pivinadanang.blog.components.LocalizationUtils;
 import com.pivinadanang.blog.services.role.IRoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

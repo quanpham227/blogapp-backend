@@ -1,7 +1,7 @@
 package com.pivinadanang.blog.services.image;
 
 import com.pivinadanang.blog.components.ImageSizeConfig;
-import com.pivinadanang.blog.components.converters.LocalizationUtils;
+import com.pivinadanang.blog.components.LocalizationUtils;
 import com.pivinadanang.blog.dtos.CloudinaryDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.exceptions.FileNotFoundException;

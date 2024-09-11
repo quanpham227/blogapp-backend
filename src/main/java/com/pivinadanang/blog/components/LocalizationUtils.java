@@ -1,4 +1,4 @@
-package com.pivinadanang.blog.components.converters;
+package com.pivinadanang.blog.components;
 
 import com.pivinadanang.blog.ultils.WebUtils;
 import jakarta.servlet.http.HttpServletRequest;

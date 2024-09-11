@@ -1,6 +1,6 @@
 package com.pivinadanang.blog.controller;
 
-import com.pivinadanang.blog.components.converters.LocalizationUtils;
+import com.pivinadanang.blog.components.LocalizationUtils;
 import com.pivinadanang.blog.dtos.CategoryDTO;
 import com.pivinadanang.blog.models.CategoryEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
