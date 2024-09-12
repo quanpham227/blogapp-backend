@@ -29,10 +29,7 @@ public class ImageController {
     private final IImageService fileUploadService;
 
     @GetMapping("")
-    public ResponseEntity<ImageListResponse> getImages(
-            @RequestParam(defaultValue = "") String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int limit)  {
+    public ResponseEntity<ImageListResponse> getImages(@RequestParam(defaultValue = "") String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int limit)  {
         PageRequest pageRequest = PageRequest.of(page, limit,
                 Sort.by("createdAt").descending()
         );
@@ -40,12 +37,11 @@ public class ImageController {
         // Lấy tổng số trang
         int totalPages = imagePage.getTotalPages();
         List<ImageResponse> images = imagePage.getContent();
-        return ResponseEntity.ok(ImageListResponse
-                .builder()
+        return ResponseEntity.ok(ImageListResponse.builder()
                         .status(HttpStatus.OK)
                         .images(images)
                         .totalPages(totalPages)
-                .build());
+                        .build());
 
     }
 
@@ -91,7 +87,7 @@ public class ImageController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_CATEGORY_SUCCESSFULLY))
+                        .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_IMAGE_SUCCESSFULLY , id))
                         .build());
     }
 }

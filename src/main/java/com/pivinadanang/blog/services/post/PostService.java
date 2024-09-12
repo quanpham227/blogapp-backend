@@ -117,10 +117,9 @@ public class PostService implements IPostService {
     }
 
     @Override
-    public List<PostResponse> getRecentPosts(int limit) {
-        return  postRepository.findTopNRecentPosts(limit).stream()
-                .map(PostResponse::fromPost)
-                .collect(Collectors.toList());
+    public Page<PostResponse> getRecentPosts(PageRequest pageRequest) {
+        Page<PostEntity> postsPage = postRepository.findAll(pageRequest);
+        return postsPage.map(PostResponse::fromPost);
     }
 
 }

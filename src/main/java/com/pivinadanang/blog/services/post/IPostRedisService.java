@@ -11,4 +11,8 @@ public interface IPostRedisService {
     void clear();//clear cache
     List<PostResponse> getAllPosts(String keyword, Long categoryId, PageRequest pageRequest) throws JsonProcessingException;
     void saveAllPosts(List<PostResponse> postResponses, String keyword, Long categoryId, PageRequest pageRequest) throws JsonProcessingException;
+
+    List<PostResponse> getRecentPosts(PageRequest pageRequest) throws JsonProcessingException;
+    void saveRecentPosts(List<PostResponse> postResponses, PageRequest pageRequest) throws JsonProcessingException;
+
 }

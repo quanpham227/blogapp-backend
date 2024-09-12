@@ -39,7 +39,7 @@ public class PostController {
     private  static final Logger logger = LoggerFactory.getLogger(PostController.class);
     private final IPostService postService;
     private final LocalizationUtils localizationUtils;
-    private final PostRedisService productRedisService;
+    private final PostRedisService postRedisService;
     private final PostRepository postRepository;
 
     @PostMapping("")
@@ -128,7 +128,7 @@ public class PostController {
                 Sort.by("createdAt").descending()
         );
         logger.info(String.format("keyword: %s, categoryId: %d, page: %d, limit: %d", keyword, categoryId, page, limit));
-        List<PostResponse> postResponses = productRedisService.getAllPosts(keyword, categoryId, pageRequest);
+        List<PostResponse> postResponses = postRedisService.getAllPosts(keyword, categoryId, pageRequest);
         if (postResponses!=null && !postResponses.isEmpty()) {
             totalPages = postResponses.get(0).getTotalPages();
         }
@@ -141,7 +141,7 @@ public class PostController {
             for (PostResponse posts : postResponses) {
                 posts.setTotalPages(totalPages);
             }
-            productRedisService.saveAllPosts(
+            postRedisService.saveAllPosts(
                     postResponses,
                     keyword,
                     categoryId,
@@ -165,14 +165,46 @@ public class PostController {
     }
 
     @GetMapping("/recent")
-    public ResponseEntity<PostListResponse> getRecentPosts(@RequestParam(defaultValue = "5") int limit) {
-        List<PostResponse> recentPosts = postService.getRecentPosts(limit);
+    public ResponseEntity<ResponseObject> getRecentPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int limit) throws JsonProcessingException {
+        int totalPages = 0;
 
-        return ResponseEntity.ok(PostListResponse
-                .builder()
-                .posts(recentPosts)
+        // Tạo Pageable từ thông tin trang và giới hạn
+        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by("createdAt").descending());
+
+        // Kiểm tra cache Redis
+        List<PostResponse> postResponses = postRedisService.getRecentPosts(pageRequest);
+
+        if (postResponses != null && !postResponses.isEmpty()) {
+            totalPages = postResponses.get(0).getTotalPages();
+        } else {
+            // Nếu cache trống, lấy dữ liệu từ database
+            Page<PostResponse> postPage = postService.getRecentPosts(pageRequest);
+            totalPages = postPage.getTotalPages();
+            postResponses = postPage.getContent();
+
+            // Bổ sung totalPages vào các đối tượng PostResponse
+            for (PostResponse post : postResponses) {
+                post.setTotalPages(totalPages);
+            }
+
+            // Lưu kết quả vào Redis
+            postRedisService.saveRecentPosts(postResponses, pageRequest);
+        }
+
+        PostListResponse postListResponse = PostListResponse.builder()
+                .posts(postResponses)
+                .totalPages(totalPages)
+                .build();
+
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Get recent posts successfully")
+                .status(HttpStatus.OK)
+                .data(postListResponse)
                 .build());
     }
+
 
     @GetMapping("/{slug}")
     public ResponseEntity<ResponseObject> getPostBySlug(@PathVariable String slug) throws Exception {

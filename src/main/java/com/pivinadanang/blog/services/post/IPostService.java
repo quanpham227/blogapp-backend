@@ -17,5 +17,5 @@ public interface IPostService {
     void deletePost(long id);
     boolean existsPostByTitle(String title);
     PostEntity getPostBySlug( String slug) throws Exception;
-    List<PostResponse> getRecentPosts(int limit);
+    Page<PostResponse> getRecentPosts(PageRequest pageRequest);
 }

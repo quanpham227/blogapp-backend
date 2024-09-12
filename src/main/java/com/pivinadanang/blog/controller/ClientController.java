@@ -29,7 +29,6 @@ import java.util.List;
 public class ClientController {
     private final ClientService clientService;
     private final LocalizationUtils localizationUtils;
-    private final ICloudinaryService cloudinaryService;
 
     @GetMapping("")
     public ResponseEntity<ResponseObject> getAllClients() {
@@ -53,7 +52,7 @@ public class ClientController {
     }
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> insertClient(@Valid @RequestBody ClientDTO clientDTO, BindingResult result) {
+    public ResponseEntity<ResponseObject> insertClient(@Valid @RequestBody ClientDTO clientDTO, BindingResult result) throws Exception {
         if (result.hasErrors()) {
             List<String> errorMessages = result.getFieldErrors()
                     .stream()
@@ -73,20 +72,12 @@ public class ClientController {
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
-        try {
-            ClientResponse client = clientService.createClient(clientDTO);
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_CLIENT_SUCCESSFULLY))
-                    .status(HttpStatus.OK)
-                    .data(client)
-                    .build());
-        } catch (Exception exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseObject.builder()
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_CLIENT_FAILED))
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .build());
-        }
+        ClientResponse client = clientService.createClient(clientDTO);
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_CLIENT_SUCCESSFULLY))
+                .status(HttpStatus.OK)
+                .data(client)
+                .build());
     }
     @PutMapping(value = "{id}")
     @PreAuthorize("hasRole('ADMIN')")

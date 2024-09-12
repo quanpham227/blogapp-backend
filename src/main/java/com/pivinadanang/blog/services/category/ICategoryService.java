@@ -10,7 +10,7 @@ public interface ICategoryService {
     CategoryResponse createCategory(CategoryDTO category) throws Exception;
     CategoryEntity getCategoryById(long id) throws Exception;
     List<CategoryResponse> getAllCategories();
-    CategoryResponse updateCategory(long categoryId, CategoryDTO category);
+    CategoryResponse updateCategory(long categoryId, CategoryDTO category) throws Exception;
     CategoryEntity deleteCategory(long id) throws Exception;
 
     boolean existsCategoryByName(String name);

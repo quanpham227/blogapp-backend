@@ -21,6 +21,9 @@ public class PostRedisService implements IPostRedisService{
     @Value("${cache.prefix.posts}")
     private String postCachePrefix;
 
+    @Value("${cache.prefix.recent_posts}")
+    private String recentPostCachePrefix;
+
     private String getKeyFrom(String keyword, Long categoryId, PageRequest pageRequest) {
         int pageNumber = pageRequest.getPageNumber();
         int pageSize = pageRequest.getPageSize();
@@ -55,6 +58,24 @@ public class PostRedisService implements IPostRedisService{
     @Override
     public void saveAllPosts(List<PostResponse> postResponses, String keyword, Long categoryId, PageRequest pageRequest) throws JsonProcessingException {
         String key = this.getKeyFrom(keyword, categoryId, pageRequest);
+        String json = redisObjectMapper.writeValueAsString(postResponses);
+        redisTemplate.opsForValue().set(key, json);
+    }
+
+    @Override
+    public List<PostResponse> getRecentPosts(PageRequest pageRequest) throws JsonProcessingException {
+        String key = String.format("%s:recent:%d:%d", recentPostCachePrefix, pageRequest.getPageNumber(), pageRequest.getPageSize());
+        String json = (String) redisTemplate.opsForValue().get(key);
+        List<PostResponse> postResponses =
+                json != null ?
+                        redisObjectMapper.readValue(json, new TypeReference<List<PostResponse>>() {})
+                        : null;
+        return postResponses;
+    }
+
+    @Override
+    public void saveRecentPosts(List<PostResponse> postResponses, PageRequest pageRequest) throws JsonProcessingException {
+        String key = String.format("%s:recent:%d:%d", recentPostCachePrefix, pageRequest.getPageNumber(), pageRequest.getPageSize());
         String json = redisObjectMapper.writeValueAsString(postResponses);
         redisTemplate.opsForValue().set(key, json);
     }
