@@ -32,6 +32,7 @@ public class CategoryService implements ICategoryService{
         CategoryEntity newCategory = CategoryEntity
                 .builder()
                 .name(categoryDTO.getName())
+                .description(categoryDTO.getDescription())
                 .build();
         CategoryEntity category =  categoryRepository.save(newCategory);
         return CategoryResponse.fromCategory(category);
@@ -59,6 +60,9 @@ public class CategoryService implements ICategoryService{
                 }
             }
             existingCategory.setName(categoryDTO.getName());
+        }
+        if(categoryDTO.getDescription() != null || !categoryDTO.getDescription().isEmpty()){
+            existingCategory.setDescription(categoryDTO.getDescription());
         }
         CategoryEntity category = categoryRepository.save(existingCategory);
         return CategoryResponse.fromCategory(category);

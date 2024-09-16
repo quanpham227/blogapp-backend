@@ -122,7 +122,6 @@ public class PostController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit) throws JsonProcessingException {
         int totalPages = 0;
-        //productRedisService.clear();
         // Tạo Pageable từ thông tin trang và giới hạn
         PageRequest pageRequest = PageRequest.of(page, limit,
                 Sort.by("createdAt").descending()

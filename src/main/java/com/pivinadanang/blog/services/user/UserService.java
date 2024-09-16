@@ -28,10 +28,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static com.pivinadanang.blog.ultils.ValidationUtils.isValidEmail;
 import static com.pivinadanang.blog.ultils.ValidationUtils.isValidPhoneNumber;
 
 @Service
@@ -99,6 +99,8 @@ public class UserService implements IUserService{
 
     }
 
+
+
     @Override
     public UserEntity getUserDetailsFromRefreshToken(String refreshToken) throws Exception {
         Token existingToken = tokenRepository.findByRefreshToken(refreshToken);
@@ -106,8 +108,21 @@ public class UserService implements IUserService{
         if (existingToken == null) {
             throw new Exception("Refresh token không hợp lệ hoặc đã hết hạn.");
         }
+        // Kiểm tra thời gian hết hạn của refresh token
+        if (existingToken.getRefreshExpirationDate().isBefore(LocalDateTime.now())) {
+            // Xóa refresh token hết hạn
+            tokenRepository.delete(existingToken);
+            throw new Exception("Refresh token đã hết hạn.");
+        }
+        // Lấy thông tin người dùng từ token
+        UserEntity user = existingToken.getUser();
 
-        return getUserDetailsFromToken(existingToken.getToken());
+        // Kiểm tra xem người dùng có tồn tại không
+        if (user == null) {
+            throw new Exception("Không tìm thấy người dùng.");
+        }
+        return user;
+
     }
 
     @Override

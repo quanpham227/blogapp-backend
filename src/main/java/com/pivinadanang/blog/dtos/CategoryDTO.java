@@ -12,4 +12,5 @@ import lombok.*;
 public class CategoryDTO {
     @NotEmpty(message = "Category cannot be empty")
     private String name;
+    private String description;
 }

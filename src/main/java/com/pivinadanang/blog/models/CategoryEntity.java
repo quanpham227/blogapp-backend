@@ -27,6 +27,9 @@ public class CategoryEntity {
     @Column (name = "name", nullable = false, length = 100)
     private String name;
 
+    @Column (name = "description", length = 255) // mới thêm vào
+    private String description;
+
     @Column (name="code")
     private String code;
 
