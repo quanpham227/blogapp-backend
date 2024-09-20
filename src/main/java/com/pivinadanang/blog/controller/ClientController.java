@@ -41,7 +41,6 @@ public class ClientController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') ")
     public ResponseEntity<ResponseObject> getClientById(@PathVariable("id") Long clienttId) throws Exception {
         ClientEntity client = clientService.findById(clienttId);
         return ResponseEntity.ok(ResponseObject.builder()

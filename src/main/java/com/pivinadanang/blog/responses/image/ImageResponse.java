@@ -35,6 +35,11 @@ public class ImageResponse extends BaseResponse {
     @JsonProperty("file_size")
     private Long fileSize;
 
+    @JsonProperty("is_used")
+    private Boolean isUsed;
+
+    @JsonProperty("usage_count")
+    private Integer usageCount;
 
     public static ImageResponse fromImage (ImageEntity image) {
         ImageResponse imageResponse = ImageResponse.builder()
@@ -45,6 +50,8 @@ public class ImageResponse extends BaseResponse {
                 .objectType(image.getObjectType())
                 .fileType(image.getFileType())
                 .fileSize(image.getFileSize())
+                .isUsed(image.getIsUsed())
+                .usageCount(image.getUsageCount())
                 .build();
         imageResponse.setCreatedAt(image.getCreatedAt());
         imageResponse.setUpdatedAt(image.getUpdatedAt());

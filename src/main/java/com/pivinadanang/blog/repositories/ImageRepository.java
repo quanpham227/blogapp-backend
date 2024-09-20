@@ -11,8 +11,15 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ImageRepository extends JpaRepository<ImageEntity, Long> {
-    @Query("SELECT i FROM ImageEntity i WHERE (:keyword IS NULL OR :keyword = '' OR i.objectType LIKE %:keyword%)")
-    Page<ImageEntity> searchImages(@Param("keyword") String keyword, Pageable pageable);
+    @Query("SELECT i FROM ImageEntity i WHERE " +
+            "(COALESCE(:objectType, '') = '' OR i.objectType = :objectType) " +
+            "AND (COALESCE(:keyword, '') = '' OR LOWER(i.fileName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(i.objectType) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<ImageEntity> searchImages(@Param("keyword") String keyword, @Param("objectType") String objectType, Pageable pageable);
+
+
+    @Query("SELECT SUM(i.fileSize) FROM ImageEntity i")
+    Long getTotalFileSize();
+
 
 
 }

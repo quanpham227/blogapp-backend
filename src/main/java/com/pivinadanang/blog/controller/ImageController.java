@@ -29,21 +29,39 @@ public class ImageController {
     private final IImageService fileUploadService;
 
     @GetMapping("")
-    public ResponseEntity<ImageListResponse> getImages(@RequestParam(defaultValue = "") String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int limit)  {
+    public ResponseEntity<ImageListResponse> getImages(@RequestParam(defaultValue = "") String keyword,
+                                                       @RequestParam(defaultValue = "", name = "object_type") String objectType,
+                                                       @RequestParam(defaultValue = "0") int page,
+                                                       @RequestParam(defaultValue = "25") int limit)  {
         PageRequest pageRequest = PageRequest.of(page, limit,
                 Sort.by("createdAt").descending()
         );
-        Page<ImageResponse> imagePage = fileUploadService.getAllImages( keyword, pageRequest);
+        Page<ImageResponse> imagePage = fileUploadService.getAllImages( keyword,objectType, pageRequest);
         // Lấy tổng số trang
         int totalPages = imagePage.getTotalPages();
         List<ImageResponse> images = imagePage.getContent();
+        Long totalFileSize = fileUploadService.getTotalFileSize(); // Tính tổng kích thước file
+
+
         return ResponseEntity.ok(ImageListResponse.builder()
                         .status(HttpStatus.OK)
                         .images(images)
                         .totalPages(totalPages)
+                        .totalFileSizes(totalFileSize)
                         .build());
 
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<ResponseObject> getImage(@PathVariable Long id) throws Exception {
+        ImageResponse image = fileUploadService.getImage(id);
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_IMAGE_SUCCESSFULLY))
+                .status(HttpStatus.OK)
+                .data(image)
+                .build());
+    }
+
+
 
     @PostMapping(value = "upload/multiple", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
@@ -80,14 +98,14 @@ public class ImageController {
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
                 .build());
     }
-    @DeleteMapping("/{id}")
+    @DeleteMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> deleteImage(@PathVariable Long id) throws Exception{
-        fileUploadService.deleteImage(id);
+    public ResponseEntity<ResponseObject> deleteImages(@RequestBody List<Long> ids) throws Exception {
+        fileUploadService.deleteImages(ids);
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .status(HttpStatus.OK)
-                        .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_IMAGE_SUCCESSFULLY , id))
+                        .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_IMAGE_SUCCESSFULLY, ids))
                         .build());
     }
 }

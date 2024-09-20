@@ -34,6 +34,10 @@ public class ImageEntity extends BaseEntity{
     @Column(name = "file_size")
     private Long fileSize;
 
+    @Column(name = "is_used", nullable = false)
+    private Boolean isUsed = false;
 
+    @Column(name = "usage_count", nullable = false)
+    private Integer usageCount = 0;
 
 }

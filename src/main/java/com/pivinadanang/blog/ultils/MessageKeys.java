@@ -39,6 +39,8 @@ public class MessageKeys {
     public static final String UPLOAD_IMAGE_FILE_NOTFOUND = "upload_images.file_not_found";
     public static final String DELETE_IMAGE_SUCCESSFULLY = "delete_image.successfully";
     public static final String DELETE_IMAGE_FAILED = "delete_image.failed";
+    public static final String IMAGE_NOT_FOUND = "image_not_found";
+    public static final String GET_IMAGE_SUCCESSFULLY = "get_image.successfully";
 
     public static final String ROLE_DOES_NOT_EXISTS = "user.login.role_not_exist";
 

@@ -18,4 +18,5 @@ public class ImageListResponse {
     private List<ImageResponse> images;
     private int totalPages;
     private HttpStatus status;
+    private Long totalFileSizes;
 }

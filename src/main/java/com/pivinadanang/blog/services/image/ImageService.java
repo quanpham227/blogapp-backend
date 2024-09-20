@@ -102,6 +102,8 @@ public class ImageService implements IImageService {
                 .objectType(objectType)
                 .fileType(file.getContentType())
                 .fileSize(cloudinaryDTO.getFileSize())
+                .isUsed(false)
+                .usageCount(0)
                 .build();
 
         ImageEntity savedImage = imageRepository.save(imageEntity);
@@ -113,24 +115,39 @@ public class ImageService implements IImageService {
     }
 
     @Override
-    public Page<ImageResponse> getAllImages(String keyword, PageRequest pageRequest) {
+    public ImageResponse getImage(long id) throws Exception {
+        ImageEntity imageEntity = imageRepository.findById(id)
+                .orElseThrow(() -> new DataNotFoundException(
+                        localizationUtils.getLocalizedMessage(MessageKeys.IMAGE_NOT_FOUND)));
+        return ImageResponse.fromImage(imageEntity);
+    }
+
+    @Override
+    public Page<ImageResponse> getAllImages(String keyword,String objectType ,PageRequest pageRequest) {
         Page<ImageEntity> imagePage;
-        imagePage = imageRepository.searchImages(keyword, pageRequest);
+        imagePage = imageRepository.searchImages(keyword,objectType ,pageRequest);
         return imagePage.map(ImageResponse::fromImage);
     }
 
     @Override
+    public Long getTotalFileSize() {
+        return imageRepository.getTotalFileSize();
+    }
+
+    @Override
     @Transactional
-    public void deleteImage(long id) throws Exception {
-        ImageEntity imageEntity = imageRepository.findById(id)
-                .orElseThrow(() -> new DataNotFoundException(
-                        localizationUtils.getLocalizedMessage(MessageKeys.DELETE_IMAGE_FAILED)));
-        try {
-            imageRepository.delete(imageEntity);
-            cloudinaryService.delete(imageEntity.getPublicId());
-        } catch (Exception e) {
-            throw new Exception(
-                    localizationUtils.getLocalizedMessage(MessageKeys.DELETE_IMAGE_FAILED));
+    public void deleteImages(List<Long> ids) throws Exception {
+        for (Long id : ids) {
+            ImageEntity imageEntity = imageRepository.findById(id)
+                    .orElseThrow(() -> new DataNotFoundException(
+                            localizationUtils.getLocalizedMessage(MessageKeys.DELETE_IMAGE_FAILED, id)));
+            try {
+                imageRepository.delete(imageEntity);
+                cloudinaryService.delete(imageEntity.getPublicId());
+            } catch (Exception e) {
+                throw new Exception(
+                        localizationUtils.getLocalizedMessage(MessageKeys.DELETE_IMAGE_FAILED, id), e);
+            }
         }
     }
 }

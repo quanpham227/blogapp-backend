@@ -12,9 +12,12 @@ public interface IImageService {
 
     List<ImageResponse> uploadImages(String objectType, List<MultipartFile> files) throws Exception;
     ImageResponse uploadImage(String objectType, MultipartFile file) throws Exception;
+    ImageResponse getImage(long id) throws Exception;
 
-    Page<ImageResponse> getAllImages(String keyword , PageRequest pageRequest);
+    Page<ImageResponse> getAllImages(String keyword , String objectType,PageRequest pageRequest);
 
-    void deleteImage(long id) throws Exception;
+    void deleteImages(List<Long> ids) throws Exception;
+
+    Long getTotalFileSize();
 
 }
