@@ -3,10 +3,12 @@ package com.pivinadanang.blog.services.client;
 import com.pivinadanang.blog.dtos.ClientDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.models.ClientEntity;
+import com.pivinadanang.blog.models.ImageEntity;
 import com.pivinadanang.blog.repositories.ClientRepository;
+import com.pivinadanang.blog.repositories.ImageRepository;
 import com.pivinadanang.blog.responses.client.ClientResponse;
 import com.pivinadanang.blog.services.cloudinary.ICloudinaryService;
-import com.pivinadanang.blog.ultils.FileUtils;
+
 import com.pivinadanang.blog.ultils.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.util.List;
 public class ClientService implements IClientService{
     private final ClientRepository clientRepository;
     private final ICloudinaryService iCloudinaryService;
+    private final ImageRepository imageRepository;
 
     @Override
     public boolean exitsByName(String name) {
@@ -32,18 +35,29 @@ public class ClientService implements IClientService{
                 .orElseThrow(() -> new DataNotFoundException("Cannot find client with id " + id));
     }
 
-    @Override
-    @Transactional
     public ClientResponse createClient(ClientDTO clientDTO) throws IOException {
-        String fileId = FileUtils.extractFileIdFromUrl(clientDTO.getLogo());
         String sanitizedDescription = HtmlSanitizer.sanitize(clientDTO.getDescription());
+
+        // Tìm hình ảnh tương ứng dựa trên publicId
+        ImageEntity imageEntity = imageRepository.findByPublicId(clientDTO.getPublicId())
+                .orElseThrow(() -> new RuntimeException("Image not found"));
+
+        // Cập nhật thuộc tính isUsed và usageCount
+        imageEntity.setIsUsed(true);
+        imageEntity.setUsageCount(imageEntity.getUsageCount() + 1);
+
+        // Lưu thay đổi vào cơ sở dữ liệu
+        imageRepository.save(imageEntity);
+
+        // Tạo client mới
         ClientEntity newClient = ClientEntity.builder()
                 .name(clientDTO.getName())
                 .logo(clientDTO.getLogo())
-                .publicId(fileId)
+                .publicId(clientDTO.getPublicId())
                 .description(sanitizedDescription)
                 .build();
         ClientEntity clientEntity = clientRepository.save(newClient);
+
         return ClientResponse.fromClient(clientEntity);
     }
 
@@ -55,41 +69,77 @@ public class ClientService implements IClientService{
     @Override
     @Transactional
     public ClientResponse updateClient(long clientId, ClientDTO clientDTO) throws DataNotFoundException, IOException {
-        ClientEntity exitsClient = clientRepository.findById(clientId)
+        ClientEntity existingClient = clientRepository.findById(clientId)
                 .orElseThrow(() -> new DataNotFoundException("Cannot find client with id " + clientId));
 
-        if (clientDTO.getName() != null || !clientDTO.getName().isEmpty()) {
-            if (!exitsClient.getName().equals(clientDTO.getName())) {
+        if (clientDTO.getName() != null && !clientDTO.getName().isEmpty()) {
+            if (!existingClient.getName().equals(clientDTO.getName())) {
                 boolean isNameExists = clientRepository.existsByName(clientDTO.getName());
                 if (isNameExists) {
-                    throw new IllegalArgumentException("Name already exists"); // Ném ngoại lệ nếu tên đã tồn tại
+                    throw new IllegalArgumentException("Name already exists");
                 }
             }
-            exitsClient.setName(clientDTO.getName());
+            existingClient.setName(clientDTO.getName());
         }
-        if ( clientDTO.getDescription() != null || !clientDTO.getDescription().isEmpty()){
+
+        if (clientDTO.getDescription() != null && !clientDTO.getDescription().isEmpty()) {
             String sanitizedDescription = HtmlSanitizer.sanitize(clientDTO.getDescription());
-            exitsClient.setDescription(sanitizedDescription);
+            existingClient.setDescription(sanitizedDescription);
         }
 
-        if (clientDTO.getLogo() != null || !clientDTO.getLogo().isEmpty()) {
-            String fileId = FileUtils.extractFileIdFromUrl(clientDTO.getLogo());
-            exitsClient.setLogo(clientDTO.getLogo());
-            exitsClient.setPublicId(fileId);
+        if (clientDTO.getLogo() != null && !clientDTO.getLogo().isEmpty() &&
+                clientDTO.getPublicId() != null && !clientDTO.getPublicId().isEmpty()) {
+
+            String newFileId = clientDTO.getPublicId();
+            // Tìm hình ảnh hiện tại dựa trên publicId
+            ImageEntity currentImage = imageRepository.findByPublicId(existingClient.getPublicId())
+                    .orElseThrow(() -> new RuntimeException("Current image not found"));
+
+            // Giảm usageCount và cập nhật isUsed của hình ảnh hiện tại nếu cần
+            currentImage.setUsageCount(currentImage.getUsageCount() - 1);
+            if (currentImage.getUsageCount() <= 0) {
+                currentImage.setIsUsed(false);
+            }
+            imageRepository.save(currentImage);
+
+            // Tìm hình ảnh mới dựa trên publicId
+            ImageEntity newImage = imageRepository.findByPublicId(newFileId)
+                    .orElseThrow(() -> new RuntimeException("New image not found"));
+
+            // Cập nhật thuộc tính isUsed và usageCount của hình ảnh mới
+            newImage.setIsUsed(true);
+            newImage.setUsageCount(newImage.getUsageCount() + 1);
+
+            imageRepository.save(newImage);
+
+
+            existingClient.setLogo(clientDTO.getLogo());
+            existingClient.setPublicId(newFileId);
         }
 
-       ClientEntity clientEntity =  clientRepository.save(exitsClient);
-       return  ClientResponse.fromClient(clientEntity);
+        ClientEntity updatedClient = clientRepository.save(existingClient);
+        return ClientResponse.fromClient(updatedClient);
     }
 
     @Override
     @Transactional
     public void deleteClients(long id) throws Exception {
-        ClientEntity exitsClient = clientRepository.findById(id)
+        ClientEntity existingClient = clientRepository.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("Cannot find client with id " + id));
         try {
-            clientRepository.delete(exitsClient);
-            iCloudinaryService.delete(exitsClient.getPublicId());
+            // Tìm hình ảnh hiện tại dựa trên publicId
+            ImageEntity currentImage = imageRepository.findByPublicId(existingClient.getPublicId())
+                    .orElseThrow(() -> new DataNotFoundException("Current image not found"));
+
+            // Giảm usageCount và cập nhật isUsed của hình ảnh hiện tại nếu cần
+            currentImage.setUsageCount(currentImage.getUsageCount() - 1);
+            if (currentImage.getUsageCount() <= 0) {
+                currentImage.setIsUsed(false);
+            }
+            imageRepository.save(currentImage);
+
+            // Xóa client khỏi cơ sở dữ liệu
+            clientRepository.delete(existingClient);
 
 
         } catch (Exception e) {

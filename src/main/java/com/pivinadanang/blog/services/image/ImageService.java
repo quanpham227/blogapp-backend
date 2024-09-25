@@ -135,15 +135,27 @@ public class ImageService implements IImageService {
     }
 
     @Override
+    public Page<ImageResponse> getUnusedImages(PageRequest pageRequest) {
+        Page<ImageEntity> imageEntities = imageRepository.findUnusedImages(pageRequest);
+        return imageEntities.map(ImageResponse::fromImage);
+    }
+
+    @Override
     @Transactional
     public void deleteImages(List<Long> ids) throws Exception {
         for (Long id : ids) {
             ImageEntity imageEntity = imageRepository.findById(id)
                     .orElseThrow(() -> new DataNotFoundException(
-                            localizationUtils.getLocalizedMessage(MessageKeys.DELETE_IMAGE_FAILED, id)));
+                            localizationUtils.getLocalizedMessage(MessageKeys.IMAGE_NOT_FOUND, id)));
             try {
                 imageRepository.delete(imageEntity);
-                cloudinaryService.delete(imageEntity.getPublicId());
+                // kiểm tra sự tồn taại của ảnh trên cloudinary
+                if (imageEntity.getPublicId() != null){
+                   if(cloudinaryService.checkImageExistsOnCloudinary(imageEntity.getPublicId())){
+                          cloudinaryService.delete(imageEntity.getPublicId());
+                   }
+                }
+
             } catch (Exception e) {
                 throw new Exception(
                         localizationUtils.getLocalizedMessage(MessageKeys.DELETE_IMAGE_FAILED, id), e);

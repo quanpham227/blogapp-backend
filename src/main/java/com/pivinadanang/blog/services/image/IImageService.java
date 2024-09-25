@@ -20,4 +20,6 @@ public interface IImageService {
 
     Long getTotalFileSize();
 
+
+    Page<ImageResponse> getUnusedImages(PageRequest pageRequest);
 }

@@ -11,7 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class SlideEntity {
+public class SlideEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +29,7 @@ public class SlideEntity {
     @Column (name="description",columnDefinition = "TEXT")
     private String description;
 
-    @Column(name= "link", length = 2048)
+    @Column(name = "link", length = 2048)
     private String link;
 
     @Column(name = "status" , nullable = false)

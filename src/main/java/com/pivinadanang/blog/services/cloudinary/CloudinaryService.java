@@ -106,4 +106,51 @@ public class CloudinaryService  implements ICloudinaryService{
         cloudinaryDTO.setFileSize(Long.parseLong(uploadResult.get("bytes").toString()));
         return cloudinaryDTO;
     }
+
+    // Phương thức kiểm tra sự tồn tại của hình ảnh trên Cloudinary
+    public boolean checkImageExistsOnCloudinary(String publicId) {
+        try {
+            Map<?, ?> result = cloudinary.api().resource(publicId, ObjectUtils.emptyMap());
+            return result != null;
+        } catch (Exception e) {
+            // Hình ảnh không tồn tại hoặc có lỗi xảy ra
+            return false;
+        }
+    }
+    // Lấy danh sách tài nguyên trong một thư mục cụ thể
+    @Override
+    public Map<?, ?> listResources(String folderName) {
+        try {
+            return cloudinary.api().resources(ObjectUtils.asMap("type", "upload", "prefix", folderName));
+        } catch (Exception e) {
+            throw new CloudinaryException("Failed to list resources in folder: " + folderName, e);
+        }
+    }
+    // Di chuyển hoặc đổi tên một tài nguyên
+    @Override
+    public void renameResource(String oldPublicId, String newPublicId) {
+        try {
+            cloudinary.uploader().rename(oldPublicId, newPublicId, ObjectUtils.emptyMap());
+        } catch (Exception e) {
+            throw new CloudinaryException("Failed to rename resource from " + oldPublicId + " to " + newPublicId, e);
+        }
+    }
+    // Tạo một thư mục mới
+    @Override
+    public void createFolder(String folderName) {
+        try {
+            cloudinary.api().createFolder(folderName, ObjectUtils.emptyMap());
+        } catch (Exception e) {
+            throw new CloudinaryException("Failed to create folder: " + folderName, e);
+        }
+    }
+    // Xóa một thư mục cụ thể
+    @Override
+    public void deleteFolder(String folderName) {
+        try {
+            cloudinary.api().deleteFolder(folderName, ObjectUtils.emptyMap());
+        } catch (Exception e) {
+            throw new CloudinaryException("Failed to delete folder: " + folderName, e);
+        }
+    }
 }

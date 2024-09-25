@@ -29,6 +29,12 @@ public class MessageKeys {
     public static final String DELETE_CLIENT_FAILED = "client.delete_client.delete_failed";
 
 
+    public static final String GET_SLIDE_SUCCESSFULLY = "slide.get_slide.get_successfully";
+    public static final String INSERT_SLIDE_SUCCESSFULLY = "slide.create_slide.create_successfully";
+    public static final String SLIDE_ALREADY_EXISTS = "slide.create_slide.slide_already_exists";
+    public static final String UPDATE_SLIDE_SUCCESSFULLY = "slide.update_slide.update_successfully";
+    public static final String DELETE_SLIDE_SUCCESSFULLY = "slide.delete_slide.delete_successfully";
+    public static final String DELETE_SLIDE_FAILED = "slide.delete_slide.delete_failed";
 
 
 

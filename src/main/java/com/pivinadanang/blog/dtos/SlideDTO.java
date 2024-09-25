@@ -1,26 +1,23 @@
 package com.pivinadanang.blog.dtos;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ClientDTO {
-
+public class SlideDTO {
     @NotEmpty(message = "name cannot be empty")
-    private String name;
-
+    private String title;
+    @JsonProperty("image_url")
+    private String imageUrl;
     private String description;
-
-    private String logo;
-
+    private Boolean status = true;
+    private Integer order ;
     @JsonProperty("public_id")
     private String publicId;
-
+    private String link;
 }

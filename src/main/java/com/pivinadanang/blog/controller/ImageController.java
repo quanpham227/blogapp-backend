@@ -32,24 +32,41 @@ public class ImageController {
     public ResponseEntity<ImageListResponse> getImages(@RequestParam(defaultValue = "") String keyword,
                                                        @RequestParam(defaultValue = "", name = "object_type") String objectType,
                                                        @RequestParam(defaultValue = "0") int page,
-                                                       @RequestParam(defaultValue = "25") int limit)  {
-        PageRequest pageRequest = PageRequest.of(page, limit,
-                Sort.by("createdAt").descending()
-        );
-        Page<ImageResponse> imagePage = fileUploadService.getAllImages( keyword,objectType, pageRequest);
-        // Lấy tổng số trang
+                                                       @RequestParam(defaultValue = "24") int limit,
+                                                       @RequestParam(required = false) Integer usage) {
+        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by("createdAt").descending());
+        Page<ImageResponse> imagePage;
+        if (usage != null && usage == 0) {
+            imagePage = fileUploadService.getUnusedImages(pageRequest);
+        } else {
+            imagePage = fileUploadService.getAllImages(keyword, objectType, pageRequest);
+        }
         int totalPages = imagePage.getTotalPages();
         List<ImageResponse> images = imagePage.getContent();
-        Long totalFileSize = fileUploadService.getTotalFileSize(); // Tính tổng kích thước file
-
+        Long totalFileSize = fileUploadService.getTotalFileSize();
 
         return ResponseEntity.ok(ImageListResponse.builder()
-                        .status(HttpStatus.OK)
-                        .images(images)
-                        .totalPages(totalPages)
-                        .totalFileSizes(totalFileSize)
-                        .build());
+                .status(HttpStatus.OK)
+                .images(images)
+                .totalPages(totalPages)
+                .totalFileSizes(totalFileSize)
+                .build());
+    }
+    @GetMapping("/unused")
+    public ResponseEntity<ImageListResponse> getUnusedImages(@RequestParam(defaultValue = "0") int page,
+                                                             @RequestParam(defaultValue = "25") int limit) {
+        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by("createdAt").descending());
+        Page<ImageResponse> imagePage = fileUploadService.getUnusedImages(pageRequest);
+        int totalPages = imagePage.getTotalPages();
+        List<ImageResponse> images = imagePage.getContent();
+        Long totalFileSize = fileUploadService.getTotalFileSize();
 
+        return ResponseEntity.ok(ImageListResponse.builder()
+                .status(HttpStatus.OK)
+                .images(images)
+                .totalPages(totalPages)
+                .totalFileSizes(totalFileSize)
+                .build());
     }
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getImage(@PathVariable Long id) throws Exception {
