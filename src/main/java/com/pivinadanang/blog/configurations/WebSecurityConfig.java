@@ -67,6 +67,9 @@ class WebSecurityConfig {
                             .requestMatchers(GET,
                                     String.format("%s/slides/**", apiPrefix)).permitAll()
 
+                            .requestMatchers(GET,
+                                    String.format("%s/about/**", apiPrefix)).permitAll()
+
                             .anyRequest()
                             .authenticated();
                     //.anyRequest().permitAll();
