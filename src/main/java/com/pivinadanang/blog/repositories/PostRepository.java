@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 @Repository
@@ -34,4 +35,7 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     @Query(value = "SELECT * FROM posts ORDER BY created_at DESC LIMIT ?1", nativeQuery = true)
     List<PostEntity> findTopNRecentPosts(int limit);
 
+
+    @Query("SELECT p.createdAt FROM PostEntity p")
+    List<LocalDateTime> findAllCreatedAt();
 }

@@ -67,6 +67,8 @@ public class PostEntity extends BaseEntity{
             fetch = FetchType.LAZY)
     private List<FavouriteEntity> favorites = new ArrayList<>();
 
+    @OneToOne(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private MetaEntity meta;
 
     @PrePersist
     @PreUpdate

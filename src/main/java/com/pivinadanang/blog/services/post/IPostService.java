@@ -18,4 +18,6 @@ public interface IPostService {
     boolean existsPostByTitle(String title);
     PostEntity getPostBySlug( String slug) throws Exception;
     Page<PostResponse> getRecentPosts(PageRequest pageRequest);
+
+    List<String> getAllMonthYears();
 }

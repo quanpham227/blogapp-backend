@@ -32,11 +32,10 @@ public class ImageController {
     public ResponseEntity<ImageListResponse> getImages(@RequestParam(defaultValue = "") String keyword,
                                                        @RequestParam(defaultValue = "", name = "object_type") String objectType,
                                                        @RequestParam(defaultValue = "0") int page,
-                                                       @RequestParam(defaultValue = "24") int limit,
-                                                       @RequestParam(required = false) Integer usage) {
+                                                       @RequestParam(defaultValue = "24") int limit) {
         PageRequest pageRequest = PageRequest.of(page, limit, Sort.by("createdAt").descending());
         Page<ImageResponse> imagePage;
-        if (usage != null && usage == 0) {
+        if ("unused".equals(objectType)) {
             imagePage = fileUploadService.getUnusedImages(pageRequest);
         } else {
             imagePage = fileUploadService.getAllImages(keyword, objectType, pageRequest);

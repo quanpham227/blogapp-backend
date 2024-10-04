@@ -34,7 +34,6 @@ public class PostResponse extends BaseResponse {
     private String status;
 
 
-
     public static PostResponse fromPost (PostEntity post){
         PostResponse postResponse = PostResponse.builder()
                 .id(post.getId())

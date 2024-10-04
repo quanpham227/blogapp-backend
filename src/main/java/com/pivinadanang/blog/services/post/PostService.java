@@ -15,6 +15,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -120,6 +122,15 @@ public class PostService implements IPostService {
     public Page<PostResponse> getRecentPosts(PageRequest pageRequest) {
         Page<PostEntity> postsPage = postRepository.findAll(pageRequest);
         return postsPage.map(PostResponse::fromPost);
+    }
+
+    @Override
+    public List<String> getAllMonthYears() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy");
+        return postRepository.findAllCreatedAt().stream()
+                .map(date -> date.format(formatter))
+                .distinct()
+                .collect(Collectors.toList());
     }
 
 }

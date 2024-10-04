@@ -249,4 +249,14 @@ public class PostController {
         return ResponseEntity.ok("Posts generated successfully");
     }
 
+
+    @GetMapping("/month-years")
+    public ResponseEntity<ResponseObject> getAllMonthYears () {
+        List<String> monthYears = postService.getAllMonthYears();
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Get all month years successfully")
+                .status(HttpStatus.OK)
+                .data(monthYears)
+                .build());
+    }
 }
