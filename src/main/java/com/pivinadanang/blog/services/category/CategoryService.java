@@ -15,6 +15,8 @@ import com.pivinadanang.blog.responses.category.CategoryResponse;
 import com.pivinadanang.blog.responses.post.PostResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,9 @@ public class CategoryService implements ICategoryService{
     @Override
     @Transactional
     public CategoryResponse createCategory(CategoryDTO categoryDTO) {
+        if (categoryDTO.getDescription() == null || categoryDTO.getDescription().isEmpty()) {
+            categoryDTO.setDescription(categoryDTO.getName());
+        }
         CategoryEntity newCategory = CategoryEntity
                 .builder()
                 .name(categoryDTO.getName())
@@ -86,5 +91,14 @@ public class CategoryService implements ICategoryService{
     @Override
     public boolean existsCategoryByName(String name) {
         return categoryRepository.exitstsByName(name);
+    }
+
+    @Override
+    public List<CategoryResponse> getTopCategoriesByPostCount(int limit) {
+        Pageable pageable = PageRequest.of(0, limit); // Giới hạn số lượng là 3
+        List<CategoryEntity> categories = categoryRepository.findTopCategoriesByPostCount(pageable);
+        return categories.stream()
+                .map(CategoryResponse::fromCategory)
+                .toList();
     }
 }

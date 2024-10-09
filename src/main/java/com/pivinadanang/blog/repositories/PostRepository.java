@@ -1,5 +1,6 @@
 package com.pivinadanang.blog.repositories;
 
+import com.pivinadanang.blog.enums.PostStatus;
 import com.pivinadanang.blog.models.CategoryEntity;
 import com.pivinadanang.blog.models.PostEntity;
 import org.springframework.data.domain.Page;
@@ -9,7 +10,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 @Repository
@@ -19,10 +22,26 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     List<PostEntity> findByCategory(CategoryEntity category);
 
-    @Query("SELECT p FROM PostEntity p WHERE " +
-            "(:categoryId IS NULL OR :categoryId = 0 OR p.category.id = :categoryId) " +
-            "AND (:keyword IS NULL OR :keyword = '' OR p.title LIKE %:keyword% OR p.content LIKE %:keyword%)")
-    Page<PostEntity> searchPosts(@Param("categoryId") Long categoryId, @Param("keyword") String keyword, Pageable pageable);
+
+
+
+
+
+    @Query("SELECT p FROM PostEntity p WHERE "
+            + "(LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR :keyword IS NULL) "
+            + "AND (:categoryId = 0 OR p.category.id = :categoryId) "
+            + "AND (:status IS NULL OR p.status = :status) "
+            + "AND (:startDate IS NULL OR p.createdAt >= :startDate) "
+            + "AND (:endDate IS NULL OR p.createdAt <= :endDate)")
+    Page<PostEntity> searchPosts(@Param("categoryId") Long categoryId,
+                                 @Param("keyword") String keyword,
+                                 @Param("status") PostStatus status,
+                                 @Param("startDate") LocalDateTime startDate,
+                                 @Param("endDate") LocalDateTime endDate,
+                                 Pageable pageable);
+
+
+
 
     @Query("SELECT p FROM PostEntity p " +
             "LEFT JOIN FETCH p.category c " +
@@ -38,4 +57,9 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     @Query("SELECT p.createdAt FROM PostEntity p")
     List<LocalDateTime> findAllCreatedAt();
+
+    Long countByStatus(PostStatus status);
+
+    long count ();
+
 }

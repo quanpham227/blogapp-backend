@@ -3,6 +3,7 @@ package com.pivinadanang.blog.services.post;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pivinadanang.blog.enums.PostStatus;
 import com.pivinadanang.blog.responses.post.PostResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,9 @@ import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 @Service
 @RequiredArgsConstructor
@@ -24,14 +28,22 @@ public class PostRedisService implements IPostRedisService{
     @Value("${cache.prefix.recent_posts}")
     private String recentPostCachePrefix;
 
-    private String getKeyFrom(String keyword, Long categoryId, PageRequest pageRequest) {
+    private String getKeyFrom(String keyword, Long categoryId, PostStatus status, YearMonth createdAt, PageRequest pageRequest) {
         int pageNumber = pageRequest.getPageNumber();
         int pageSize = pageRequest.getPageSize();
         Sort sort = pageRequest.getSort();
         String sortDirection = sort.getOrderFor("createdAt")
                 .getDirection() == Sort.Direction.ASC ? "asc": "desc";
-        String key = String.format("%s:%s:%d:%d:%d:%s",postCachePrefix,
-                keyword, categoryId, pageNumber, pageSize, sortDirection);
+        String createdAtStr = createdAt != null ? createdAt.format(DateTimeFormatter.ofPattern("yyyy-MM")) : "null";
+
+        String key = String.format("%s:%s:%d:%s:%s:%d:%d:%s",postCachePrefix,
+                keyword,
+                categoryId,
+                status != null ? status.name() : "null",
+                createdAtStr,
+                pageNumber,
+                pageSize,
+                sortDirection);
         return key;
         /*
         {
@@ -45,8 +57,8 @@ public class PostRedisService implements IPostRedisService{
     }
 
     @Override
-    public List<PostResponse> getAllPosts(String keyword, Long categoryId, PageRequest pageRequest) throws JsonProcessingException {
-        String key = this.getKeyFrom(keyword, categoryId, pageRequest);
+    public List<PostResponse> getAllPosts(String keyword, Long categoryId, PostStatus status, YearMonth createdAt, PageRequest pageRequest) throws JsonProcessingException {
+        String key = this.getKeyFrom(keyword, categoryId, status, createdAt, pageRequest);
         String json = (String) redisTemplate.opsForValue().get(key);
         List<PostResponse> postResponses =
                 json != null ?
@@ -56,8 +68,8 @@ public class PostRedisService implements IPostRedisService{
     }
 
     @Override
-    public void saveAllPosts(List<PostResponse> postResponses, String keyword, Long categoryId, PageRequest pageRequest) throws JsonProcessingException {
-        String key = this.getKeyFrom(keyword, categoryId, pageRequest);
+    public void saveAllPosts(List<PostResponse> postResponses, String keyword, Long categoryId,PostStatus status, YearMonth createdAt, PageRequest pageRequest) throws JsonProcessingException {
+        String key = this.getKeyFrom(keyword, categoryId, status, createdAt, pageRequest);
         String json = redisObjectMapper.writeValueAsString(postResponses);
         redisTemplate.opsForValue().set(key, json);
     }

@@ -2,6 +2,7 @@ package com.pivinadanang.blog.responses.user;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pivinadanang.blog.models.RoleEntity;
 import com.pivinadanang.blog.models.UserEntity;
+import com.pivinadanang.blog.responses.role.RoleResponse;
 import lombok.*;
 
 import java.util.Date;
@@ -37,7 +38,7 @@ public class UserResponse {
     private String googleAccountId;
 
     @JsonProperty("role")
-    RoleEntity role;
+    RoleResponse role;
     public static UserResponse fromUser(UserEntity user) {
         return UserResponse.builder()
                 .id(user.getId())
@@ -48,7 +49,7 @@ public class UserResponse {
                 .active(user.isActive())
                 .facebookAccountId(user.getFacebookAccountId())
                 .googleAccountId(user.getGoogleAccountId())
-                .role(user.getRole())
+                .role(RoleResponse.fromRole(user.getRole().getName()))
                 .build();
     }
 }

@@ -108,4 +108,14 @@ public class CategoryController {
                         .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_CATEGORY_SUCCESSFULLY, id))
                         .build());
     }
+
+    @GetMapping("/top")
+    public ResponseEntity<ResponseObject> getTopCategoriesByPostCount() {
+        List<CategoryResponse> topCategories = categoryService.getTopCategoriesByPostCount(3);
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Get top 3 categories successfully")
+                .status(HttpStatus.OK)
+                .data(topCategories)
+                .build());
+    }
 }

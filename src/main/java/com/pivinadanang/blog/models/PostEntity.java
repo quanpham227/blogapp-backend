@@ -2,10 +2,10 @@ package com.pivinadanang.blog.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import java.text.Normalizer;
-import java.util.regex.Pattern;
+
 
 import com.pivinadanang.blog.enums.PostStatus;
+import com.pivinadanang.blog.enums.PostVisibility;
 import jakarta.persistence.*;
 
 import lombok.*;
@@ -43,6 +43,15 @@ public class PostEntity extends BaseEntity{
     @Column(name = "status")
     private PostStatus status;
 
+    @Column(name = "visibility")
+    @Enumerated(EnumType.STRING)
+    private PostVisibility visibility;
+
+    @Column(name = "revision_count")
+    private int revisionCount = 0;
+
+    @Column(name = "view_count")
+    private int viewCount = 0;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
@@ -67,33 +76,44 @@ public class PostEntity extends BaseEntity{
             fetch = FetchType.LAZY)
     private List<FavouriteEntity> favorites = new ArrayList<>();
 
-    @OneToOne(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "meta_id", referencedColumnName = "id")
     private MetaEntity meta;
 
-    @PrePersist
-    @PreUpdate
-    public void prePersistAndUpdate() {
-        if (this.title != null) {
-            this.slug = generateSlug(this.title);
+    @ManyToMany
+    @JoinTable(
+            name = "post_tags",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<TagEntity> tags = new HashSet<>();
+
+
+
+
+    // Custom setter to ensure viewCount is not negative
+    public void setViewCount(int viewCount) {
+        if (viewCount < 0) {
+            throw new IllegalArgumentException("View count cannot be negative");
         }
-        if (this.content != null) {
-            this.excerpt = generateExcerpt(this.content);
-        }
+        this.viewCount = viewCount;
     }
 
-    private String generateSlug(String title) {
-        // Bước 1: Chuẩn hóa chuỗi, loại bỏ dấu và chuyển thành chữ thường
-        String normalizedTitle = Normalizer.normalize(title, Normalizer.Form.NFD);
-        String slug = Pattern.compile("\\p{InCombiningDiacriticalMarks}+").matcher(normalizedTitle).replaceAll("");
-        // Bước 2: Chuyển đổi thành chữ thường, loại bỏ ký tự đặc biệt, và thay thế khoảng trắng bằng dấu gạch ngang
-        slug = slug.toLowerCase().trim().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
-        return slug;
+    // Method to increment view count
+    public void incrementViewCount() {
+        this.viewCount++;
     }
 
-    private String generateExcerpt(String content) {
-        // Loại bỏ URL hình ảnh hoặc các URL khác
-        String plainTextContent = content.replaceAll("http[s]?://\\S+\\.(png|jpg|jpeg|gif|svg)", "");
-        // Cắt đoạn trích theo độ dài
-        return plainTextContent.length() > 200 ? plainTextContent.substring(0, 200) + "..." : plainTextContent;
+    // Custom setter to ensure revisionCount is not negative
+    public void setRevisionCount(int revisionCount) {
+        if (revisionCount < 0) {
+            throw new IllegalArgumentException("Revision count cannot be negative");
+        }
+        this.revisionCount = revisionCount;
+    }
+
+    // Method to increment revision count
+    public void incrementRevisionCount() {
+        this.revisionCount++;
     }
 }

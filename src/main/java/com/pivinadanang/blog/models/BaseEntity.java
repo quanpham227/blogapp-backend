@@ -32,5 +32,4 @@ public class BaseEntity {
         updatedAt = LocalDateTime.now();
     }
 
-
 }

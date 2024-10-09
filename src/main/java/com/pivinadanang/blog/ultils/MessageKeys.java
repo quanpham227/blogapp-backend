@@ -19,6 +19,7 @@ public class MessageKeys {
     public static final String UPDATE_POST_SUCCESSFULLY = "post.update_post.update_successfully";
     public static final String GET_POST_SUCCESSFULLY = "post.get_post.get_successfully";
     public static final String INSERT_POST_ALREADY_EXISTS = "post.create_post.create_already_exists";
+    public static final String INSERT_POST_THUMBNAIL_REQUIRED = "post.create_post.thumbnail_required";
 
 
     public static final String GET_CLIENT_SUCCESSFULLY = "client.get_client.get_successfully";

@@ -2,5 +2,5 @@ package com.pivinadanang.blog.enums;
 
 public enum PostStatus {
 
-        published, draft, deleted,
+        published, draft, deleted, pending
 }

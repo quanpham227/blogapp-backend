@@ -2,6 +2,9 @@ package com.pivinadanang.blog.responses.post;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pivinadanang.blog.models.PostEntity;
 import com.pivinadanang.blog.responses.BaseResponse;
+import com.pivinadanang.blog.responses.MetaResponse;
+import com.pivinadanang.blog.responses.category.CategoryResponse;
+import com.pivinadanang.blog.responses.user.UserResponse;
 import lombok.*;
 
 @Getter
@@ -25,14 +28,23 @@ public class PostResponse extends BaseResponse {
     // Thêm trường totalPages
     private int totalPages;
 
-    @JsonProperty("category_id")
-    private Long categoryId;
-
-    @JsonProperty("category_name")
-    private String categoryName;
+    private CategoryResponse category;
 
     private String status;
 
+    @JsonProperty("author_name")
+   private String authorName;
+
+   @JsonProperty("profile_image")
+   private String profileImage;
+
+    private MetaResponse meta;
+
+    @JsonProperty("favorite_count")
+    private Long favoriteCount;
+
+    @JsonProperty("comment_count")
+    private Long commentCount;
 
     public static PostResponse fromPost (PostEntity post){
         PostResponse postResponse = PostResponse.builder()
@@ -43,8 +55,10 @@ public class PostResponse extends BaseResponse {
                 .excerpt(post.getExcerpt())
                 .thumbnailUrl(post.getThumbnail())
                 .status(post.getStatus().name())
-                .categoryId(post.getCategory().getId())
-                .categoryName(post.getCategory().getName())
+                .category(CategoryResponse.fromCategory(post.getCategory()))
+                .authorName(post.getUser().getFullName())
+                .profileImage(post.getUser().getProfileImage())
+                .meta(MetaResponse.fromMeta(post.getMeta()))
                 .build();
         postResponse.setCreatedAt(post.getCreatedAt());
         postResponse.setUpdatedAt(post.getUpdatedAt());

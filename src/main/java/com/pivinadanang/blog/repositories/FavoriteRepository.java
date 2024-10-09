@@ -8,5 +8,7 @@ import org.springframework.stereotype.Repository;
 public interface FavoriteRepository extends JpaRepository<FavouriteEntity, Long> {
     boolean existsByUserIdAndPostId(Long userId, Long productId);
     FavouriteEntity findByUserIdAndPostId(Long userId, Long prostId);
+
+    Long countByPostId(Long postId);
 }
 

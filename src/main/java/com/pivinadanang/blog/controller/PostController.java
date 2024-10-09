@@ -5,6 +5,7 @@ import com.github.javafaker.Faker;
 import com.pivinadanang.blog.components.LocalizationUtils;
 import com.pivinadanang.blog.dtos.PostDTO;
 import com.pivinadanang.blog.dtos.UpdatePostDTO;
+import com.pivinadanang.blog.enums.PostStatus;
 import com.pivinadanang.blog.models.PostEntity;
 import com.pivinadanang.blog.repositories.PostRepository;
 import com.pivinadanang.blog.responses.ResponseObject;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,8 +30,12 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @RestController
 @RequestMapping("${api.prefix}/posts")
@@ -64,6 +70,13 @@ public class PostController {
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
+        if(postDTO.getThumbnail() == null || postDTO.getThumbnail().isEmpty()){
+            return ResponseEntity.badRequest()
+                    .body(ResponseObject.builder()
+                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_THUMBNAIL_REQUIRED))
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
 
         PostResponse postResponse = postService.createPost(postDTO);
         return ResponseEntity.ok(ResponseObject.builder()
@@ -74,10 +87,10 @@ public class PostController {
     }
     @GetMapping("/details/{id}")
     public ResponseEntity<ResponseObject> getPostById(@PathVariable Long id) throws Exception {
-        PostEntity existingPost = postService.getPostById(id);
+        PostResponse existingPost = postService.getPostById(id);
         return ResponseEntity.ok(ResponseObject.builder()
                 .status(HttpStatus.OK)
-                .data(PostResponse.fromPost(existingPost))
+                .data(existingPost)
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
                 .build());
     }
@@ -120,46 +133,31 @@ public class PostController {
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "0", name = "category_id") Long categoryId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int limit) throws JsonProcessingException {
-        int totalPages = 0;
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) PostStatus status,
+            @RequestParam(required = false, name = "created_at") @DateTimeFormat(pattern = "yyyy-MM") YearMonth createdAt)
+            throws JsonProcessingException {
         // Tạo Pageable từ thông tin trang và giới hạn
-        PageRequest pageRequest = PageRequest.of(page, limit,
-                Sort.by("createdAt").descending()
-        );
-        logger.info(String.format("keyword: %s, categoryId: %d, page: %d, limit: %d", keyword, categoryId, page, limit));
-        List<PostResponse> postResponses = postRedisService.getAllPosts(keyword, categoryId, pageRequest);
-        if (postResponses!=null && !postResponses.isEmpty()) {
-            totalPages = postResponses.get(0).getTotalPages();
-        }
-        if(postResponses == null){
-            Page<PostResponse> postPage = postService.getAllPosts( keyword, categoryId, pageRequest);
-            // Lấy tổng số trang
-            totalPages = postPage.getTotalPages();
+        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by("createdAt").descending());
+        List<PostResponse> postResponses = postRedisService.getAllPosts(keyword, categoryId, status, createdAt, pageRequest);
+
+        if (postResponses == null || postResponses.isEmpty()) {
+            Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, createdAt, pageRequest);
             postResponses = postPage.getContent();
-            // Bổ sung totalPages vào các đối tượng ProductResponse
-            for (PostResponse posts : postResponses) {
-                posts.setTotalPages(totalPages);
-            }
-            postRedisService.saveAllPosts(
-                    postResponses,
-                    keyword,
-                    categoryId,
-                    pageRequest
-            );
+            int totalPages = postPage.getTotalPages();
+            postResponses.forEach(post -> post.setTotalPages(totalPages));
+            postRedisService.saveAllPosts(postResponses, keyword, categoryId, status, createdAt, pageRequest);
         }
-        PostListResponse postListResponse = PostListResponse
-                .builder()
+        PostListResponse postListResponse = PostListResponse.builder()
                 .posts(postResponses)
-                .totalPages(totalPages)
+                .totalPages(postResponses.isEmpty() ? 0 : postResponses.get(0).getTotalPages())
                 .build();
 
         return ResponseEntity.ok(ResponseObject.builder()
-                        .message("Get posts successfully")
-                        .status(HttpStatus.OK)
-                        .data(postListResponse)
-                        .build()
-        );
-
+                .message("Get posts successfully")
+                .status(HttpStatus.OK)
+                .data(postListResponse)
+                .build());
 
     }
 
@@ -259,4 +257,27 @@ public class PostController {
                 .data(monthYears)
                 .build());
     }
+
+
+
+    @GetMapping("/counts")
+    public ResponseEntity<ResponseObject> getPostStatusCounts() {
+        try {
+            Map<PostStatus, Long> postCounts = postService.getPostCountsByStatus();
+
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .data(postCounts)
+                    .message("Successfully retrieved post counts.")
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .message("Error retrieving post counts: " + e.getMessage())
+                            .build());
+        }
+    }
+
+
 }

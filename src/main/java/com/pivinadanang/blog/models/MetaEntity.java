@@ -15,10 +15,6 @@ public class MetaEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "post_id", nullable = false)
-    private PostEntity post;
-
     @Column(name = "meta_title", length = 255)
     private String metaTitle;
 
@@ -36,4 +32,5 @@ public class MetaEntity extends BaseEntity {
 
     @Column(name = "og_image", length = 255)
     private String ogImage;
+
 }

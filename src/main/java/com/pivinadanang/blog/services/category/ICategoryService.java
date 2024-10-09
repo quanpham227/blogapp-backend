@@ -14,4 +14,6 @@ public interface ICategoryService {
     CategoryEntity deleteCategory(long id) throws Exception;
 
     boolean existsCategoryByName(String name);
+
+    List<CategoryResponse> getTopCategoriesByPostCount(int limit);
 }
