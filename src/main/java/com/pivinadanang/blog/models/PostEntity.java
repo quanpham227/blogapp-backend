@@ -53,6 +53,10 @@ public class PostEntity extends BaseEntity{
     @Column(name = "view_count")
     private int viewCount = 0;
 
+
+    @Column(name = "ratings_count")
+    private int ratings_count = 0;
+
     @ManyToOne
     @JoinColumn(name = "category_id")
     @JsonBackReference
@@ -74,11 +78,20 @@ public class PostEntity extends BaseEntity{
             orphanRemoval = true,
             cascade = CascadeType.ALL,
             fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<FavouriteEntity> favorites = new ArrayList<>();
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "meta_id", referencedColumnName = "id")
     private MetaEntity meta;
+
+    @OneToMany(mappedBy = "post",
+            orphanRemoval = true,
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List<RatingEntity> ratings;
+
 
     @ManyToMany
     @JoinTable(
