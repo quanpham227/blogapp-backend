@@ -4,7 +4,6 @@ import com.pivinadanang.blog.models.PostEntity;
 import com.pivinadanang.blog.responses.BaseResponse;
 import com.pivinadanang.blog.responses.MetaResponse;
 import com.pivinadanang.blog.responses.category.CategoryResponse;
-import com.pivinadanang.blog.responses.user.UserResponse;
 import lombok.*;
 
 @Getter
@@ -40,11 +39,20 @@ public class PostResponse extends BaseResponse {
 
     private MetaResponse meta;
 
-    @JsonProperty("favorite_count")
-    private Long favoriteCount;
+    @JsonProperty("ratings_count")
+    private int ratingsCount;
 
     @JsonProperty("comment_count")
-    private Long commentCount;
+    private int commentCount;
+
+    @JsonProperty("view_count")
+    private int viewCount;
+
+    @JsonProperty("visibility")
+    private String visibility;
+
+    @JsonProperty("revision_count")
+    private int revisionCount;
 
     public static PostResponse fromPost (PostEntity post){
         PostResponse postResponse = PostResponse.builder()
@@ -59,6 +67,11 @@ public class PostResponse extends BaseResponse {
                 .authorName(post.getUser().getFullName())
                 .profileImage(post.getUser().getProfileImage())
                 .meta(MetaResponse.fromMeta(post.getMeta()))
+                .commentCount(post.getCommentCount())
+                .ratingsCount(post.getRatingsCount())
+                .viewCount(post.getViewCount())
+                .visibility(post.getVisibility().name())
+                .revisionCount(post.getRevisionCount())
                 .build();
         postResponse.setCreatedAt(post.getCreatedAt());
         postResponse.setUpdatedAt(post.getUpdatedAt());

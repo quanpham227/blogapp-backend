@@ -21,7 +21,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ClientService implements IClientService{
     private final ClientRepository clientRepository;
-    private final ICloudinaryService iCloudinaryService;
     private final ImageRepository imageRepository;
 
     @Override

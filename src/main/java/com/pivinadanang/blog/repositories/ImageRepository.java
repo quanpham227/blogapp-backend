@@ -27,4 +27,7 @@ public interface ImageRepository extends JpaRepository<ImageEntity, Long> {
 
     @Query("SELECT i FROM ImageEntity i WHERE i.publicId = :publicId")
     Optional<ImageEntity> findByPublicId(String publicId);
+
+    Optional<ImageEntity> findByImageUrl(String imageUrl);
+
 }

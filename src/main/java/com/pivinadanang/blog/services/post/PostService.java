@@ -1,13 +1,11 @@
 package com.pivinadanang.blog.services.post;
 
 import com.pivinadanang.blog.dtos.PostDTO;
+import com.pivinadanang.blog.dtos.TagDTO;
 import com.pivinadanang.blog.dtos.UpdatePostDTO;
 import com.pivinadanang.blog.enums.PostStatus;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
-import com.pivinadanang.blog.models.CategoryEntity;
-import com.pivinadanang.blog.models.MetaEntity;
-import com.pivinadanang.blog.models.PostEntity;
-import com.pivinadanang.blog.models.UserEntity;
+import com.pivinadanang.blog.models.*;
 import com.pivinadanang.blog.repositories.*;
 import com.pivinadanang.blog.responses.post.PostResponse;
 import lombok.RequiredArgsConstructor;
@@ -18,12 +16,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -37,6 +35,8 @@ public class PostService implements IPostService {
     private final PostUtilityService postUtilityService;
     private final FavoriteRepository favouriteRepository;
     private final CommentRepository commentRepository;
+    private final TagRepository tagRepository;
+    private final ImageRepository imageRepository;
     @Override
     @Transactional
     public PostResponse createPost(PostDTO postDTO) throws DataNotFoundException {
@@ -71,10 +71,53 @@ public class PostService implements IPostService {
                 .excerpt(postUtilityService.generateExcerpt(postDTO.getContent()))
                 .thumbnail(postDTO.getThumbnail())
                 .status(postDTO.getStatus())
+                .visibility(postDTO.getVisibility())
                 .user(user)
                 .meta(meta)
+                .revisionCount(0)
+                .viewCount(0)
+                .ratingsCount(0)
+                .commentCount(0)
                 .category(existingCategory)
                 .build();
+
+        // Xử lý các thẻ (tags)
+        Set<TagEntity> tags = new HashSet<>();
+        for (TagDTO tagDTO : postDTO.getTags()) {
+            TagEntity tag = tagRepository.findByName(tagDTO.getName())
+                    .orElseGet(() -> tagRepository.save(new TagEntity(tagDTO.getName())));
+            tags.add(tag);
+        }
+        newPost.setTags(tags);
+
+        // Kiểm tra và cập nhật thuộc tính thumbnail và public_id
+        if (postDTO.getPublicId() != null && !postDTO.getPublicId().isEmpty()) {
+            ImageEntity imageEntity = imageRepository.findByPublicId(postDTO.getPublicId())
+                    .orElseThrow(() -> new RuntimeException("Image not found"));
+
+            // Cập nhật thuộc tính isUsed và usageCount
+            imageEntity.setIsUsed(true);
+            imageEntity.setUsageCount(imageEntity.getUsageCount() + 1);
+
+            // Lưu thay đổi vào cơ sở dữ liệu
+            imageRepository.save(imageEntity);
+        }
+
+        // Phân tích nội dung bài viết để tìm các URL hình ảnh
+        List<String> imageUrls = extractImageUrls(postDTO.getContent());
+
+        // Cập nhật trạng thái của các hình ảnh trong nội dung bài viết
+        for (String imageUrl : imageUrls) {
+            ImageEntity imageEntity = imageRepository.findByImageUrl(imageUrl)
+                    .orElseThrow(() -> new RuntimeException("Image not found for URL: " + imageUrl));
+
+            // Cập nhật thuộc tính isUsed và usageCount
+            imageEntity.setIsUsed(true);
+            imageEntity.setUsageCount(imageEntity.getUsageCount() + 1);
+
+            // Lưu thay đổi vào cơ sở dữ liệu
+            imageRepository.save(imageEntity);
+        }
         // Lưu bài viết mới vào cơ sở dữ liệu
         PostEntity savedPostEntity = postRepository.save(newPost);
         return PostResponse.fromPost(savedPostEntity);
@@ -82,16 +125,9 @@ public class PostService implements IPostService {
 
     @Override
     public PostResponse getPostById(long postId) throws Exception {
-
         PostEntity post =   postRepository.findPostById(postId)
                 .orElseThrow(() -> new DataNotFoundException("Cannot find post with id " + postId));
-
-        Long favoriteCount = favouriteRepository.countByPostId(postId);
-        Long commentCount = commentRepository.countByPostId(postId);
-
         PostResponse postResponse = PostResponse.fromPost(post);
-        postResponse.setFavoriteCount(favoriteCount);
-        postResponse.setCommentCount(commentCount);
         return postResponse;
     }
 
@@ -109,13 +145,6 @@ public class PostService implements IPostService {
             // Tạo PostResponse từ PostEntity
             PostResponse postResponse = PostResponse.fromPost(post);
 
-            // Đếm số lượng yêu thích (favorites) cho bài viết
-            Long favoriteCount = favouriteRepository.countByPostId(post.getId());
-            Long commentCount = commentRepository.countByPostId(post.getId());
-
-            // Gán giá trị favoriteCount và commentCount vào PostResponse
-            postResponse.setFavoriteCount(favoriteCount);
-            postResponse.setCommentCount(commentCount);
 
             return postResponse;
         });
@@ -127,7 +156,7 @@ public class PostService implements IPostService {
     @Transactional
     public PostResponse updatePost(long id, UpdatePostDTO postDTO) throws Exception {
         // Lấy thông tin bài viết hiện có
-        PostEntity existingPost =   postRepository.findPostById(id)
+        PostEntity existingPost = postRepository.findPostById(id)
                 .orElseThrow(() -> new DataNotFoundException("Cannot find post with id " + id));
 
         // Cập nhật Category nếu có
@@ -153,7 +182,18 @@ public class PostService implements IPostService {
         }
 
         if (postDTO.getThumbnail() != null && !postDTO.getThumbnail().isEmpty()) {
-            existingPost.setThumbnail(postDTO.getThumbnail());
+            // Kiểm tra và cập nhật trạng thái của hình ảnh cũ
+            if (!postDTO.getThumbnail().equals(existingPost.getThumbnail())) {
+                ImageEntity oldImageEntity = imageRepository.findByImageUrl(existingPost.getThumbnail())
+                        .orElseThrow(() -> new RuntimeException("Old image not found"));
+                oldImageEntity.setUsageCount(oldImageEntity.getUsageCount() - 1);
+                if (oldImageEntity.getUsageCount() == 0) {
+                    oldImageEntity.setIsUsed(false);
+                }
+                imageRepository.save(oldImageEntity);
+
+                existingPost.setThumbnail(postDTO.getThumbnail());
+            }
         }
 
         // Cập nhật thông tin Meta nếu có thay đổi
@@ -176,12 +216,62 @@ public class PostService implements IPostService {
             meta.setMetaKeywords(postUtilityService.generateKeywords(postDTO.getTitle()));
         }
 
+        // Xử lý các thẻ (tags)
+        if (postDTO.getTags() != null) {
+            Set<TagEntity> tags = new HashSet<>();
+            for (TagDTO tagDTO : postDTO.getTags()) {
+                TagEntity tag = tagRepository.findByName(tagDTO.getName())
+                        .orElseGet(() -> tagRepository.save(new TagEntity(tagDTO.getName())));
+                tags.add(tag);
+            }
+            existingPost.setTags(tags);
+        }
+
+        // Kiểm tra và cập nhật thuộc tính thumbnail và public_id
+        if (postDTO.getPublicId() != null && !postDTO.getPublicId().isEmpty()) {
+            ImageEntity imageEntity = imageRepository.findByPublicId(postDTO.getPublicId())
+                    .orElseThrow(() -> new RuntimeException("Image not found"));
+
+            // Cập nhật thuộc tính isUsed và usageCount
+            imageEntity.setIsUsed(true);
+            imageEntity.setUsageCount(imageEntity.getUsageCount() + 1);
+
+            // Lưu thay đổi vào cơ sở dữ liệu
+            imageRepository.save(imageEntity);
+        }
+
+        // Phân tích nội dung bài viết để tìm các URL hình ảnh
+        List<String> newImageUrls = extractImageUrls(postDTO.getContent());
+        List<String> oldImageUrls = extractImageUrls(existingPost.getContent());
+
+        // Cập nhật trạng thái của các hình ảnh trong nội dung bài viết
+        for (String imageUrl : oldImageUrls) {
+            if (!newImageUrls.contains(imageUrl)) {
+                ImageEntity oldImageEntity = imageRepository.findByImageUrl(imageUrl)
+                        .orElseThrow(() -> new RuntimeException("Old image not found for URL: " + imageUrl));
+                oldImageEntity.setUsageCount(oldImageEntity.getUsageCount() - 1);
+                if (oldImageEntity.getUsageCount() == 0) {
+                    oldImageEntity.setIsUsed(false);
+                }
+                imageRepository.save(oldImageEntity);
+            }
+        }
+
+        for (String imageUrl : newImageUrls) {
+            ImageEntity newImageEntity = imageRepository.findByImageUrl(imageUrl)
+                    .orElseThrow(() -> new RuntimeException("New image not found for URL: " + imageUrl));
+            newImageEntity.setIsUsed(true);
+            newImageEntity.setUsageCount(newImageEntity.getUsageCount() + 1);
+            imageRepository.save(newImageEntity);
+        }
+
         // Lưu bài viết đã cập nhật vào cơ sở dữ liệu
         PostEntity updatedPost = postRepository.save(existingPost);
 
         // Trả về đối tượng PostResponse
         return PostResponse.fromPost(updatedPost);
     }
+
 
     @Override
     @Transactional
@@ -227,6 +317,15 @@ public class PostService implements IPostService {
 
         return postCounts;
     }
-
+    // Phương thức để phân tích nội dung bài viết và tìm các URL hình ảnh
+    private List<String> extractImageUrls(String content) {
+        List<String> imageUrls = new ArrayList<>();
+        Pattern pattern = Pattern.compile("<img[^>]+src=\"([^\"]+)\"");
+        Matcher matcher = pattern.matcher(content);
+        while (matcher.find()) {
+            imageUrls.add(matcher.group(1));
+        }
+        return imageUrls;
+    }
 
 }

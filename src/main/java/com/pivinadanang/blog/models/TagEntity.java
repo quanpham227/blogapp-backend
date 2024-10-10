@@ -2,6 +2,7 @@ package com.pivinadanang.blog.models;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
 import jakarta.persistence.*;
 
@@ -15,6 +16,7 @@ import java.util.*;
 @Getter
 @Setter
 @Builder
+
 public class TagEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,4 +27,9 @@ public class TagEntity{
 
     @ManyToMany(mappedBy = "tags")
     private Set<PostEntity> posts = new HashSet<>();
+
+    // Constructor nhận tham số name
+    public TagEntity(String name) {
+        this.name = name;
+    }
 }

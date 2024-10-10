@@ -139,20 +139,29 @@ public class PostController {
             throws JsonProcessingException {
         // Tạo Pageable từ thông tin trang và giới hạn
         PageRequest pageRequest = PageRequest.of(page, limit, Sort.by("createdAt").descending());
-        List<PostResponse> postResponses = postRedisService.getAllPosts(keyword, categoryId, status, createdAt, pageRequest);
+//        List<PostResponse> postResponses = postRedisService.getAllPosts(keyword, categoryId, status, createdAt, pageRequest);
+//
+//        if (postResponses == null || postResponses.isEmpty()) {
+//            Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, createdAt, pageRequest);
+//            postResponses = postPage.getContent();
+//            int totalPages = postPage.getTotalPages();
+//            postResponses.forEach(post -> post.setTotalPages(totalPages));
+//            postRedisService.saveAllPosts(postResponses, keyword, categoryId, status, createdAt, pageRequest);
+//        }
+//        PostListResponse postListResponse = PostListResponse.builder()
+//                .posts(postResponses)
+//                .totalPages(postResponses.isEmpty() ? 0 : postResponses.get(0).getTotalPages())
+//                .build();
 
-        if (postResponses == null || postResponses.isEmpty()) {
-            Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, createdAt, pageRequest);
-            postResponses = postPage.getContent();
-            int totalPages = postPage.getTotalPages();
-            postResponses.forEach(post -> post.setTotalPages(totalPages));
-            postRedisService.saveAllPosts(postResponses, keyword, categoryId, status, createdAt, pageRequest);
-        }
+
+        Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, createdAt, pageRequest);
+        List<PostResponse> postResponses = postPage.getContent();
+        int totalPages = postPage.getTotalPages();
+        postResponses.forEach(post -> post.setTotalPages(totalPages));
         PostListResponse postListResponse = PostListResponse.builder()
                 .posts(postResponses)
-                .totalPages(postResponses.isEmpty() ? 0 : postResponses.get(0).getTotalPages())
+                .totalPages(totalPages)
                 .build();
-
         return ResponseEntity.ok(ResponseObject.builder()
                 .message("Get posts successfully")
                 .status(HttpStatus.OK)

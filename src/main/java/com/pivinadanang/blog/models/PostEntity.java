@@ -53,15 +53,16 @@ public class PostEntity extends BaseEntity{
     @Column(name = "view_count")
     private int viewCount = 0;
 
-
     @Column(name = "ratings_count")
-    private int ratings_count = 0;
+    private int ratingsCount = 0;
+
+    @Column(name = "comment_count")
+    private int commentCount = 0;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
     @JsonBackReference
     private CategoryEntity category;
-
 
     @ManyToOne
     @JoinColumn(name = "user_id")
