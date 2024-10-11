@@ -50,5 +50,5 @@ public class UpdatePostDTO {
     @JsonProperty("comment_count")
     private Integer commentCount;
 
-
+    private Boolean priority;
 }

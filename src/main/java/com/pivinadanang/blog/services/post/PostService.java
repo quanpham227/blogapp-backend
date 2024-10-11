@@ -37,6 +37,8 @@ public class PostService implements IPostService {
     private final CommentRepository commentRepository;
     private final TagRepository tagRepository;
     private final ImageRepository imageRepository;
+
+
     @Override
     @Transactional
     public PostResponse createPost(PostDTO postDTO) throws DataNotFoundException {
@@ -55,14 +57,7 @@ public class PostService implements IPostService {
 
 
         // Tạo MetaEntity từ các thuộc tính của PostEntity
-        MetaEntity meta = MetaEntity.builder()
-                .metaTitle(postDTO.getTitle())
-                .metaDescription(postUtilityService.generateExcerpt(postDTO.getContent()))
-                .metaKeywords(postUtilityService.generateKeywords(postDTO.getTitle()))
-                .ogTitle(postDTO.getTitle())
-                .ogDescription(postUtilityService.generateExcerpt(postDTO.getContent()))
-                .ogImage(postDTO.getThumbnail())
-                .build();
+        MetaEntity meta = createMetaEntity(postDTO);
         // Tạo PostEntity từ PostDTO và các thông tin liên quan
         PostEntity newPost = PostEntity.builder()
                 .title(postDTO.getTitle())
@@ -78,46 +73,23 @@ public class PostService implements IPostService {
                 .viewCount(0)
                 .ratingsCount(0)
                 .commentCount(0)
+                .priority(0)
                 .category(existingCategory)
                 .build();
 
         // Xử lý các thẻ (tags)
-        Set<TagEntity> tags = new HashSet<>();
-        for (TagDTO tagDTO : postDTO.getTags()) {
-            TagEntity tag = tagRepository.findByName(tagDTO.getName())
-                    .orElseGet(() -> tagRepository.save(new TagEntity(tagDTO.getName())));
-            tags.add(tag);
-        }
+        Set<TagEntity> tags = processTags(postDTO.getTags());
         newPost.setTags(tags);
 
-        // Kiểm tra và cập nhật thuộc tính thumbnail và public_id
-        if (postDTO.getPublicId() != null && !postDTO.getPublicId().isEmpty()) {
-            ImageEntity imageEntity = imageRepository.findByPublicId(postDTO.getPublicId())
-                    .orElseThrow(() -> new RuntimeException("Image not found"));
-
-            // Cập nhật thuộc tính isUsed và usageCount
-            imageEntity.setIsUsed(true);
-            imageEntity.setUsageCount(imageEntity.getUsageCount() + 1);
-
-            // Lưu thay đổi vào cơ sở dữ liệu
-            imageRepository.save(imageEntity);
-        }
+        // Cập nhật trạng thái của hình ảnh dựa trên publicId
+        updateImageUsageByPublicId(postDTO.getPublicId());
 
         // Phân tích nội dung bài viết để tìm các URL hình ảnh
         List<String> imageUrls = extractImageUrls(postDTO.getContent());
 
         // Cập nhật trạng thái của các hình ảnh trong nội dung bài viết
-        for (String imageUrl : imageUrls) {
-            ImageEntity imageEntity = imageRepository.findByImageUrl(imageUrl)
-                    .orElseThrow(() -> new RuntimeException("Image not found for URL: " + imageUrl));
+        updateImageUsageForContent(postDTO.getContent(), true);
 
-            // Cập nhật thuộc tính isUsed và usageCount
-            imageEntity.setIsUsed(true);
-            imageEntity.setUsageCount(imageEntity.getUsageCount() + 1);
-
-            // Lưu thay đổi vào cơ sở dữ liệu
-            imageRepository.save(imageEntity);
-        }
         // Lưu bài viết mới vào cơ sở dữ liệu
         PostEntity savedPostEntity = postRepository.save(newPost);
         return PostResponse.fromPost(savedPostEntity);
@@ -180,6 +152,11 @@ public class PostService implements IPostService {
         if (postDTO.getStatus() != null) {
             existingPost.setStatus(postDTO.getStatus());
         }
+        // Kiểm tra và cập nhật giá trị priority
+        if (Boolean.TRUE.equals(postDTO.getPriority())) {
+            int maxPriority = postRepository.findMaxPriority();
+            existingPost.setPriority(maxPriority + 1);
+        }
 
         if (postDTO.getThumbnail() != null && !postDTO.getThumbnail().isEmpty()) {
             // Kiểm tra và cập nhật trạng thái của hình ảnh cũ
@@ -199,33 +176,14 @@ public class PostService implements IPostService {
         // Cập nhật thông tin Meta nếu có thay đổi
         MetaEntity meta = existingPost.getMeta();
         if (meta != null) {
-            if (postDTO.getTitle() != null && !postDTO.getTitle().isEmpty()) {
-                meta.setMetaTitle(postDTO.getTitle());
-                meta.setOgTitle(postDTO.getTitle());
-            }
-
-            if (postDTO.getContent() != null && !postDTO.getContent().isEmpty()) {
-                meta.setMetaDescription(postUtilityService.generateExcerpt(postDTO.getContent()));
-                meta.setOgDescription(postUtilityService.generateExcerpt(postDTO.getContent()));
-            }
-
-            if (postDTO.getThumbnail() != null && !postDTO.getThumbnail().isEmpty()) {
-                meta.setOgImage(postDTO.getThumbnail());
-            }
-
-            meta.setMetaKeywords(postUtilityService.generateKeywords(postDTO.getTitle()));
+            updateMetaEntity(meta, postDTO);
         }
-
         // Xử lý các thẻ (tags)
         if (postDTO.getTags() != null) {
-            Set<TagEntity> tags = new HashSet<>();
-            for (TagDTO tagDTO : postDTO.getTags()) {
-                TagEntity tag = tagRepository.findByName(tagDTO.getName())
-                        .orElseGet(() -> tagRepository.save(new TagEntity(tagDTO.getName())));
-                tags.add(tag);
-            }
+            Set<TagEntity> tags = processTags(postDTO.getTags());
             existingPost.setTags(tags);
         }
+
 
         // Kiểm tra và cập nhật thuộc tính thumbnail và public_id
         if (postDTO.getPublicId() != null && !postDTO.getPublicId().isEmpty()) {
@@ -245,26 +203,8 @@ public class PostService implements IPostService {
         List<String> oldImageUrls = extractImageUrls(existingPost.getContent());
 
         // Cập nhật trạng thái của các hình ảnh trong nội dung bài viết
-        for (String imageUrl : oldImageUrls) {
-            if (!newImageUrls.contains(imageUrl)) {
-                ImageEntity oldImageEntity = imageRepository.findByImageUrl(imageUrl)
-                        .orElseThrow(() -> new RuntimeException("Old image not found for URL: " + imageUrl));
-                oldImageEntity.setUsageCount(oldImageEntity.getUsageCount() - 1);
-                if (oldImageEntity.getUsageCount() == 0) {
-                    oldImageEntity.setIsUsed(false);
-                }
-                imageRepository.save(oldImageEntity);
-            }
-        }
-
-        for (String imageUrl : newImageUrls) {
-            ImageEntity newImageEntity = imageRepository.findByImageUrl(imageUrl)
-                    .orElseThrow(() -> new RuntimeException("New image not found for URL: " + imageUrl));
-            newImageEntity.setIsUsed(true);
-            newImageEntity.setUsageCount(newImageEntity.getUsageCount() + 1);
-            imageRepository.save(newImageEntity);
-        }
-
+        updateImageUsageForContent(existingPost.getContent(), false);
+        updateImageUsageForContent(postDTO.getContent(), true);
         // Lưu bài viết đã cập nhật vào cơ sở dữ liệu
         PostEntity updatedPost = postRepository.save(existingPost);
 
@@ -327,5 +267,69 @@ public class PostService implements IPostService {
         }
         return imageUrls;
     }
+    private Set<TagEntity> processTags(Set<TagDTO> tagDTOs) {
+        Set<TagEntity> tags = new HashSet<>();
+        for (TagDTO tagDTO : tagDTOs) {
+            String slug = postUtilityService.generateSlug(tagDTO.getName());
+            TagEntity tag = tagRepository.findByName(tagDTO.getName())
+                    .orElseGet(() -> tagRepository.save(new TagEntity(tagDTO.getName(), slug)));
+            tags.add(tag);
+        }
+        return tags;
+    }
+    private void updateImageUsage(String imageUrl, boolean isUsed) {
+        ImageEntity imageEntity = imageRepository.findByImageUrl(imageUrl)
+                .orElseThrow(() -> new RuntimeException("Image not found for URL: " + imageUrl));
+        imageEntity.setIsUsed(isUsed);
+        imageEntity.setUsageCount(imageEntity.getUsageCount() + (isUsed ? 1 : -1));
+        imageRepository.save(imageEntity);
+    }
 
+    private void updateImageUsageForContent(String content, boolean isUsed) {
+        List<String> imageUrls = extractImageUrls(content);
+        for (String imageUrl : imageUrls) {
+            updateImageUsage(imageUrl, isUsed);
+        }
+    }
+    private MetaEntity createMetaEntity(PostDTO postDTO) {
+        return MetaEntity.builder()
+                .metaTitle(postDTO.getTitle())
+                .metaDescription(postUtilityService.generateExcerpt(postDTO.getContent()))
+                .metaKeywords(postUtilityService.generateKeywords(postDTO.getTitle()))
+                .ogTitle(postDTO.getTitle())
+                .ogDescription(postUtilityService.generateExcerpt(postDTO.getContent()))
+                .ogImage(postDTO.getThumbnail())
+                .build();
+    }
+
+    private void updateMetaEntity(MetaEntity meta, UpdatePostDTO postDTO) {
+        if (postDTO.getTitle() != null && !postDTO.getTitle().isEmpty()) {
+            meta.setMetaTitle(postDTO.getTitle());
+            meta.setOgTitle(postDTO.getTitle());
+        }
+
+        if (postDTO.getContent() != null && !postDTO.getContent().isEmpty()) {
+            meta.setMetaDescription(postUtilityService.generateExcerpt(postDTO.getContent()));
+            meta.setOgDescription(postUtilityService.generateExcerpt(postDTO.getContent()));
+        }
+
+        if (postDTO.getThumbnail() != null && !postDTO.getThumbnail().isEmpty()) {
+            meta.setOgImage(postDTO.getThumbnail());
+        }
+
+        meta.setMetaKeywords(postUtilityService.generateKeywords(postDTO.getTitle()));
+    }
+    private void updateImageUsageByPublicId(String publicId) {
+        if (publicId != null && !publicId.isEmpty()) {
+            ImageEntity imageEntity = imageRepository.findByPublicId(publicId)
+                    .orElseThrow(() -> new RuntimeException("Image not found"));
+
+            // Cập nhật thuộc tính isUsed và usageCount
+            imageEntity.setIsUsed(true);
+            imageEntity.setUsageCount(imageEntity.getUsageCount() + 1);
+
+            // Lưu thay đổi vào cơ sở dữ liệu
+            imageRepository.save(imageEntity);
+        }
+    }
 }

@@ -19,7 +19,7 @@ public class TagResponse {
         TagResponse response = new TagResponse();
         response.setId(tag.getId());
         response.setName(tag.getName());
-//        response.setSlug(tag.getSlug());
+        response.setSlug(tag.getSlug());
         return response;
     }
 }

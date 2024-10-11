@@ -59,6 +59,9 @@ public class PostEntity extends BaseEntity{
     @Column(name = "comment_count")
     private int commentCount = 0;
 
+    @Column(name = "priority")
+    private int priority = 0;
+
     @ManyToOne
     @JoinColumn(name = "category_id")
     @JsonBackReference

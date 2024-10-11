@@ -4,7 +4,11 @@ import com.pivinadanang.blog.models.PostEntity;
 import com.pivinadanang.blog.responses.BaseResponse;
 import com.pivinadanang.blog.responses.MetaResponse;
 import com.pivinadanang.blog.responses.category.CategoryResponse;
+import com.pivinadanang.blog.responses.tag.TagResponse;
 import lombok.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -54,6 +58,11 @@ public class PostResponse extends BaseResponse {
     @JsonProperty("revision_count")
     private int revisionCount;
 
+    private int priority;
+
+    private List<TagResponse> tags;
+
+
     public static PostResponse fromPost (PostEntity post){
         PostResponse postResponse = PostResponse.builder()
                 .id(post.getId())
@@ -72,6 +81,8 @@ public class PostResponse extends BaseResponse {
                 .viewCount(post.getViewCount())
                 .visibility(post.getVisibility().name())
                 .revisionCount(post.getRevisionCount())
+                .priority(post.getPriority())
+                .tags(post.getTags().stream().map(TagResponse::fromTag).collect(Collectors.toList()))
                 .build();
         postResponse.setCreatedAt(post.getCreatedAt());
         postResponse.setUpdatedAt(post.getUpdatedAt());

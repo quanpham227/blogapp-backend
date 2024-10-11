@@ -25,11 +25,15 @@ public class TagEntity{
     @Column(name = "name", unique = true, nullable = false, length = 100)
     private String name;
 
+    @Column(name = "slug", unique = true, nullable = false, length = 100)
+    private String slug;
+
     @ManyToMany(mappedBy = "tags")
     private Set<PostEntity> posts = new HashSet<>();
 
     // Constructor nhận tham số name
-    public TagEntity(String name) {
+    public TagEntity(String name, String slug) {
         this.name = name;
+        this.slug = slug;
     }
 }

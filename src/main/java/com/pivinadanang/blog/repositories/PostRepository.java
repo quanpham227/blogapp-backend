@@ -62,4 +62,6 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     long count ();
 
+    @Query("SELECT COALESCE(MAX(p.priority), 0) FROM PostEntity p")
+    int findMaxPriority();
 }
