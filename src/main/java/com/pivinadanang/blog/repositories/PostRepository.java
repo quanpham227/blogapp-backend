@@ -32,7 +32,8 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
             + "AND (:categoryId = 0 OR p.category.id = :categoryId) "
             + "AND (:status IS NULL OR p.status = :status) "
             + "AND (:startDate IS NULL OR p.createdAt >= :startDate) "
-            + "AND (:endDate IS NULL OR p.createdAt <= :endDate)")
+            + "AND (:endDate IS NULL OR p.createdAt <= :endDate)"
+            + "ORDER BY p.priority DESC")
     Page<PostEntity> searchPosts(@Param("categoryId") Long categoryId,
                                  @Param("keyword") String keyword,
                                  @Param("status") PostStatus status,

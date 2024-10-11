@@ -21,8 +21,14 @@ public class MetaEntity extends BaseEntity {
     @Column(name = "meta_description", columnDefinition = "TEXT")
     private String metaDescription;
 
-    @Column(name = "meta_keywords", length = 255)
-    private String metaKeywords;
+    @Column(name = "viewport", length = 255)
+    private String viewport = "width=device-width, initial-scale=1";
+
+    @Column(name = "robots", length = 255)
+    private String robots = "index, follow";
+
+    @Column(name = "slug", length = 255, unique = true)
+    private String slug;
 
     @Column(name = "og_title", length = 255)
     private String ogTitle;

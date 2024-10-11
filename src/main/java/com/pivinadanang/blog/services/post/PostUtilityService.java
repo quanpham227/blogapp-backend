@@ -16,22 +16,21 @@ public class PostUtilityService {
         return slug;
     }
 
-    public String generateExcerpt(String content) {
+    public String generateExcerpt(String content, int length) {
         // Loại bỏ URL hình ảnh hoặc các URL khác
         String plainTextContent = content.replaceAll("http[s]?://\\S+\\.(png|jpg|jpeg|gif|svg)", "");
         // Cắt đoạn trích theo độ dài
-        return plainTextContent.length() > 200 ? plainTextContent.substring(0, 200) + "..." : plainTextContent;
+        return plainTextContent.length() > length ? plainTextContent.substring(0, length) + "..." : plainTextContent;
     }
 
-    public String generateKeywords(String title) {
-        // Chuẩn hóa chuỗi, loại bỏ dấu
-        String normalizedTitle = Normalizer.normalize(title, Normalizer.Form.NFD);
-        String keywords = Pattern.compile("\\p{InCombiningDiacriticalMarks}+").matcher(normalizedTitle).replaceAll("");
-
-        // Loại bỏ ký tự không phải chữ cái và số, thay thế khoảng trắng bằng dấu cách
-        keywords = keywords.replaceAll("[^a-zA-Z0-9\\s]", "").trim();
-
-        // Thay thế khoảng trắng bằng dấu cách để tạo từ khóa
-        return keywords.replaceAll("\\s+", " ");
+    public String generateMetaDescription(String content) {
+        // Tạo meta description với độ dài tối đa 160 ký tự
+        return generateExcerpt(content, 160);
     }
+
+    public String generateOgDescription(String content) {
+        // Tạo og description với độ dài tối đa 200 ký tự
+        return generateExcerpt(content, 200);
+    }
+
 }

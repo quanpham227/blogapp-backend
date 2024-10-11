@@ -9,6 +9,7 @@ import com.pivinadanang.blog.models.*;
 import com.pivinadanang.blog.repositories.*;
 import com.pivinadanang.blog.responses.post.PostResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,6 +30,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PostService implements IPostService {
+
+    @Value("${app.base-url}")
+    private String baseUrl;
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
@@ -63,7 +67,7 @@ public class PostService implements IPostService {
                 .title(postDTO.getTitle())
                 .content(postDTO.getContent())
                 .slug(postUtilityService.generateSlug(postDTO.getTitle()))
-                .excerpt(postUtilityService.generateExcerpt(postDTO.getContent()))
+                .excerpt(postUtilityService.generateExcerpt(postDTO.getContent(), 200))
                 .thumbnail(postDTO.getThumbnail())
                 .status(postDTO.getStatus())
                 .visibility(postDTO.getVisibility())
@@ -139,15 +143,17 @@ public class PostService implements IPostService {
         }
 
         // Cập nhật thông tin bài viết (title, content, status, thumbnail)
-        if (postDTO.getTitle() != null && !postDTO.getTitle().isEmpty()) {
+        if (postDTO.getTitle() != null && !postDTO.getTitle().isEmpty() && !postDTO.getTitle().equals(existingPost.getTitle())) {
             existingPost.setTitle(postDTO.getTitle());
             existingPost.setSlug(postUtilityService.generateSlug(postDTO.getTitle())); // Cập nhật slug nếu tiêu đề thay đổi
         }
 
+
         if (postDTO.getContent() != null && !postDTO.getContent().isEmpty()) {
             existingPost.setContent(postDTO.getContent());
-            existingPost.setExcerpt(postUtilityService.generateExcerpt(postDTO.getContent())); // Cập nhật excerpt
+            existingPost.setExcerpt(postUtilityService.generateExcerpt(postDTO.getContent(), 200)); // Cập nhật excerpt với độ dài 200 ký tự
         }
+
 
         if (postDTO.getStatus() != null) {
             existingPost.setStatus(postDTO.getStatus());
@@ -292,32 +298,41 @@ public class PostService implements IPostService {
         }
     }
     private MetaEntity createMetaEntity(PostDTO postDTO) {
+        String slug = baseUrl + "/" + postDTO.getTitle().replaceAll("\\s+", "-").toLowerCase();
         return MetaEntity.builder()
                 .metaTitle(postDTO.getTitle())
-                .metaDescription(postUtilityService.generateExcerpt(postDTO.getContent()))
-                .metaKeywords(postUtilityService.generateKeywords(postDTO.getTitle()))
+                .metaDescription(postUtilityService.generateMetaDescription(postDTO.getContent()))
                 .ogTitle(postDTO.getTitle())
-                .ogDescription(postUtilityService.generateExcerpt(postDTO.getContent()))
+                .ogDescription(postUtilityService.generateOgDescription(postDTO.getContent()))
                 .ogImage(postDTO.getThumbnail())
+                .viewport("width=device-width, initial-scale=1.0")
+                .robots("index, follow")
+                .slug(slug)
                 .build();
     }
 
     private void updateMetaEntity(MetaEntity meta, UpdatePostDTO postDTO) {
+        boolean titleChanged = false;
+
         if (postDTO.getTitle() != null && !postDTO.getTitle().isEmpty()) {
             meta.setMetaTitle(postDTO.getTitle());
             meta.setOgTitle(postDTO.getTitle());
+            titleChanged = true;
         }
 
         if (postDTO.getContent() != null && !postDTO.getContent().isEmpty()) {
-            meta.setMetaDescription(postUtilityService.generateExcerpt(postDTO.getContent()));
-            meta.setOgDescription(postUtilityService.generateExcerpt(postDTO.getContent()));
+            meta.setMetaDescription(postUtilityService.generateMetaDescription(postDTO.getContent()));
+            meta.setOgDescription(postUtilityService.generateOgDescription(postDTO.getContent()));
         }
 
         if (postDTO.getThumbnail() != null && !postDTO.getThumbnail().isEmpty()) {
             meta.setOgImage(postDTO.getThumbnail());
         }
 
-        meta.setMetaKeywords(postUtilityService.generateKeywords(postDTO.getTitle()));
+        if (titleChanged) {
+            String slug = baseUrl + "/" + postUtilityService.generateSlug(postDTO.getTitle());
+            meta.setSlug(slug);
+        }
     }
     private void updateImageUsageByPublicId(String publicId) {
         if (publicId != null && !publicId.isEmpty()) {

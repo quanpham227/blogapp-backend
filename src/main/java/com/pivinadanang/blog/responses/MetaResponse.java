@@ -14,23 +14,28 @@ public class MetaResponse extends BaseResponse {
     private String metaTitle;
     @JsonProperty("meta_description")
     private String metaDescription;
-    @JsonProperty("meta_keywords")
-    private String metaKeywords;
     @JsonProperty("og_title")
     private String ogTitle;
     @JsonProperty("og_description")
     private String ogDescription;
     @JsonProperty("og_image")
     private String ogImage;
+    private String viewport;
+    private String robots;
+    private String slug;
+
+
 
     public static MetaResponse fromMeta(MetaEntity meta) {
         MetaResponse metaResponse =  MetaResponse.builder()
                 .metaTitle(meta.getMetaTitle())
                 .metaDescription(meta.getMetaDescription())
-                .metaKeywords(meta.getMetaKeywords())
                 .ogTitle(meta.getOgTitle())
                 .ogDescription(meta.getOgDescription())
                 .ogImage(meta.getOgImage())
+                .viewport(meta.getViewport())
+                .robots(meta.getRobots())
+                .slug(meta.getSlug())
                 .build();
 
         metaResponse.setCreatedAt(meta.getCreatedAt());
