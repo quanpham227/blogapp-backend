@@ -28,10 +28,10 @@ public class PostRedisService implements IPostRedisService{
     @Value("${cache.prefix.recent_posts}")
     private String recentPostCachePrefix;
 
-    private String getKeyFrom(String keyword, Long categoryId, PostStatus status, YearMonth createdAt, PageRequest pageRequest) {
-        int pageNumber = pageRequest.getPageNumber();
-        int pageSize = pageRequest.getPageSize();
-        Sort sort = pageRequest.getSort();
+    private String getKeyFrom(String keyword, Long categoryId, PostStatus status, YearMonth createdAt, Pageable pageable) {
+        int pageNumber = pageable.getPageNumber();
+        int pageSize = pageable.getPageSize();
+        Sort sort = pageable.getSort();
         String sortDirection = sort.getOrderFor("createdAt")
                 .getDirection() == Sort.Direction.ASC ? "asc": "desc";
         String createdAtStr = createdAt != null ? createdAt.format(DateTimeFormatter.ofPattern("yyyy-MM")) : "null";
@@ -57,8 +57,8 @@ public class PostRedisService implements IPostRedisService{
     }
 
     @Override
-    public List<PostResponse> getAllPosts(String keyword, Long categoryId, PostStatus status, YearMonth createdAt, PageRequest pageRequest) throws JsonProcessingException {
-        String key = this.getKeyFrom(keyword, categoryId, status, createdAt, pageRequest);
+    public List<PostResponse> getAllPosts(String keyword, Long categoryId, PostStatus status, YearMonth createdAt, Pageable pageable) throws JsonProcessingException {
+        String key = this.getKeyFrom(keyword, categoryId, status, createdAt, pageable);
         String json = (String) redisTemplate.opsForValue().get(key);
         List<PostResponse> postResponses =
                 json != null ?
@@ -68,15 +68,15 @@ public class PostRedisService implements IPostRedisService{
     }
 
     @Override
-    public void saveAllPosts(List<PostResponse> postResponses, String keyword, Long categoryId,PostStatus status, YearMonth createdAt, PageRequest pageRequest) throws JsonProcessingException {
-        String key = this.getKeyFrom(keyword, categoryId, status, createdAt, pageRequest);
+    public void saveAllPosts(List<PostResponse> postResponses, String keyword, Long categoryId,PostStatus status, YearMonth createdAt, Pageable pageable) throws JsonProcessingException {
+        String key = this.getKeyFrom(keyword, categoryId, status, createdAt, pageable);
         String json = redisObjectMapper.writeValueAsString(postResponses);
         redisTemplate.opsForValue().set(key, json);
     }
 
     @Override
-    public List<PostResponse> getRecentPosts(PageRequest pageRequest) throws JsonProcessingException {
-        String key = String.format("%s:recent:%d:%d", recentPostCachePrefix, pageRequest.getPageNumber(), pageRequest.getPageSize());
+    public List<PostResponse> getRecentPosts(Pageable pageable) throws JsonProcessingException {
+        String key = String.format("%s:recent:%d:%d", recentPostCachePrefix, pageable.getPageNumber(), pageable.getPageSize());
         String json = (String) redisTemplate.opsForValue().get(key);
         List<PostResponse> postResponses =
                 json != null ?
@@ -86,8 +86,8 @@ public class PostRedisService implements IPostRedisService{
     }
 
     @Override
-    public void saveRecentPosts(List<PostResponse> postResponses, PageRequest pageRequest) throws JsonProcessingException {
-        String key = String.format("%s:recent:%d:%d", recentPostCachePrefix, pageRequest.getPageNumber(), pageRequest.getPageSize());
+    public void saveRecentPosts(List<PostResponse> postResponses, Pageable pageable) throws JsonProcessingException {
+        String key = String.format("%s:recent:%d:%d", recentPostCachePrefix, pageable.getPageNumber(), pageable.getPageSize());
         String json = redisObjectMapper.writeValueAsString(postResponses);
         redisTemplate.opsForValue().set(key, json);
     }

@@ -17,14 +17,18 @@ import com.pivinadanang.blog.services.token.ITokenService;
 import com.pivinadanang.blog.services.user.IUserService;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import com.pivinadanang.blog.ultils.ValidationUtils;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
@@ -131,16 +135,19 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<ResponseObject> login (@Valid @RequestBody UserLoginDTO userLoginDTO,
-                                                 HttpServletRequest request
-                                                ) throws Exception{
+                                                 HttpServletRequest request,
+                                                 HttpServletResponse response) throws Exception{
         // Kiểm tra thông tin đăng nhập và sinh token
-
-
             String token = userService.login(userLoginDTO);
             // Lấy thông tin user từ token
             String userAgent = request.getHeader("User-Agent");
             UserEntity userDetail = userService.getUserDetailsFromToken(token);
             Token jwtToken =  tokenService.addToken(userDetail, token, isMobileDevice(userAgent));
+
+            // Thiết lập cookies từ phía server
+
+        // Thiết lập cookies từ phía server
+        setCookies(response, jwtToken.getRefreshToken());
 
             LoginResponse loginResponse = LoginResponse.builder()
                     .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_SUCCESSFULLY))
@@ -161,19 +168,21 @@ public class UserController {
 
       }
     @PostMapping("/refreshToken")
-    public ResponseEntity<ResponseObject> refreshToken(
-            @Valid @RequestBody RefreshTokenDTO refreshTokenDTO
-    ) throws Exception {
-        if(refreshTokenDTO.getRefreshToken() == null || refreshTokenDTO.getRefreshToken().isBlank()){
+    public ResponseEntity<ResponseObject> refreshToken( HttpServletRequest request, HttpServletResponse response) throws Exception {String refreshToken = getRefreshTokenFromCookie(request);
+        if (refreshToken == null || refreshToken.isBlank()) {
             return ResponseEntity.badRequest().body(ResponseObject.builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .data(null)
-                    .message("Refresh token is required")
+                    .message("You not login, please login again")
                     .build());
-
         }
-        UserEntity userDetail = userService.getUserDetailsFromRefreshToken(refreshTokenDTO.getRefreshToken());
-        Token jwtToken = tokenService.refreshToken(refreshTokenDTO.getRefreshToken(), userDetail);
+        UserEntity userDetail = userService.getUserDetailsFromRefreshToken(refreshToken);
+        Token jwtToken = tokenService.refreshToken(refreshToken, userDetail);
+
+        // Thiết lập cookies từ phía server
+        setCookies(response, jwtToken.getRefreshToken());
+
+
         LoginResponse loginResponse = LoginResponse.builder()
                 .message("Refresh token successfully")
                 .token(jwtToken.getToken())
@@ -189,6 +198,45 @@ public class UserController {
                         .status(HttpStatus.OK)
                         .build());
 
+    }
+    private void setCookies(HttpServletResponse response, String refreshToken) {
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true) // Đặt httpOnly là true để tăng cường bảo mật
+                .secure(false) // Đặt secure là true nếu bạn sử dụng HTTPS , đang ở gd pt thì để false đã
+                .path("/")
+                .sameSite("Lax")
+                .maxAge(30 * 24 * 60 * 60) // 30 ngày
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
+    }
+    private String getRefreshTokenFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ResponseObject> logout(HttpServletResponse response) {
+        // Xóa cookie refreshToken
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false) // Đặt secure là true nếu bạn sử dụng HTTPS
+                .path("/")
+                .sameSite("Lax")
+                .maxAge(0) // Đặt maxAge là 0 để xóa cookie
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
+
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Logged out successfully")
+                .status(HttpStatus.OK)
+                .build());
     }
     private boolean isMobileDevice(String userAgent) {
         // Kiểm tra User-Agent header để xác định thiết bị di động

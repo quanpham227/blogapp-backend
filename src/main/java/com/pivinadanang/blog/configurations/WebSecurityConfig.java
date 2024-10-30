@@ -59,9 +59,11 @@ class WebSecurityConfig {
                             .requestMatchers(GET,
                                     String.format("%s/categories/**", apiPrefix)).permitAll()
                             .requestMatchers(GET,
-                                    String.format("%s/posts/**", apiPrefix)).permitAll()
+                                    String.format("%s/user/posts/**", apiPrefix)).permitAll()
                             .requestMatchers(GET,
-                                    String.format("%s/clients/*", apiPrefix)).permitAll()
+                                    String.format("%s/clients/**", apiPrefix)).permitAll()
+                            .requestMatchers(GET,
+                                    String.format("%s/comments/**", apiPrefix)).permitAll()
                             .requestMatchers(GET,
                                     String.format("%s/images/**", apiPrefix)).permitAll()
                             .requestMatchers(GET,
@@ -69,6 +71,8 @@ class WebSecurityConfig {
 
                             .requestMatchers(GET,
                                     String.format("%s/about/**", apiPrefix)).permitAll()
+                            .requestMatchers(GET,
+                                    String.format("%s/tags/**", apiPrefix)).permitAll()
 
                             .anyRequest()
                             .authenticated();

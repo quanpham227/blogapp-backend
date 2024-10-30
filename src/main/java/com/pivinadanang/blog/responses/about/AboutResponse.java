@@ -2,8 +2,6 @@ package com.pivinadanang.blog.responses.about;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pivinadanang.blog.models.AboutEntity;
-import com.pivinadanang.blog.models.SlideEntity;
-import com.pivinadanang.blog.responses.slide.SlideResponse;
 import lombok.*;
 
 @Getter

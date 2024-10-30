@@ -16,7 +16,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/v1/about")
@@ -41,28 +44,15 @@ public class AboutController {
     // Cập nhật thông tin trang About
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> updateAbout(
-            @PathVariable Long id,
-            @Valid @RequestBody AboutDTO aboutDTO,
-            BindingResult result
-    ) throws Exception {
-        if (result.hasErrors()) {
-            List<String> errorMessages = result.getFieldErrors()
-                    .stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message(errorMessages.toString())
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data(null)
-                    .build());
-        }
-
+    public ResponseEntity<ResponseObject> updateAbout(@PathVariable Long id, @Valid @RequestBody AboutDTO aboutDTO) throws Exception {
         AboutResponse aboutResponse = aboutService.updateAbout(id, aboutDTO);
-        return ResponseEntity.ok(ResponseObject.builder()
-                .status(HttpStatus.OK)
-                .data(aboutResponse)
-                .message("Update about information successfully")
-                .build());
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .data(aboutResponse)
+                        .message("Update about information successfully")
+                        .build()
+        );
     }
+
 }

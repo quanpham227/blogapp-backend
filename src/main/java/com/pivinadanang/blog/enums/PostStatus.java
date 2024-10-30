@@ -1,6 +1,18 @@
 package com.pivinadanang.blog.enums;
 
-public enum PostStatus {
+import lombok.Getter;
 
-        published, draft, deleted, pending
+@Getter
+public enum PostStatus {
+        PUBLISHED(0),
+        DRAFT(1),
+        DELETED(2),
+        PENDING(3);
+
+        private final int value;
+
+        PostStatus(int value) {
+                this.value = value;
+        }
+
 }

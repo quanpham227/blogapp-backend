@@ -10,14 +10,12 @@ import com.pivinadanang.blog.responses.comment.CommentResponse;
 import java.util.List;
 
 public interface ICommentService {
-    CommentEntity insertComment(CommentDTO comment);
-
-    void deleteComment(Long commentId);
-    void updateComment(Long id, CommentDTO commentDTO) throws DataNotFoundException;
-
+    CommentResponse insertComment(CommentDTO comment);
+    CommentResponse updateComment(Long id, CommentDTO commentDTO) throws DataNotFoundException;
+    CommentResponse replyComment(CommentDTO commentDTO);
     List<CommentResponse> getCommentsByUserAndPost(Long userId, Long productId);
-    List<CommentResponse> getCommentsByPost(Long productId);
+    List<CommentResponse> getCommentsByPostId(Long postId);
     void generateFakeComments() throws Exception;
-
-    CommentResponse getCommentById(Long commentId);
+    void deleteComment(Long commentId) throws DataNotFoundException;
+    CommentResponse getCommentById(Long commentId) throws DataNotFoundException;
 }

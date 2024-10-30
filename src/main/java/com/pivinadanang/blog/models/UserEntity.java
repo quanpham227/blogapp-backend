@@ -53,7 +53,7 @@ public class UserEntity extends BaseEntity implements UserDetails {
     @JoinColumn(name = "role_id")
     private RoleEntity role;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonManagedReference
     private List<CommentEntity> comments = new ArrayList<>();
 

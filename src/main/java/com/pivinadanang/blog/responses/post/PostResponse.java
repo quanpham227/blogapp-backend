@@ -28,6 +28,10 @@ public class PostResponse extends BaseResponse {
 
     @JsonProperty("thumbnail_url")
     private String thumbnailUrl;
+
+    @JsonProperty("public_id")
+    private String publicId;
+
     // Thêm trường totalPages
     private int totalPages;
 
@@ -40,6 +44,8 @@ public class PostResponse extends BaseResponse {
 
    @JsonProperty("profile_image")
    private String profileImage;
+
+   private String email;
 
     private MetaResponse meta;
 
@@ -71,10 +77,12 @@ public class PostResponse extends BaseResponse {
                 .slug(post.getSlug())
                 .excerpt(post.getExcerpt())
                 .thumbnailUrl(post.getThumbnail())
+                .publicId(post.getPublicId())
                 .status(post.getStatus().name())
                 .category(CategoryResponse.fromCategory(post.getCategory()))
                 .authorName(post.getUser().getFullName())
                 .profileImage(post.getUser().getProfileImage())
+                .email(post.getUser().getEmail())
                 .meta(MetaResponse.fromMeta(post.getMeta()))
                 .commentCount(post.getCommentCount())
                 .ratingsCount(post.getRatingsCount())

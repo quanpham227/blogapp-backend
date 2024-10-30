@@ -16,4 +16,6 @@ public interface ICategoryService {
     boolean existsCategoryByName(String name);
 
     List<CategoryResponse> getTopCategoriesByPostCount(int limit);
+
+
 }

@@ -1,18 +1,23 @@
 package com.pivinadanang.blog.exceptions;
 
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import com.pivinadanang.blog.responses.ResponseObject;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import org.springframework.security.access.AccessDeniedException;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 
-@RestControllerAdvice // Chỉ định lớp này xử lý ngoại lệ chung
+import java.util.HashMap;
+import java.util.Map;
+
+@RestControllerAdvice
 public class GlobalExceptionHandler {
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<ResponseObject> handleGeneralException(Exception exception) {
@@ -20,127 +25,195 @@ public class GlobalExceptionHandler {
                 ResponseObject.builder()
                         .status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .message(exception.getMessage())
+                        .data(null)
                         .build()
         );
     }
+
     @ExceptionHandler(DataNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ResponseEntity<?> handleResourceNotFoundException(DataNotFoundException exception) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                .status(HttpStatus.NOT_FOUND)
-                .message(exception.getMessage())
-                .build());
+    public ResponseEntity<ResponseObject> handleResourceNotFoundException(DataNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.NOT_FOUND)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
     }
+
     @ExceptionHandler(InvalidRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<?> handleInvalidRequestException(InvalidRequestException exception) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                .status(HttpStatus.BAD_REQUEST)
-                .message(exception.getMessage())
-                .build());
-    }
-    @ExceptionHandler(ForbiddenException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ResponseEntity<?> handleForbiddenException(ForbiddenException exception) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseObject.builder()
-                .status(HttpStatus.FORBIDDEN)
-                .message(exception.getMessage())
-                .build());
-    }
-    @ExceptionHandler(UnauthorizedException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ResponseEntity<?> handleUnauthorizedException(UnauthorizedException exception) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
-                .status(HttpStatus.UNAUTHORIZED)
-                .message(exception.getMessage())
-                .build());
-    }
-    @ExceptionHandler(ConflictException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ResponseEntity<?> handleConflictException(ConflictException exception) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseObject.builder()
-                .status(HttpStatus.CONFLICT)
-                .message(exception.getMessage())
-                .build());
-    }
-    @ExceptionHandler(UnsupportedMediaTypeException.class)
-    @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-    public ResponseEntity<?> handleUnsupportedMediaTypeException(UnsupportedMediaTypeException exception) {
-        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(ResponseObject.builder()
-                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                .message(exception.getMessage())
-                .build());
-    }
-    @ExceptionHandler(InternalServerErrorException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<?> handleInternalServerErrorException(InternalServerErrorException exception) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .message(exception.getMessage())
-                .build());
-    }
-    @ExceptionHandler(BadRequestException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<?> handleBadRequestException(BadRequestException exception) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResponseObject.builder()
-                .status(HttpStatus.BAD_REQUEST)
-                .message(exception.getMessage())
-                .build());
-    }
-    @ExceptionHandler(ChangeSetPersister.NotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ResponseEntity<?> handleNotFoundException(ChangeSetPersister.NotFoundException exception) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                .status(HttpStatus.NOT_FOUND)
-                .message(exception.getMessage())
-                .build());
-    }
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<ResponseObject> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
-        List<String> errorMessages = exception.getBindingResult().getAllErrors().stream()
-                .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                .collect(Collectors.toList());
-
+    public ResponseEntity<ResponseObject> handleInvalidRequestException(InvalidRequestException exception) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 ResponseObject.builder()
                         .status(HttpStatus.BAD_REQUEST)
-                        .message(String.join(", ", errorMessages))
+                        .message(exception.getMessage())
+                        .data(null)
                         .build()
         );
     }
+
+    @ExceptionHandler(ForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ResponseEntity<ResponseObject> handleForbiddenException(ForbiddenException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.FORBIDDEN)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ResponseEntity<ResponseObject> handleUnauthorizedException(UnauthorizedException exception) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<ResponseObject> handleConflictException(ConflictException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.CONFLICT)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(UnsupportedMediaTypeException.class)
+    @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+    public ResponseEntity<ResponseObject> handleUnsupportedMediaTypeException(UnsupportedMediaTypeException exception) {
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(InternalServerErrorException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<ResponseObject> handleInternalServerErrorException(InternalServerErrorException exception) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ResponseObject> handleBadRequestException(BadRequestException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(ChangeSetPersister.NotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<ResponseObject> handleNotFoundException(ChangeSetPersister.NotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.NOT_FOUND)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ResponseObject> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
+        // Thu thập lỗi xác thực vào một Map
+        Map<String, String> errors = new HashMap<>();
+        for (FieldError error : exception.getBindingResult().getFieldErrors()) {
+            errors.put(error.getField(), error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value");
+        }
+        // Trả về JSON với các lỗi chi tiết
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .message("Validation failed")
+                        .data(errors) // Các lỗi được truyền vào `data` để hiển thị chi tiết
+                        .build()
+        );
+    }
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ResponseObject> handleDataIntegrityViolationException(DataIntegrityViolationException exception) {
+        // Thông báo lỗi tùy chỉnh cho lỗi cắt dữ liệu
+        String errorMessage = "Dữ liệu quá dài cho một trong các trường";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .message(errorMessage)
+                        .data(null)
+                        .build()
+        );
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ResponseEntity<ResponseObject> handleAccessDeniedException(AccessDeniedException exception) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseObject.builder()
-                .status(HttpStatus.FORBIDDEN)
-                .message(exception.getMessage())
-                .build());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.FORBIDDEN)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
-    public ResponseEntity<?> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException exception) {
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(ResponseObject.builder()
-                .status(HttpStatus.METHOD_NOT_ALLOWED)
-                .message(exception.getMessage())
-                .build());
+    public ResponseEntity<ResponseObject> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException exception) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.METHOD_NOT_ALLOWED)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-    public ResponseEntity<?> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException exception) {
-        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(ResponseObject.builder()
-                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                .message(exception.getMessage())
-                .build());
+    public ResponseEntity<ResponseObject> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException exception) {
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
     }
+
     @ExceptionHandler(ExpiredTokenException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ResponseEntity<?> handleExpiredTokenException(ExpiredTokenException exception) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseObject.builder()
-                .status(HttpStatus.UNAUTHORIZED)
-                .message(exception.getMessage())
-                .build());
+    public ResponseEntity<ResponseObject> handleExpiredTokenException(ExpiredTokenException exception) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
     }
 }

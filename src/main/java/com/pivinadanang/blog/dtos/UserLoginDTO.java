@@ -21,9 +21,9 @@ public class UserLoginDTO {
     @NotBlank(message = "Password cannot be blank")
     private String password;
 
-    @Min(value = 1, message = "You must enter role's Id")
-    @JsonProperty("role_id")
-    private Long roleId;
+//    @Min(value = 1, message = "You must enter role's Id")
+//    @JsonProperty("role_id")
+//    private Long roleId;
 
     // Facebook Account Id, not mandatory, can be blank
     @JsonProperty("facebook_account_id")

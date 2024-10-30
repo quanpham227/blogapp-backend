@@ -32,7 +32,7 @@ public class AboutEntity  {
     @Column(name = "address", length = 255)
     private String address; // Địa chỉ của công ty
 
-    @Column(name = "phone_number", length = 20)
+    @Column(name = "phone_number", length = 100)
     private String phoneNumber; // Số điện thoại của công ty
 
     @Column(name = "email", length = 100)

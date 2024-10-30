@@ -1,6 +1,8 @@
 package com.pivinadanang.blog.services.category;
 
 import com.pivinadanang.blog.dtos.CategoryDTO;
+import com.pivinadanang.blog.enums.PostStatus;
+import com.pivinadanang.blog.enums.PostVisibility;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.models.CategoryEntity;
 import com.pivinadanang.blog.models.PostEntity;
@@ -9,10 +11,13 @@ import com.pivinadanang.blog.repositories.CategoryRepository;
 import com.pivinadanang.blog.repositories.PostRepository;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 import com.pivinadanang.blog.responses.category.CategoryResponse;
 import com.pivinadanang.blog.responses.post.PostResponse;
+import com.pivinadanang.blog.services.post.IPostService;
+import com.pivinadanang.blog.services.post.PostUtilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +32,7 @@ public class CategoryService implements ICategoryService{
 
     private final CategoryRepository categoryRepository;
     private final PostRepository postRepository;
+    private final PostUtilityService postUtilityService;
 
     @Override
     @Transactional
@@ -34,10 +40,13 @@ public class CategoryService implements ICategoryService{
         if (categoryDTO.getDescription() == null || categoryDTO.getDescription().isEmpty()) {
             categoryDTO.setDescription(categoryDTO.getName());
         }
+        String categoryCode = postUtilityService.generateSlug(categoryDTO.getName());
+
         CategoryEntity newCategory = CategoryEntity
                 .builder()
                 .name(categoryDTO.getName())
                 .description(categoryDTO.getDescription())
+                .code(categoryCode)
                 .build();
         CategoryEntity category =  categoryRepository.save(newCategory);
         return CategoryResponse.fromCategory(category);
@@ -51,7 +60,16 @@ public class CategoryService implements ICategoryService{
 
     @Override
     public List<CategoryResponse> getAllCategories() {
-        return categoryRepository.findAll().stream().map(CategoryResponse::fromCategory).toList();
+        List<CategoryResponse> categories = categoryRepository.findCategoriesWithPostCount(PostStatus.PUBLISHED, PostVisibility.PUBLIC);
+        return categories.stream()
+                .map(dto -> CategoryResponse.builder()
+                        .id(dto.getId())
+                        .name(dto.getName())
+                        .code(dto.getCode())
+                        .description(dto.getDescription())
+                        .postCount((int) dto.getPostCount()) // Chuyển đổi sang kiểu int
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -65,10 +83,13 @@ public class CategoryService implements ICategoryService{
                 }
             }
             existingCategory.setName(categoryDTO.getName());
+            String categoryCode = postUtilityService.generateSlug(categoryDTO.getName());
+            existingCategory.setCode(categoryCode);
         }
         if(categoryDTO.getDescription() != null || !categoryDTO.getDescription().isEmpty()){
             existingCategory.setDescription(categoryDTO.getDescription());
         }
+
         CategoryEntity category = categoryRepository.save(existingCategory);
         return CategoryResponse.fromCategory(category);
     }
