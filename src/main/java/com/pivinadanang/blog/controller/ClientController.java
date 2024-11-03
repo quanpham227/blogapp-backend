@@ -12,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,19 +46,7 @@ public class ClientController {
     }
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> insertClient(@Valid @RequestBody ClientDTO clientDTO, BindingResult result) throws Exception {
-        if (result.hasErrors()) {
-            List<String> errorMessages = result.getFieldErrors()
-                    .stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message(errorMessages.toString())
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data(null)
-                    .build());
-        }
+    public ResponseEntity<ResponseObject> insertClient(@Valid @RequestBody ClientDTO clientDTO) throws Exception {
         if (clientService.exitsByName(clientDTO.getName())) {
             return ResponseEntity.badRequest()
                     .body(ResponseObject.builder()
@@ -78,20 +64,8 @@ public class ClientController {
     @PutMapping(value = "{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> updateClient(@Valid @RequestBody ClientDTO clientDTO,
-                                                       @PathVariable  Long id,
-                                                       BindingResult result) throws Exception {
-        if (result.hasErrors()) {
-            List<String> errorMessages = result.getFieldErrors()
-                    .stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message(errorMessages.toString())
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data(null)
-                    .build());
+                                                       @PathVariable  Long id) throws Exception {
 
-        }
         ClientResponse client = clientService.updateClient(id, clientDTO);
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_CLIENT_SUCCESSFULLY, id))

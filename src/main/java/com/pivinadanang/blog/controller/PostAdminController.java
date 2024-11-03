@@ -43,19 +43,7 @@ public class PostAdminController {
 
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO, BindingResult result) throws Exception{
-        if (result.hasErrors()) {
-            List<String> errorMessages = result.getFieldErrors()
-                    .stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-            return ResponseEntity.badRequest()
-                    .body(ResponseObject.builder()
-                            .message("Validation errors")
-                            .status(HttpStatus.BAD_REQUEST)
-                            .data(errorMessages)
-                            .build());
-        }
+    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO) throws Exception{
         if(postService.existsPostByTitle(postDTO.getTitle())){
             return ResponseEntity.badRequest()
                     .body(ResponseObject.builder()
@@ -89,19 +77,7 @@ public class PostAdminController {
     }
     @PutMapping(value = "/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody UpdatePostDTO postDTO, @PathVariable Long id, BindingResult result) throws Exception {
-        if (result.hasErrors()) {
-            List<String> errorMessages = result.getFieldErrors()
-                    .stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-            return ResponseEntity.badRequest()
-                    .body(ResponseObject.builder()
-                            .message("Validation errors")
-                            .status(HttpStatus.BAD_REQUEST)
-                            .data(errorMessages)
-                            .build());
-        }
+    public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody UpdatePostDTO postDTO, @PathVariable Long id) throws Exception {
         PostResponse postResponse = postService.updatePost(id,postDTO);
         return ResponseEntity.ok(
                 ResponseObject.builder()

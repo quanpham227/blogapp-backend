@@ -127,7 +127,7 @@ public class UserController {
 
         UserEntity user = userService.createUser(userDTO);
             return ResponseEntity.ok(ResponseObject.builder()
-                            .status(HttpStatus.CREATED)
+                            .status(HttpStatus.OK)
                             .data(UserResponse.fromUser(user))
                             .message(localizationUtils.getLocalizedMessage(MessageKeys.REGISTER_SUCCESSFULLY))
                             .build());

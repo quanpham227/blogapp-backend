@@ -12,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,19 +28,7 @@ public class CategoryController {
 
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> insertCategory(@Valid @RequestBody CategoryDTO categoryDTO, BindingResult result) throws Exception {
-        if(result.hasErrors()) {
-            List<String> errorMessages = result.getFieldErrors()
-                    .stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message(errorMessages.toString())
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data(null)
-                    .build());
-
-        }
+    public ResponseEntity<ResponseObject> insertCategory(@Valid @RequestBody CategoryDTO categoryDTO) throws Exception {
 
         if(categoryService.existsCategoryByName(categoryDTO.getName())){
             return ResponseEntity.badRequest()

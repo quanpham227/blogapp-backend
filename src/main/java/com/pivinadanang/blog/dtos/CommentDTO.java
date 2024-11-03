@@ -6,6 +6,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 @Data//toString
 @Getter
@@ -23,6 +24,7 @@ public class CommentDTO {
 
     @JsonProperty("content")
     @NotEmpty(message = "Content cannot be empty")
+    @Size(max = 1000, message = "Content must be less than or equal to 1000 characters")
     private String content;
 
     @JsonProperty("parent_comment_id")

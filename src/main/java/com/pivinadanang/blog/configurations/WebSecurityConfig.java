@@ -73,6 +73,8 @@ class WebSecurityConfig {
                                     String.format("%s/about/**", apiPrefix)).permitAll()
                             .requestMatchers(GET,
                                     String.format("%s/tags/**", apiPrefix)).permitAll()
+                            .requestMatchers(POST,
+                                    String.format("%s/email/**", apiPrefix)).permitAll()
 
                             .anyRequest()
                             .authenticated();

@@ -2,6 +2,7 @@ package com.pivinadanang.blog.dtos;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Data
@@ -19,22 +20,15 @@ public class UserLoginDTO {
     private String email;
 
     @NotBlank(message = "Password cannot be blank")
+    @Size(max = 200, message = "Password must be less than or equal to 200 characters")
     private String password;
 
-//    @Min(value = 1, message = "You must enter role's Id")
-//    @JsonProperty("role_id")
-//    private Long roleId;
-
-    // Facebook Account Id, not mandatory, can be blank
     @JsonProperty("facebook_account_id")
     private String facebookAccountId;
 
-    // Google Account Id, not mandatory, can be blank
     @JsonProperty("google_account_id")
     private String googleAccountId;
 
-    //For Google, Facebook login
-    // Full name, not mandatory, can be blank
     @JsonProperty("fullname")
     private String fullname;
 

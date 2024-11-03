@@ -13,22 +13,14 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<ResponseObject> handleGeneralException(Exception exception) {
-        return ResponseEntity.internalServerError().body(
-                ResponseObject.builder()
-                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .message(exception.getMessage())
-                        .data(null)
-                        .build()
-        );
-    }
+
 
     @ExceptionHandler(DataNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -138,36 +130,8 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<ResponseObject> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
-        // Thu thập lỗi xác thực vào một Map
-        Map<String, String> errors = new HashMap<>();
-        for (FieldError error : exception.getBindingResult().getFieldErrors()) {
-            errors.put(error.getField(), error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value");
-        }
-        // Trả về JSON với các lỗi chi tiết
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ResponseObject.builder()
-                        .status(HttpStatus.BAD_REQUEST)
-                        .message("Validation failed")
-                        .data(errors) // Các lỗi được truyền vào `data` để hiển thị chi tiết
-                        .build()
-        );
-    }
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<ResponseObject> handleDataIntegrityViolationException(DataIntegrityViolationException exception) {
-        // Thông báo lỗi tùy chỉnh cho lỗi cắt dữ liệu
-        String errorMessage = "Dữ liệu quá dài cho một trong các trường";
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ResponseObject.builder()
-                        .status(HttpStatus.BAD_REQUEST)
-                        .message(errorMessage)
-                        .data(null)
-                        .build()
-        );
-    }
+
+
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
@@ -211,6 +175,33 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 ResponseObject.builder()
                         .status(HttpStatus.UNAUTHORIZED)
+                        .message(exception.getMessage())
+                        .data(null)
+                        .build()
+        );
+    }
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ResponseObject> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        List<String> errorMessages = ex.getBindingResult().getFieldErrors()
+                .stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.toList());
+        String combinedErrorMessage = String.join(", ", errorMessages);
+
+        ResponseObject responseObject = ResponseObject.builder()
+                .message(combinedErrorMessage)
+                .status(HttpStatus.BAD_REQUEST)
+                .data(null)
+                .build();
+
+        return new ResponseEntity<>(responseObject, HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<ResponseObject> handleGeneralException(Exception exception) {
+        return ResponseEntity.internalServerError().body(
+                ResponseObject.builder()
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .message(exception.getMessage())
                         .data(null)
                         .build()

@@ -43,7 +43,7 @@ public class AboutController {
 
     // Cập nhật thông tin trang About
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') ")
     public ResponseEntity<ResponseObject> updateAbout(@PathVariable Long id, @Valid @RequestBody AboutDTO aboutDTO) throws Exception {
         AboutResponse aboutResponse = aboutService.updateAbout(id, aboutDTO);
         return ResponseEntity.ok(

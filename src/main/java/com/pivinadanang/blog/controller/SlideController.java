@@ -48,18 +48,6 @@ public class SlideController {
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> insertSlide(@Valid @RequestBody SlideDTO slideDTO, BindingResult result) throws Exception {
-        if (result.hasErrors()) {
-            List<String> errorMessages = result.getFieldErrors()
-                    .stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message(errorMessages.toString())
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data(null)
-                    .build());
-        }
         if (slideService.existsByTitle(slideDTO.getTitle())) {
             return ResponseEntity.badRequest()
                     .body(ResponseObject.builder()
@@ -78,19 +66,7 @@ public class SlideController {
     @PutMapping(value = "{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> updateSlide(@Valid @RequestBody SlideDTO slideDTO,
-                                                      @PathVariable Long id,
-                                                      BindingResult result) throws Exception {
-        if (result.hasErrors()) {
-            List<String> errorMessages = result.getFieldErrors()
-                    .stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message(errorMessages.toString())
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data(null)
-                    .build());
-        }
+                                                      @PathVariable Long id) throws Exception {
         SlideResponse slide = slideService.updateSlide(id, slideDTO);
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_SLIDE_SUCCESSFULLY, id))
