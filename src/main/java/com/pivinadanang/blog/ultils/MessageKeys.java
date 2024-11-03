@@ -52,5 +52,10 @@ public class MessageKeys {
     public static final String ROLE_DOES_NOT_EXISTS = "user.login.role_not_exist";
 
 
+    public static final String INSERT_ACHIEVEMENT_SUCCESSFULLY = "achievement.create_achievement.create_successfully";
+    public static final String ACHIEVEMENT_ALREADY_EXISTS = "achievement.create_achievement.achievement_already_exists";
+    public static final String UPDATE_ACHIEVEMENT_SUCCESSFULLY = "achievement.update_achievement.update_successfully";
+    public static final String DELETE_ACHIEVEMENT_SUCCESSFULLY = "achievement.delete_achievement.delete_successfully";
+
 
 }
