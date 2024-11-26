@@ -68,7 +68,7 @@ public class JwtTokenFilter extends OncePerRequestFilter{
         }catch (Exception e) {
             //response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write(e.getMessage());
+            response.getWriter().write("Invalid or expired token");
         }
 
     }
@@ -87,6 +87,7 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                 Pair.of(String.format("/%s/about**", apiPrefix), "GET"),
                 Pair.of(String.format("/%s/comments**", apiPrefix), "GET"),
                 Pair.of(String.format("/%s/tags**", apiPrefix), "GET"),
+                Pair.of(String.format("/%s/achievements**", apiPrefix), "GET"),
                 Pair.of(String.format("/%s/users/forget-password", apiPrefix), "POST"),
                 Pair.of(String.format("/%s/email**", apiPrefix), "POST"),
                 Pair.of(String.format("/%s/users/register", apiPrefix), "POST"),
@@ -103,7 +104,11 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                 Pair.of("/configuration/security","GET"),
                 Pair.of("/swagger-ui/**","GET"),
                 Pair.of("/swagger-ui.html", "GET"),
-                Pair.of("/swagger-ui/index.html", "GET")
+                Pair.of("/swagger-ui/index.html", "GET"),
+
+                // WebSocket
+                Pair.of("/progress", "GET")
+
         );
 
         String requestPath = request.getServletPath();

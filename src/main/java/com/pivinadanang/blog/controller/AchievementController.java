@@ -27,7 +27,7 @@ public class AchievementController {
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> insertAchievement(@Valid @RequestBody AchievementDTO achievementDTO) throws Exception {
-        if(achievementService.existsAchievementByKey(achievementDTO.getKey())){
+        if(achievementService.existsAchievementByTitle(achievementDTO.getTitle())){
             return ResponseEntity.badRequest()
                     .body(ResponseObject.builder()
                             .message(localizationUtils.getLocalizedMessage(MessageKeys.ACHIEVEMENT_ALREADY_EXISTS))
@@ -38,7 +38,7 @@ public class AchievementController {
         AchievementResponse achievement = achievementService.addAchievement(achievementDTO) ;
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_ACHIEVEMENT_SUCCESSFULLY))
-                .status(HttpStatus.CREATED)
+                .status(HttpStatus.OK)
                 .data(achievement)
                 .build());
     }
@@ -46,14 +46,7 @@ public class AchievementController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> updateAchievement(@PathVariable Long id,
                                                             @Valid @RequestBody AchievementDTO achievementDTO) throws Exception {
-        if(achievementService.existsAchievementByKey(achievementDTO.getKey())){
-            return ResponseEntity.badRequest()
-                    .body(ResponseObject.builder()
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.ACHIEVEMENT_ALREADY_EXISTS))
-                            .status(HttpStatus.BAD_REQUEST)
-                            .build());
 
-        }
         AchievementResponse achievement = achievementService.updateAchievement(id, achievementDTO);
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_ACHIEVEMENT_SUCCESSFULLY))
@@ -72,9 +65,18 @@ public class AchievementController {
                 .build());
     }
 
-    @GetMapping("")
-    public ResponseEntity<ResponseObject> getAllAchievements() {
-        List<AchievementResponse> achievements = achievementService.getAllAchievements();
+    @GetMapping("/admin")
+    public ResponseEntity<ResponseObject> getAllAchievementsForAdmin() {
+        List<AchievementResponse> achievements = achievementService.getAllAchievementsForAdmin();
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Get list of achievements successfully")
+                .status(HttpStatus.OK)
+                .data(achievements)
+                .build());
+    }
+    @GetMapping("/user")
+    public ResponseEntity<ResponseObject> getAllAchievementsForUser() {
+        List<AchievementResponse> achievements = achievementService.getAllAchievementsForUser();
         return ResponseEntity.ok(ResponseObject.builder()
                 .message("Get list of achievements successfully")
                 .status(HttpStatus.OK)

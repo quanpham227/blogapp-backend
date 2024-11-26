@@ -22,9 +22,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -57,12 +57,12 @@ public class UserController {
             @RequestParam(defaultValue = "10") int limit
     ) throws Exception{
         // Tạo Pageable từ thông tin trang và giới hạn
-        PageRequest pageRequest = PageRequest.of(
+        Pageable pageable = PageRequest.of(
                 page, limit,
                 //Sort.by("createdAt").descending()
-                Sort.by("id").ascending()
+                Sort.by("create").ascending()
         );
-        Page<UserResponse> userPage = userService.findAll(keyword, pageRequest)
+        Page<UserResponse> userPage = userService.findAll(keyword, pageable)
                 .map(UserResponse::fromUser);
 
         // Lấy tổng số trang

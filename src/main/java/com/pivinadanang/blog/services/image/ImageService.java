@@ -14,6 +14,7 @@ import com.pivinadanang.blog.ultils.FileUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -123,9 +124,9 @@ public class ImageService implements IImageService {
     }
 
     @Override
-    public Page<ImageResponse> getAllImages(String keyword,String objectType ,PageRequest pageRequest) {
+    public Page<ImageResponse> getAllImages(String keyword, String objectType , Pageable pageable) {
         Page<ImageEntity> imagePage;
-        imagePage = imageRepository.searchImages(keyword,objectType ,pageRequest);
+        imagePage = imageRepository.searchImages(keyword,objectType ,pageable);
         return imagePage.map(ImageResponse::fromImage);
     }
 
@@ -135,8 +136,8 @@ public class ImageService implements IImageService {
     }
 
     @Override
-    public Page<ImageResponse> getUnusedImages(PageRequest pageRequest) {
-        Page<ImageEntity> imageEntities = imageRepository.findUnusedImages(pageRequest);
+    public Page<ImageResponse> getUnusedImages( Pageable pageable) {
+        Page<ImageEntity> imageEntities = imageRepository.findUnusedImages(pageable);
         return imageEntities.map(ImageResponse::fromImage);
     }
 

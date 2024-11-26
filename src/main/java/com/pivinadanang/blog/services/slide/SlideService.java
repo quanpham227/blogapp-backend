@@ -1,6 +1,7 @@
 package com.pivinadanang.blog.services.slide;
 
 import com.pivinadanang.blog.dtos.SlideDTO;
+import com.pivinadanang.blog.dtos.SlideOrderDTO;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.models.ImageEntity;
 import com.pivinadanang.blog.models.SlideEntity;
@@ -14,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -73,6 +76,11 @@ public class SlideService implements ISlideService{
     @Override
     public List<SlideResponse> getAllSlides() {
         return slideRepository.findAll().stream().map(SlideResponse::fromSlide).toList();
+    }
+
+    @Override
+    public List<SlideResponse> findAllByStatusTrue() {
+        return slideRepository.findAllByStatusTrue().stream().map(SlideResponse::fromSlide).toList();
     }
 
     @Override
@@ -165,6 +173,40 @@ public class SlideService implements ISlideService{
         Integer order = existingSlide.getOrder();
         slideRepository.delete(existingSlide);
         slideRepository.decrementOrderAfterDelete(order);
+    }
+
+    @Override
+    @Transactional
+    public void updateSlideOrder(List<SlideOrderDTO> slideOrderDTOs) throws Exception {
+        // Lấy danh sách các slide hiện tại từ cơ sở dữ liệu
+        List<SlideEntity> currentSlides = slideRepository.findAll();
+
+        // Tạo một map từ id của slide đến thứ tự mới
+        Map<Long, Integer> newOrderMap = slideOrderDTOs.stream()
+                .collect(Collectors.toMap(SlideOrderDTO::getId, SlideOrderDTO::getOrder));
+
+        // Cập nhật thứ tự của các slide
+        for (SlideEntity slide : currentSlides) {
+            Integer newOrder = newOrderMap.get(slide.getId());
+            if (newOrder != null) {
+                Integer oldOrder = slide.getOrder();
+                Integer maxOrder = slideRepository.findMaxOrder();
+
+                if (newOrder == null || newOrder == 0 || newOrder > maxOrder + 1) {
+                    newOrder = oldOrder;
+                } else if (!oldOrder.equals(newOrder)) {
+                    if (newOrder > oldOrder) {
+                        slideRepository.decrementOrderBetween(oldOrder, newOrder);
+                    } else {
+                        slideRepository.incrementOrderBetween(newOrder, oldOrder);
+                    }
+                }
+                slide.setOrder(newOrder);
+            }
+        }
+
+        // Lưu các slide đã cập nhật vào cơ sở dữ liệu
+        slideRepository.saveAll(currentSlides);
     }
 
 }

@@ -15,8 +15,8 @@ public class AchievementEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column (name = "key", nullable = false, length = 100)
-    private String key;
+    @Column (name = "title", nullable = false, length = 100)
+    private String title;
 
     @Column (name = "value", nullable = false)
     private Integer value;

@@ -12,9 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -196,6 +194,7 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(responseObject, HttpStatus.BAD_REQUEST);
     }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<ResponseObject> handleGeneralException(Exception exception) {

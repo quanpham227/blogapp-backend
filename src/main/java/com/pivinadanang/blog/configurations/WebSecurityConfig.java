@@ -50,7 +50,10 @@ class WebSecurityConfig {
                                     "/swagger-ui/**",
                                     "/swagger-ui.html",
                                     "/webjars/swagger-ui/**",
-                                    "/swagger-ui/index.html"
+                                    "/swagger-ui/index.html",
+
+                                    // WebSocket endpoint
+                                    "/progress"
 
                             )
                             .permitAll()
@@ -73,9 +76,10 @@ class WebSecurityConfig {
                                     String.format("%s/about/**", apiPrefix)).permitAll()
                             .requestMatchers(GET,
                                     String.format("%s/tags/**", apiPrefix)).permitAll()
+                            .requestMatchers(GET,
+                                    String.format("%s/achievements/**", apiPrefix)).permitAll()
                             .requestMatchers(POST,
                                     String.format("%s/email/**", apiPrefix)).permitAll()
-
                             .anyRequest()
                             .authenticated();
                     //.anyRequest().permitAll();

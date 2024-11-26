@@ -27,6 +27,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
@@ -110,11 +111,12 @@ public class PostAdminController {
     @GetMapping("")
     public ResponseEntity<ResponseObject> getPosts(
             @RequestParam(defaultValue = "") String keyword,
-            @RequestParam(defaultValue = "0", name = "category_id") Long categoryId,
+            @RequestParam(defaultValue = "0", name = "categoryId") Long categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(required = false) PostStatus status,
-            @RequestParam(required = false, name = "created_at") @DateTimeFormat(pattern = "yyyy-MM") YearMonth createdAt)
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate)
             throws JsonProcessingException {
         // Tạo Pageable từ thông tin trang và giới hạn
         PageRequest pageRequest = PageRequest.of(page, limit);
@@ -133,7 +135,7 @@ public class PostAdminController {
 //                .build();
 
 
-        Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, createdAt, pageRequest);
+        Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, startDate, endDate, pageRequest);
         List<PostResponse> postResponses = postPage.getContent();
         int totalPages = postPage.getTotalPages();
         postResponses.forEach(post -> post.setTotalPages(totalPages));

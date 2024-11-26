@@ -8,10 +8,13 @@ import java.util.List;
 
 public interface AchievementRepository extends JpaRepository<AchievementEntity, Long> {
 
-    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN TRUE ELSE FALSE END FROM AchievementEntity a WHERE a.key = :key AND a.isActive = true")
-    boolean exitstsByKey(String key);
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN TRUE ELSE FALSE END FROM AchievementEntity a WHERE a.title = :title AND a.isActive = true")
+    boolean exitstsByTitle(String title);
 
     @Query("SELECT a FROM AchievementEntity a WHERE a.isActive = true")
     List<AchievementEntity> findAllByIsActiveTrue();
+
+
+
 
 }

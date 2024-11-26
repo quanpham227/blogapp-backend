@@ -11,6 +11,10 @@ import java.util.List;
 
 @Repository
 public interface SlideRepository extends JpaRepository<SlideEntity, Long> {
+
+    @Query("SELECT s FROM SlideEntity s WHERE s.status = true ORDER BY s.order")
+    List<SlideEntity> findAllByStatusTrue ();
+
     boolean existsByTitle(String title);
 
     @Query("SELECT COALESCE(MAX(s.order), 0) FROM SlideEntity s")

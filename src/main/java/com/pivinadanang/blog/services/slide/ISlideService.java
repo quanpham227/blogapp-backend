@@ -1,6 +1,7 @@
 package com.pivinadanang.blog.services.slide;
 
 import com.pivinadanang.blog.dtos.SlideDTO;
+import com.pivinadanang.blog.dtos.SlideOrderDTO;
 import com.pivinadanang.blog.models.SlideEntity;
 import com.pivinadanang.blog.responses.client.ClientResponse;
 import com.pivinadanang.blog.responses.slide.SlideResponse;
@@ -12,7 +13,8 @@ public interface ISlideService {
     SlideResponse findById(long id) throws Exception;
     SlideResponse createSlide(SlideDTO slideDTO) throws Exception;
     List<SlideResponse> getAllSlides();
+    List<SlideResponse> findAllByStatusTrue();
     SlideResponse updateSlide(long slideId, SlideDTO slideDTO) throws Exception;
     void deleteSlide(long id) throws Exception;
-
+    void updateSlideOrder(List<SlideOrderDTO> slideDTOs) throws Exception;
 }

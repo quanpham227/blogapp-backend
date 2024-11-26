@@ -1,6 +1,7 @@
 package com.pivinadanang.blog.controller;
 import com.pivinadanang.blog.components.LocalizationUtils;
 import com.pivinadanang.blog.dtos.SlideDTO;
+import com.pivinadanang.blog.dtos.SlideOrderDTO;
 import com.pivinadanang.blog.models.SlideEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.slide.SlideResponse;
@@ -25,9 +26,18 @@ public class SlideController {
     private final ISlideService slideService;
     private final LocalizationUtils localizationUtils;
 
-    @GetMapping("")
+    @GetMapping("/admin")
     public ResponseEntity<ResponseObject> getAllSlides() {
         List<SlideResponse> slides = slideService.getAllSlides();
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_SLIDE_SUCCESSFULLY))
+                .status(HttpStatus.OK)
+                .data(slides)
+                .build());
+    }
+    @GetMapping("user")
+    public ResponseEntity<ResponseObject> findAllByStatusTrue() {
+        List<SlideResponse> slides = slideService.findAllByStatusTrue();
         return ResponseEntity.ok(ResponseObject.builder()
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_SLIDE_SUCCESSFULLY))
                 .status(HttpStatus.OK)
@@ -72,6 +82,17 @@ public class SlideController {
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_SLIDE_SUCCESSFULLY, id))
                 .status(HttpStatus.OK)
                 .data(slide)
+                .build());
+    }
+
+    @PutMapping("/order")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> updateSlideOrder(@Valid @RequestBody List<SlideOrderDTO> slideDTOs) throws Exception {
+        slideService.updateSlideOrder(slideDTOs);
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message("Update slides order successfully")
+                .status(HttpStatus.OK)
+                .data(null)
                 .build());
     }
 

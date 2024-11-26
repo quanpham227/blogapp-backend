@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
@@ -19,7 +20,7 @@ public interface IPostService {
     //admin
     PostResponse  createPost(PostDTO postDTO) throws Exception;
     PostResponse getPostById(long id) throws Exception;
-    Page<PostResponse> getAllPosts(String keyword , Long categoryId, PostStatus status, YearMonth createdAt, PageRequest pageRequest);
+    Page<PostResponse> getAllPosts(String keyword , Long categoryId, PostStatus status, LocalDate startDate, LocalDate endDate, PageRequest pageRequest);
     PostResponse updatePost(long id, UpdatePostDTO postDTO) throws Exception;
     void deletePost(long id);
     void deletePosts(List<Long> ids);

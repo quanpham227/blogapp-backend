@@ -11,6 +11,8 @@ import com.pivinadanang.blog.services.comment.CommentService;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,8 +31,11 @@ public class CommentController {
 
 
     @GetMapping("/post/{id}")
-    public ResponseEntity<ResponseObject> getCommentsByPostId(@PathVariable Long id) {
-        List<CommentResponse> commentResponses = commentService.getCommentsByPostId(id);
+    public ResponseEntity<ResponseObject> getCommentsByPostId(@PathVariable Long id,
+                                                              @RequestParam(defaultValue = "0") int page,
+                                                              @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<CommentResponse> commentResponses = commentService.getCommentsByPostId(id, pageable);
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .message("Get comments successfully")
                 .status(HttpStatus.OK)

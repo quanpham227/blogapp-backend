@@ -3,9 +3,11 @@ package com.pivinadanang.blog.services.image;
 import com.pivinadanang.blog.responses.image.ImageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public interface IImageService {
 
@@ -14,12 +16,12 @@ public interface IImageService {
     ImageResponse uploadImage(String objectType, MultipartFile file) throws Exception;
     ImageResponse getImage(long id) throws Exception;
 
-    Page<ImageResponse> getAllImages(String keyword , String objectType,PageRequest pageRequest);
+    Page<ImageResponse> getAllImages(String keyword , String objectType, Pageable pageable);
 
     void deleteImages(List<Long> ids) throws Exception;
 
     Long getTotalFileSize();
 
 
-    Page<ImageResponse> getUnusedImages(PageRequest pageRequest);
+    Page<ImageResponse> getUnusedImages(Pageable pageable);
 }

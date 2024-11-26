@@ -46,16 +46,16 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
             + "AND (:categoryId = 0 OR p.category.id = :categoryId) "
             + "AND (:status IS NULL OR p.status = :status) "
             + "AND (:startDate IS NULL OR p.createdAt >= :startDate) "
-            + "AND (:endDate IS NULL OR p.createdAt <= :endDate)"
+            + "AND (:endDate IS NULL OR p.createdAt <= :endDate) "
             + "AND p.status != :deletedStatus " // Loại bỏ các bài viết có trạng thái DELETED
             + "ORDER BY p.priority DESC, p.createdAt DESC")
     Page<PostEntity> searchPostsForAdmin(@Param("categoryId") Long categoryId,
-                                 @Param("keyword") String keyword,
-                                 @Param("status") PostStatus status,
-                                 @Param("startDate") LocalDateTime startDate,
-                                 @Param("endDate") LocalDateTime endDate,
-                                 @Param("deletedStatus") PostStatus deletedStatus,
-                                 Pageable pageable);
+                                         @Param("keyword") String keyword,
+                                         @Param("status") PostStatus status,
+                                         @Param("startDate") LocalDateTime startDate,
+                                         @Param("endDate") LocalDateTime endDate,
+                                         @Param("deletedStatus") PostStatus deletedStatus,
+                                         Pageable pageable);
 
     @Query("SELECT p FROM PostEntity p WHERE "
             + "(:keyword IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) "

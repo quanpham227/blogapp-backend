@@ -16,18 +16,24 @@ public class AchievementService implements IAchievementService{
     private final AchievementRepository achievementRepository;
 
     @Override
-    public List<AchievementResponse> getAllAchievements() {
+    public List<AchievementResponse> getAllAchievementsForAdmin() {
+        return achievementRepository.findAll().stream()
+                .map(AchievementResponse::fromAchievement).toList();
+    }
+
+    @Override
+    public List<AchievementResponse> getAllAchievementsForUser() {
         return achievementRepository.findAllByIsActiveTrue().stream()
                 .map(AchievementResponse::fromAchievement).toList();
     }
 
     @Override
     public AchievementResponse addAchievement(@Valid AchievementDTO achievement) throws Exception {
-        if (achievementRepository.exitstsByKey(achievement.getKey())) {
-            throw new IllegalStateException("Key must be unique");
+        if (achievementRepository.exitstsByTitle(achievement.getTitle())) {
+            throw new IllegalStateException("Title must be unique");
         }
         AchievementEntity newAchievement = AchievementEntity.builder()
-                .key(achievement.getKey())
+                .title(achievement.getTitle())
                 .value(achievement.getValue())
                 .description(achievement.getDescription())
                 .isActive(achievement.getIsActive() != null ? achievement.getIsActive() : true)
@@ -40,12 +46,12 @@ public class AchievementService implements IAchievementService{
     public AchievementResponse updateAchievement(Long id, AchievementDTO achievement) throws Exception {
         AchievementEntity achievementEntity = achievementRepository.findById(id)
                 .orElseThrow(() -> new Exception("Achievement not found"));
-        if (achievement.getKey() != null && !achievement.getKey().isEmpty()) {
-           if (!achievement.getKey().equals(achievementEntity.getKey()) ) {
-                if (achievementRepository.exitstsByKey(achievement.getKey())) {
+        if (achievement.getTitle() != null && !achievement.getTitle().isEmpty()) {
+           if (!achievement.getTitle().equals(achievementEntity.getTitle()) ) {
+                if (achievementRepository.exitstsByTitle(achievement.getTitle())) {
                     throw new IllegalStateException("Achievement already exists");
                 }
-                achievementEntity.setKey(achievement.getKey());
+                achievementEntity.setTitle(achievement.getTitle());
            }
         }
         if (achievement.getValue() != null && achievement.getValue() >= 0) {
@@ -75,7 +81,7 @@ public class AchievementService implements IAchievementService{
     }
 
     @Override
-    public boolean existsAchievementByKey(String key) {
-        return achievementRepository.exitstsByKey(key);
+    public boolean existsAchievementByTitle(String title) {
+        return achievementRepository.exitstsByTitle(title);
     }
 }

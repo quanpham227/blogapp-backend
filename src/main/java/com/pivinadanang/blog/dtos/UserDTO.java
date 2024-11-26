@@ -16,7 +16,7 @@ import java.util.Date;
 @Getter
 @Setter
 public class UserDTO extends SocialAccountDTO{
-    @JsonProperty("fullname")
+    @JsonProperty("full_name")
     @Size(max = 100, message = "Full name must be less than or equal to 100 characters")
     private String fullName;
 

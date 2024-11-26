@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -55,18 +56,18 @@ public class PostService implements IPostService {
     }
 
     @Override
-    public Page<PostResponse> getAllPosts(String keyword, Long categoryId, PostStatus status, YearMonth createdAt, PageRequest pageRequest) {
+    public Page<PostResponse> getAllPosts(String keyword, Long categoryId, PostStatus status, LocalDate startDate, LocalDate endDate, PageRequest pageRequest) {
         Page<PostEntity> postsPage;
         // Chuyển YearMonth thành LocalDate với ngày bắt đầu và kết thúc của tháng đó
-        LocalDateTime startDate = createdAt != null ? createdAt.atDay(1).atStartOfDay() : null;
-        LocalDateTime endDate = createdAt != null ? createdAt.atEndOfMonth().atTime(23, 59, 59) : null;
+        LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = endDate != null ? endDate.atTime(23, 59, 59) : null;
 
         // Gọi phương thức searchPosts với startDate và endDate
         if(status == PostStatus.DELETED){
-           postsPage = postRepository.searchDeletedPostsForAdmin(categoryId, keyword, status, startDate, endDate,PostStatus.DELETED, pageRequest);
+           postsPage = postRepository.searchDeletedPostsForAdmin(categoryId, keyword, status, startDateTime, endDateTime,PostStatus.DELETED, pageRequest);
 
         }else {
-            postsPage = postRepository.searchPostsForAdmin(categoryId, keyword, status, startDate, endDate,PostStatus.DELETED, pageRequest);
+            postsPage = postRepository.searchPostsForAdmin(categoryId, keyword, status, startDateTime, endDateTime,PostStatus.DELETED, pageRequest);
 
         }
 

@@ -8,10 +8,12 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 public interface IAchievementService {
-    List<AchievementResponse> getAllAchievements();
+    List<AchievementResponse> getAllAchievementsForAdmin();
+    List<AchievementResponse> getAllAchievementsForUser();
+
     AchievementResponse addAchievement(@Valid AchievementDTO achievement) throws Exception;
     AchievementResponse updateAchievement(Long id, AchievementDTO achievement) throws Exception;
     void deleteAchievement(Long id) throws Exception;
     AchievementResponse getAchievementById(Long id) throws Exception;
-    boolean existsAchievementByKey(String key);
+    boolean existsAchievementByTitle(String title);
 }

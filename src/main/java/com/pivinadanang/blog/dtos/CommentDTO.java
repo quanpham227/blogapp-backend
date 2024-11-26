@@ -15,7 +15,6 @@ import lombok.*;
 @NoArgsConstructor
 public class CommentDTO {
     @JsonProperty("post_id")
-    @NotNull(message = "Post ID cannot be null")
     private Long postId;
 
     @JsonProperty("user_id")

@@ -12,7 +12,7 @@ import lombok.*;
 @Builder
 public class AchievementResponse  extends BaseResponse {
     private Long id;
-    private String key;
+    private String title;
     private Integer value;
     private String description;
     @JsonProperty("is_active")
@@ -22,7 +22,7 @@ public class AchievementResponse  extends BaseResponse {
     public static AchievementResponse fromAchievement (AchievementEntity achievement) {
         AchievementResponse achievementResponse =  AchievementResponse.builder()
                 .id(achievement.getId())
-                .key(achievement.getKey())
+                .title(achievement.getTitle())
                 .value(achievement.getValue())
                 .description(achievement.getDescription())
                 .isActive(achievement.getIsActive())

@@ -1,6 +1,5 @@
 package com.pivinadanang.blog.dtos;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -29,8 +28,8 @@ public class UserLoginDTO {
     @JsonProperty("google_account_id")
     private String googleAccountId;
 
-    @JsonProperty("fullname")
-    private String fullname;
+    @JsonProperty("full_name")
+    private String fullName;
 
     // Profile image URL, not mandatory, can be blank
     @JsonProperty("profile_image")

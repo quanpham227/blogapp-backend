@@ -10,6 +10,7 @@ import com.pivinadanang.blog.ultils.MessageKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,45 +30,36 @@ public class ImageController {
     private final IImageService fileUploadService;
 
     @GetMapping("")
-    public ResponseEntity<ImageListResponse> getImages(@RequestParam(defaultValue = "") String keyword,
+    public ResponseEntity<ResponseObject> getImages(@RequestParam(defaultValue = "") String keyword,
                                                        @RequestParam(defaultValue = "", name = "object_type") String objectType,
                                                        @RequestParam(defaultValue = "0") int page,
                                                        @RequestParam(defaultValue = "24") int limit) {
-        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, limit, Sort.by("createdAt").descending());
         Page<ImageResponse> imagePage;
         if ("unused".equals(objectType)) {
-            imagePage = fileUploadService.getUnusedImages(pageRequest);
+            imagePage = fileUploadService.getUnusedImages(pageable);
         } else {
-            imagePage = fileUploadService.getAllImages(keyword, objectType, pageRequest);
+            imagePage = fileUploadService.getAllImages(keyword, objectType, pageable);
         }
         int totalPages = imagePage.getTotalPages();
         List<ImageResponse> images = imagePage.getContent();
+        int totalImages = imagePage.getTotalPages();
         Long totalFileSize = fileUploadService.getTotalFileSize();
 
-        return ResponseEntity.ok(ImageListResponse.builder()
-                .status(HttpStatus.OK)
+        ImageListResponse imageListResponse = ImageListResponse.builder()
                 .images(images)
                 .totalPages(totalPages)
+                .status(HttpStatus.OK)
                 .totalFileSizes(totalFileSize)
-                .build());
-    }
-    @GetMapping("/unused")
-    public ResponseEntity<ImageListResponse> getUnusedImages(@RequestParam(defaultValue = "0") int page,
-                                                             @RequestParam(defaultValue = "25") int limit) {
-        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by("createdAt").descending());
-        Page<ImageResponse> imagePage = fileUploadService.getUnusedImages(pageRequest);
-        int totalPages = imagePage.getTotalPages();
-        List<ImageResponse> images = imagePage.getContent();
-        Long totalFileSize = fileUploadService.getTotalFileSize();
+                .build();
 
-        return ResponseEntity.ok(ImageListResponse.builder()
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Get images successfully")
                 .status(HttpStatus.OK)
-                .images(images)
-                .totalPages(totalPages)
-                .totalFileSizes(totalFileSize)
+                .data(imageListResponse)
                 .build());
     }
-    @GetMapping("/{id}")
+
     public ResponseEntity<ResponseObject> getImage(@PathVariable Long id) throws Exception {
         ImageResponse image = fileUploadService.getImage(id);
         return ResponseEntity.ok(ResponseObject.builder()
@@ -81,7 +73,7 @@ public class ImageController {
 
     @PostMapping(value = "upload/multiple", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> uploadImages(
+    public ResponseEntity<?> uploadImages(
             @RequestParam("object_type") String objectType,
             @RequestParam("files") List<MultipartFile> files) throws Exception {
 
@@ -95,10 +87,10 @@ public class ImageController {
             );
         }
         // Gọi service để upload file
-        List<ImageResponse> images = fileUploadService.uploadImages(objectType, files);
+        List<ImageResponse> imageResponses = fileUploadService.uploadImages(objectType, files);
         return ResponseEntity.ok(ResponseObject.builder()
                 .status(HttpStatus.CREATED)
-                .data(images)
+                .data(imageResponses)
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
                 .build());
     }
@@ -109,7 +101,7 @@ public class ImageController {
         // Gọi service để upload file
         ImageResponse image = fileUploadService.uploadImage(objectType, file);
         return ResponseEntity.ok(ResponseObject.builder()
-                .status(HttpStatus.CREATED)
+                .status(HttpStatus.OK)
                 .data(image)
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
                 .build());
