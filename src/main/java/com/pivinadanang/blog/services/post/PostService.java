@@ -66,12 +66,12 @@ public class PostService implements IPostService {
         if(status == PostStatus.DELETED){
            postsPage = postRepository.searchDeletedPostsForAdmin(categoryId, keyword, status, startDateTime, endDateTime,PostStatus.DELETED, pageRequest);
 
-        }else {
+        } else {
             postsPage = postRepository.searchPostsForAdmin(categoryId, keyword, status, startDateTime, endDateTime,PostStatus.DELETED, pageRequest);
 
         }
 
-        // Chuyển đổi từng PostEntity thành PostResponse và tính toán favoriteCount và commentCount
+        // Chuyển đổi từng PostEntity thành PostResponse
         return postsPage.map(post -> {
             // Tạo PostResponse từ PostEntity
             PostResponse postResponse = PostResponse.fromPost(post);

@@ -27,7 +27,7 @@ public class CategoryController {
 
 
     @PostMapping("")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> insertCategory(@Valid @RequestBody CategoryDTO categoryDTO) throws Exception {
 
         if(categoryService.existsCategoryByName(categoryDTO.getName())){
@@ -71,7 +71,7 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> updateCategory (@PathVariable Long id, @Valid @RequestBody CategoryDTO categoryDTO) throws Exception {
        CategoryResponse categoryResponse =  categoryService.updateCategory(id, categoryDTO);
         return ResponseEntity.ok(ResponseObject
@@ -82,7 +82,7 @@ public class CategoryController {
                 .build());
     }
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> deleteCategory(@PathVariable Long id) throws Exception{
         categoryService.deleteCategory(id);
         return ResponseEntity.ok(

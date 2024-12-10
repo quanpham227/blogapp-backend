@@ -105,6 +105,10 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     Optional<PostEntity> findPostBySlugAndStatusAndVisibility(String slug, PostStatus status, PostVisibility visibility);
 
 
+    @Query("SELECT p FROM PostEntity p WHERE p.status <> :excludedStatus ORDER BY p.viewCount DESC")
+    List<PostEntity> findTop3PostsExcludingStatus(@Param("excludedStatus") PostStatus excludedStatus, Pageable pageable);
 
 
+    @Query("SELECT SUM(p.viewCount) FROM PostEntity p WHERE p.createdAt >= CURRENT_DATE - 7 GROUP BY FUNCTION('DAY', p.createdAt)")
+    List<Long> countPageViewsPerDayLastWeek();
 }

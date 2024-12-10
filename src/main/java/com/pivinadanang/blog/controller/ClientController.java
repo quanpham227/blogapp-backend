@@ -45,7 +45,7 @@ public class ClientController {
                 .build());
     }
     @PostMapping("")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> insertClient(@Valid @RequestBody ClientDTO clientDTO) throws Exception {
         if (clientService.exitsByName(clientDTO.getName())) {
             return ResponseEntity.badRequest()
@@ -62,7 +62,7 @@ public class ClientController {
                 .build());
     }
     @PutMapping(value = "{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> updateClient(@Valid @RequestBody ClientDTO clientDTO,
                                                        @PathVariable  Long id) throws Exception {
 
@@ -75,7 +75,7 @@ public class ClientController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> deleteClient(@PathVariable Long id) throws Exception {
         clientService.deleteClients(id);
         return ResponseEntity.ok().body(ResponseObject.builder()

@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 
@@ -78,13 +79,24 @@ class WebSecurityConfig {
                                     String.format("%s/tags/**", apiPrefix)).permitAll()
                             .requestMatchers(GET,
                                     String.format("%s/achievements/**", apiPrefix)).permitAll()
+                            .requestMatchers(GET,
+                                    String.format("%s/dashboard/**", apiPrefix)).permitAll()
                             .requestMatchers(POST,
                                     String.format("%s/email/**", apiPrefix)).permitAll()
                             .anyRequest()
                             .authenticated();
                     //.anyRequest().permitAll();
                 })
-                .csrf(AbstractHttpConfigurer::disable);
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                .headers(headers -> headers
+                        .defaultsDisabled()
+                        .contentTypeOptions(contentTypeOptions -> contentTypeOptions.disable())
+                        .frameOptions(frameOptions -> frameOptions.deny())
+                        .xssProtection(xss -> xss.disable()) // Disable XSS protection
+                        .cacheControl(cache -> cache.disable())
+                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("script-src 'self'"))
+                );
         http.securityMatcher(String.valueOf(EndpointRequest.toAnyEndpoint()));
         return http.build();
     }

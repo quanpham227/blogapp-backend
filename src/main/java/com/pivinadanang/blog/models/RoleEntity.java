@@ -20,4 +20,5 @@ public class RoleEntity {
 
     public static String ADMIN = "ADMIN";
     public static String USER = "USER";
+    public static String MODERATOR = "MODERATOR";
 }

@@ -56,7 +56,7 @@ public class SlideController {
     }
 
     @PostMapping("")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> insertSlide(@Valid @RequestBody SlideDTO slideDTO, BindingResult result) throws Exception {
         if (slideService.existsByTitle(slideDTO.getTitle())) {
             return ResponseEntity.badRequest()
@@ -74,7 +74,7 @@ public class SlideController {
     }
 
     @PutMapping(value = "{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> updateSlide(@Valid @RequestBody SlideDTO slideDTO,
                                                       @PathVariable Long id) throws Exception {
         SlideResponse slide = slideService.updateSlide(id, slideDTO);
@@ -86,7 +86,7 @@ public class SlideController {
     }
 
     @PutMapping("/order")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> updateSlideOrder(@Valid @RequestBody List<SlideOrderDTO> slideDTOs) throws Exception {
         slideService.updateSlideOrder(slideDTOs);
         return ResponseEntity.ok().body(ResponseObject.builder()
@@ -97,7 +97,7 @@ public class SlideController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> deleteSlide(@PathVariable Long id) throws Exception {
         slideService.deleteSlide(id);
         return ResponseEntity.ok().body(ResponseObject.builder()

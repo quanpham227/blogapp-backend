@@ -72,7 +72,7 @@ public class ImageController {
 
 
     @PostMapping(value = "upload/multiple", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<?> uploadImages(
             @RequestParam("object_type") String objectType,
             @RequestParam("files") List<MultipartFile> files) throws Exception {
@@ -94,7 +94,7 @@ public class ImageController {
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
                 .build());
     }
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     @PostMapping(value = "upload/single",consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseObject> uploadImage(@RequestParam("object_type") String objectType,
                                                         @RequestParam("file") MultipartFile file) throws Exception {
@@ -107,7 +107,7 @@ public class ImageController {
                 .build());
     }
     @DeleteMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> deleteImages(@RequestBody List<Long> ids) throws Exception {
         fileUploadService.deleteImages(ids);
         return ResponseEntity.ok(

@@ -25,7 +25,7 @@ public class AchievementController {
     private final LocalizationUtils localizationUtils;
 
     @PostMapping("")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> insertAchievement(@Valid @RequestBody AchievementDTO achievementDTO) throws Exception {
         if(achievementService.existsAchievementByTitle(achievementDTO.getTitle())){
             return ResponseEntity.badRequest()
@@ -43,7 +43,7 @@ public class AchievementController {
                 .build());
     }
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> updateAchievement(@PathVariable Long id,
                                                             @Valid @RequestBody AchievementDTO achievementDTO) throws Exception {
 
@@ -56,7 +56,7 @@ public class AchievementController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> deleteAchievement(@PathVariable Long id) throws Exception {
         achievementService.deleteAchievement(id);
         return ResponseEntity.ok().body(ResponseObject.builder()

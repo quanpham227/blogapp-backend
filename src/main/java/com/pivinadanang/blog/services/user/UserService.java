@@ -2,6 +2,7 @@ package com.pivinadanang.blog.services.user;
 
 import com.pivinadanang.blog.components.JwtTokenUtils;
 import com.pivinadanang.blog.components.LocalizationUtils;
+import com.pivinadanang.blog.dtos.UpdateUserByAdminDTO;
 import com.pivinadanang.blog.dtos.UpdateUserDTO;
 import com.pivinadanang.blog.dtos.UserDTO;
 import com.pivinadanang.blog.dtos.UserLoginDTO;
@@ -15,6 +16,7 @@ import com.pivinadanang.blog.models.UserEntity;
 import com.pivinadanang.blog.repositories.RoleRepository;
 import com.pivinadanang.blog.repositories.TokenRepository;
 import com.pivinadanang.blog.repositories.UserRepository;
+import com.pivinadanang.blog.responses.user.UserResponse;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +40,8 @@ import static com.pivinadanang.blog.ultils.ValidationUtils.isValidPhoneNumber;
 @Service
 @RequiredArgsConstructor
 public class UserService implements IUserService{
+    private static final List<String> VALID_ROLES = Arrays.asList(RoleEntity.ADMIN, RoleEntity.USER, RoleEntity.MODERATOR);
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final TokenRepository tokenRepository;
@@ -172,8 +177,7 @@ public class UserService implements IUserService{
     @Override
     public UserEntity updateUser(Long userId, UpdateUserDTO updatedUserDTO) throws Exception {
         // Find the existing user by userId
-        UserEntity existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new DataNotFoundException("User not found"));
+        UserEntity existingUser = getUserById(userId);
 
         // Check if the phone number is being changed and if it already exists for another user
         String phoneNumber = updatedUserDTO.getPhoneNumber();
@@ -213,23 +217,21 @@ public class UserService implements IUserService{
     }
 
     @Override
-    public Page<UserEntity> findAll(String keyword, Pageable pageable) throws Exception {
-        return userRepository.findAll(keyword, pageable);
+    public Page<UserEntity> findAll(String keyword,Boolean status, Long roleId, Pageable pageable) throws Exception {
+
+        return userRepository.findAll(keyword, status, roleId,pageable);
     }
 
     @Override
     @Transactional
     public void resetPassword(Long userId, String newPassword) throws InvalidPasswordException, DataNotFoundException {
-        UserEntity existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new DataNotFoundException("User not found"));
+        UserEntity existingUser = getUserById(userId);
         String encodedPassword = passwordEncoder.encode(newPassword);
         existingUser.setPassword(encodedPassword);
         userRepository.save(existingUser);
         //reset password => clear token
         List<Token> tokens = tokenRepository.findByUser(existingUser);
-        for (Token token : tokens) {
-            tokenRepository.delete(token);
-        }
+        tokenRepository.deleteAll(tokens);
     }
 
     @Override
@@ -244,5 +246,52 @@ public class UserService implements IUserService{
     @Override
     public void changeProfileImage(Long userId, String imageName) throws Exception {
 
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUserByAdmin(Long userId, UpdateUserByAdminDTO updateUserByAdminDTO) throws Exception {
+        UserEntity existingUser = getUserById(userId);
+
+        // Cập nhật các thuộc tính
+        if (updateUserByAdminDTO.getFullName() != null) {
+            existingUser.setFullName(updateUserByAdminDTO.getFullName());
+        }
+        if (updateUserByAdminDTO.getPhoneNumber() != null) {
+            if (!existingUser.getPhoneNumber().equals(updateUserByAdminDTO.getPhoneNumber()) &&
+                    userRepository.existsByPhoneNumber(updateUserByAdminDTO.getPhoneNumber())) {
+                throw new DataIntegrityViolationException("Phone number already exists");
+            }
+            existingUser.setPhoneNumber(updateUserByAdminDTO.getPhoneNumber());
+        }
+        if (updateUserByAdminDTO.getFacebookAccountId() != null) {
+            existingUser.setFacebookAccountId(updateUserByAdminDTO.getFacebookAccountId());
+        }
+        if (updateUserByAdminDTO.getGoogleAccountId() != null) {
+            existingUser.setGoogleAccountId(updateUserByAdminDTO.getGoogleAccountId());
+        }
+        if (updateUserByAdminDTO.getPassword() != null && !updateUserByAdminDTO.getPassword().isEmpty()) {
+            if (!updateUserByAdminDTO.getPassword().equals(updateUserByAdminDTO.getRetypePassword())) {
+                throw new DataIntegrityViolationException("Password not match");
+            }
+            existingUser.setPassword(passwordEncoder.encode(updateUserByAdminDTO.getPassword()));
+        }
+
+        // Cập nhật role (Moderator mới có quyền, đã kiểm tra ở Controller)
+        if (updateUserByAdminDTO.getRoleId() != null) {
+            existingUser.setRole(roleRepository.findById(updateUserByAdminDTO.getRoleId())
+                    .orElseThrow(() -> new DataNotFoundException(
+                            localizationUtils.getLocalizedMessage(MessageKeys.ROLE_DOES_NOT_EXISTS))));
+        }
+
+        UserEntity savedUser = userRepository.save(existingUser);
+        return UserResponse.fromUser(savedUser);
+    }
+
+
+    @Override
+    public UserEntity getUserById(Long userId) throws DataNotFoundException {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new DataNotFoundException("User not found"));
     }
 }

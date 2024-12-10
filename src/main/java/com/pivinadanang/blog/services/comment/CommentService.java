@@ -2,6 +2,7 @@ package com.pivinadanang.blog.services.comment;
 
 import com.github.javafaker.Faker;
 import com.pivinadanang.blog.dtos.CommentDTO;
+import com.pivinadanang.blog.dtos.UpdateCommentDTO;
 import com.pivinadanang.blog.enums.CommentStatus;
 import com.pivinadanang.blog.exceptions.DataNotFoundException;
 import com.pivinadanang.blog.models.CommentEntity;
@@ -15,6 +16,7 @@ import com.pivinadanang.blog.responses.comment.CommentResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -137,10 +139,10 @@ public class CommentService implements ICommentService{
 
     @Override
     @Transactional
-    public CommentResponse updateComment(Long id, CommentDTO commentDTO) throws DataNotFoundException {
+    public CommentResponse updateComment(Long id, UpdateCommentDTO updateCommentDTO) throws DataNotFoundException {
         CommentEntity existingComment = commentRepository.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("Comment not found"));
-        existingComment.setContent(commentDTO.getContent());
+        existingComment.setContent(updateCommentDTO.getContent());
         CommentEntity comment = commentRepository.save(existingComment);
         return CommentResponse.fromComment(comment);
     }
@@ -239,6 +241,20 @@ public class CommentService implements ICommentService{
                 .orElseThrow( () -> new DataNotFoundException("Comment not found"));
 
         return CommentResponse.fromComment(comment);
+    }
+
+    @Override
+    public Page<CommentResponse> findAll(String keyword,CommentStatus status, Pageable pageable) throws Exception {
+        Page<CommentEntity> comments = commentRepository.getAllComments(keyword, status, CommentStatus.DELETED, pageable);
+        return comments.map(CommentResponse::fromComment);
+    }
+
+    @Override
+    public void updateCommentStatus(Long commentId, CommentStatus status) throws Exception {
+        CommentEntity comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new Exception("Comment not found"));
+        comment.setStatus(status);
+        commentRepository.save(comment);
     }
 
 }

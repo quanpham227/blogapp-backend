@@ -49,7 +49,7 @@ public class UserResponse {
                 .active(user.isActive())
                 .facebookAccountId(user.getFacebookAccountId())
                 .googleAccountId(user.getGoogleAccountId())
-                .role(RoleResponse.fromRole(user.getRole().getName()))
+                .role(RoleResponse.fromRole(user.getRole()))
                 .build();
     }
 }

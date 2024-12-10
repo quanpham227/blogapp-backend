@@ -1,24 +1,29 @@
 package com.pivinadanang.blog.controller;
-import com.github.javafaker.Faker;
 import com.pivinadanang.blog.components.SecurityUtils;
 import com.pivinadanang.blog.dtos.CommentDTO;
-import com.pivinadanang.blog.models.CommentEntity;
+import com.pivinadanang.blog.dtos.UpdateCommentDTO;
+import com.pivinadanang.blog.enums.CommentStatus;
 import com.pivinadanang.blog.models.RoleEntity;
 import com.pivinadanang.blog.models.UserEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
+import com.pivinadanang.blog.responses.comment.CommentListResponse;
 import com.pivinadanang.blog.responses.comment.CommentResponse;
 import com.pivinadanang.blog.services.comment.CommentService;
-import com.pivinadanang.blog.ultils.MessageKeys;
+import com.pivinadanang.blog.services.comment.ICommentService;
+import com.pivinadanang.blog.services.user.IUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @RestController
@@ -26,10 +31,37 @@ import java.util.Objects;
 
 @RequiredArgsConstructor
 public class CommentController {
-    private final CommentService commentService;
+    private final ICommentService commentService;
     private final SecurityUtils securityUtils;
+    private final IUserService userService;
 
-
+    @GetMapping("")
+    public ResponseEntity<ResponseObject> getAllUser(
+            @RequestParam(defaultValue = "", required = false) String keyword,
+            @RequestParam(required = false) CommentStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int limit
+    ) throws Exception{
+        // Tạo Pageable từ thông tin trang và giới hạn
+        Pageable pageable = PageRequest.of(
+                page, limit,
+                Sort.by("createdAt").descending()
+        );
+        Page<CommentResponse> commentResponsePage = commentService.findAll(keyword,status, pageable);
+        // Lấy tổng số trang
+        int totalPages = commentResponsePage.getTotalPages();
+        List<CommentResponse> commentResponses = commentResponsePage.getContent();
+        CommentListResponse commentListResponse = CommentListResponse
+                .builder()
+                .comments(commentResponses)
+                .totalPages(totalPages)
+                .build();
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message("Get comments list successfully")
+                .status(HttpStatus.OK)
+                .data(commentListResponse)
+                .build());
+    }
     @GetMapping("/post/{id}")
     public ResponseEntity<ResponseObject> getCommentsByPostId(@PathVariable Long id,
                                                               @RequestParam(defaultValue = "0") int page,
@@ -43,7 +75,7 @@ public class CommentController {
                 .build());
     }
     @PostMapping("/add")
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> addComment(@Valid @RequestBody CommentDTO commentDTO) {
         UserEntity loginUser = securityUtils.getLoggedInUser();
         if(!Objects.equals(loginUser.getId(), commentDTO.getUserId())) {
@@ -62,27 +94,44 @@ public class CommentController {
                         .build());
     }
     @PutMapping("/edit/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
-    public ResponseEntity<ResponseObject> updateComment(@PathVariable("id") Long commentId, @Valid @RequestBody CommentDTO commentDTO) throws Exception {
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') or hasRole('MODERATOR')")
+    public ResponseEntity<ResponseObject> updateComment(@PathVariable("id") Long commentId, @Valid @RequestBody UpdateCommentDTO updateCommentDTO) throws Exception {
         UserEntity loginUser = securityUtils.getLoggedInUser();
-        if (!Objects.equals(loginUser.getId(), commentDTO.getUserId())) {
+        String loginUserRole = loginUser.getRole().getName();
+
+        // Check if the user has permission to update the comment
+        if (loginUserRole.equals(RoleEntity.USER) && !Objects.equals(loginUser.getId(), updateCommentDTO.getUserId())) {
             return ResponseEntity.badRequest().body(
                     new ResponseObject(
                             "You cannot update another user's comment",
                             HttpStatus.BAD_REQUEST,
                             null));
-
         }
-        CommentResponse commentResponse =  commentService.updateComment(commentId, commentDTO);
+
+        if (loginUserRole.equals(RoleEntity.ADMIN) && !Objects.equals(loginUser.getId(), updateCommentDTO.getUserId())) {
+            UserEntity commentOwner = userService.getUserById(updateCommentDTO.getUserId());
+            String commentOwnerRole = commentOwner.getRole().getName();
+            if (commentOwnerRole.equals(RoleEntity.ADMIN) || commentOwnerRole.equals(RoleEntity.MODERATOR)) {
+                return ResponseEntity.badRequest().body(
+                        new ResponseObject(
+                                "Admin cannot update another admin's or moderator's comment",
+                                HttpStatus.BAD_REQUEST,
+                                null));
+            }
+        }
+
+        // Moderators can update any comment, so no additional checks are needed
+
+        CommentResponse commentResponse = commentService.updateComment(commentId, updateCommentDTO);
         return ResponseEntity.ok(ResponseObject.builder()
-                        .message("update comment successfully")
-                        .status(HttpStatus.OK)
-                        .data(commentResponse)
-                        .build());
+                .message("update comment successfully")
+                .status(HttpStatus.OK)
+                .data(commentResponse)
+                .build());
     }
 
     @PostMapping("/generateFakeComments")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> generateFakeComments() throws Exception {
         commentService.generateFakeComments();
         return ResponseEntity.ok(ResponseObject.builder()
@@ -93,7 +142,7 @@ public class CommentController {
     }
 
     @PostMapping("/reply")
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> replyComment(@Valid @RequestBody CommentDTO commentDTO) {
         UserEntity loginUser = securityUtils.getLoggedInUser();
         if (!Objects.equals(loginUser.getId(), commentDTO.getUserId())) {
@@ -114,7 +163,7 @@ public class CommentController {
     }
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> deleteComment(@PathVariable("id") Long commentId) throws Exception {
         UserEntity loginUser = securityUtils.getLoggedInUser();
         CommentResponse commentResponse = commentService.getCommentById(commentId);
@@ -144,6 +193,41 @@ public class CommentController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .message("Delete comment successfully")
+                        .status(HttpStatus.OK)
+                        .data(null)
+                        .build());
+    }
+
+    @PutMapping("/updateStatus/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
+    public ResponseEntity<ResponseObject> updateCommentStatus(
+            @PathVariable("id") Long commentId,
+            @RequestBody Map<String, CommentStatus> request) throws Exception {
+        CommentStatus status = request.get("status");
+        UserEntity loginUser = securityUtils.getLoggedInUser();
+        CommentResponse commentResponse = commentService.getCommentById(commentId);
+        if (commentResponse == null) {
+            return ResponseEntity.badRequest().body(ResponseObject.builder()
+                    .message("Comment not found")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .data(null)
+                    .build());
+        }
+
+        // Check if the user has permission to update the comment status
+        if (!loginUser.getRole().getName().equals(RoleEntity.ADMIN) && !Objects.equals(loginUser.getId(), commentResponse.getUserId())) {
+            return ResponseEntity.badRequest()
+                    .body(ResponseObject.builder()
+                            .message("You do not have permission")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+
+        // Update the comment status
+        commentService.updateCommentStatus(commentId, status);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .message("Update comment status successfully")
                         .status(HttpStatus.OK)
                         .data(null)
                         .build());

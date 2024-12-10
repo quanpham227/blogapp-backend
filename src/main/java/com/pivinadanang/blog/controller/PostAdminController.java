@@ -43,7 +43,7 @@ public class PostAdminController {
     private final PostRedisService postRedisService;
 
     @PostMapping("")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO) throws Exception{
         if(postService.existsPostByTitle(postDTO.getTitle())){
             return ResponseEntity.badRequest()
@@ -77,18 +77,18 @@ public class PostAdminController {
                 .build());
     }
     @PutMapping(value = "/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody UpdatePostDTO postDTO, @PathVariable Long id) throws Exception {
         PostResponse postResponse = postService.updatePost(id,postDTO);
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_POST_SUCCESSFULLY))
-                        .status(HttpStatus.CREATED)
+                        .status(HttpStatus.OK)
                         .data(postResponse)
                         .build());
     }
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> deletePost(@PathVariable Long id) throws Exception{
             postService.deletePost(id);
             return ResponseEntity.ok(ResponseObject.builder()
@@ -98,7 +98,7 @@ public class PostAdminController {
                     .build());
     }
     @DeleteMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> deletePosts(@RequestBody List<Long> ids) throws Exception {
         postService.deletePosts(ids);
         return ResponseEntity.ok(ResponseObject.builder()

@@ -1,7 +1,10 @@
 package com.pivinadanang.blog.responses.role;
+import com.pivinadanang.blog.models.RoleEntity;
 import lombok.*;
 
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -9,11 +12,18 @@ import java.util.Date;
 @NoArgsConstructor
 @Builder
 public class RoleResponse {
+    Long id;
     private String name;
 
-    public static RoleResponse fromRole(String role) {
+    public static RoleResponse fromRole(RoleEntity role) {
         return RoleResponse.builder()
-                .name(role)
+                .id(role.getId())
+                .name(role.getName())
                 .build();
+    }
+    public static List<RoleResponse> fromRoles(List<RoleEntity> roles) {
+        return roles.stream()
+                .map(RoleResponse::fromRole)
+                .collect(Collectors.toList());
     }
 }
