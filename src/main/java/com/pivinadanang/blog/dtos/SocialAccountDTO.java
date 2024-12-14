@@ -10,36 +10,23 @@ import lombok.Setter;
 @Setter
 public abstract class SocialAccountDTO {
 
-    @JsonProperty("provider")
-    @NotEmpty(message = "Provider cannot be empty")
-    @Size(max = 20, message = "Provider must be less than or equal to 20 characters")
-    protected String provider;
+    @JsonProperty("facebook_account_id")
+    protected String facebookAccountId;
 
-    @JsonProperty("provider_id")
-    @NotEmpty(message = "Provider ID cannot be empty")
-    @Size(max = 50, message = "Provider ID must be less than or equal to 50 characters")
-    protected String providerId;
-
-    @JsonProperty("email")
-    @Email(message = "Email should be valid")
-    @Size(max = 150, message = "Email must be less than or equal to 150 characters")
-    protected String email;
-
-    @JsonProperty("name")
-    @Size(max = 150, message = "Name must be less than or equal to 150 characters")
-    protected String name;
+    @JsonProperty("google_account_id")
+    protected String googleAccountId;
 
     public boolean isFacebookAccountIdValid() {
-        return provider.equalsIgnoreCase("facebook") && providerId != null && !providerId.isEmpty();
+        return facebookAccountId != null && !facebookAccountId.isEmpty();
     }
 
     public boolean isGoogleAccountIdValid() {
-        return provider.equalsIgnoreCase("google") && providerId != null && !providerId.isEmpty();
+        return googleAccountId != null && !googleAccountId.isEmpty();
     }
 
     // Phương thức kiểm tra xem người dùng có phải là người dùng đăng nhập xã hội hay không
     public boolean isSocialLogin() {
-        return (provider.equalsIgnoreCase("facebook") && providerId != null && !providerId.isEmpty()) ||
-                (provider.equalsIgnoreCase("google") && providerId != null && !providerId.isEmpty());
+        return (facebookAccountId != null && !facebookAccountId.isEmpty()) ||
+                (googleAccountId != null && !googleAccountId.isEmpty());
     }
 }

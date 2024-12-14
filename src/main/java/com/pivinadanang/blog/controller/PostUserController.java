@@ -43,19 +43,28 @@ public class PostUserController {
             @RequestParam (defaultValue = "",required = false) String categorySlug,
             @RequestParam (defaultValue = "",required = false) String tagSlug,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "6") int limit) throws JsonProcessingException {
         Pageable pageable = createPageable(page, limit);
-        Page<PostResponse> postPage = postService.searchPosts(keyword,categorySlug, tagSlug, pageable);
-        List<PostResponse> postResponses = postPage.getContent();
-        int totalPages = postPage.getTotalPages();
-        postResponses.forEach(post -> post.setTotalPages(totalPages));
+
+        List<PostResponse> postResponses = postRedisService.getAllPosts(keyword, categorySlug, tagSlug, pageable);
+
+        if (postResponses == null || postResponses.isEmpty()) {
+            Page<PostResponse> postPage = postService.searchPosts(keyword,categorySlug, tagSlug, pageable);
+            postResponses = postPage.getContent();
+            int totalPages = postPage.getTotalPages();
+            postResponses.forEach(post -> post.setTotalPages(totalPages));
+            postRedisService.saveAllPosts(postResponses, keyword, categorySlug, tagSlug, pageable);
+        }
+
         PostListResponse postListResponse = PostListResponse.builder()
                 .posts(postResponses)
-                .totalPages(totalPages)
-                .status(HttpStatus.OK)
+                .totalPages(postResponses.isEmpty() ? 0 : postResponses.get(0).getTotalPages())
                 .build();
+
+
+
         return ResponseEntity.ok(ResponseObject.builder()
-                .message("Get user posts successfully")
+                .message("Get  posts successfully")
                 .status(HttpStatus.OK)
                 .data(postListResponse)
                 .build());
@@ -102,13 +111,20 @@ public class PostUserController {
 
     @GetMapping("/{slug}")
     public ResponseEntity<ResponseObject> getPostBySlug(@PathVariable String slug) throws Exception {
-        PostResponse postResponse = postService.getPostBySlug(slug);
+        PostResponse postResponse = postRedisService.getPostBySlug(slug);
+
+        if (postResponse == null || postResponse.getSlug() == null) {
+            postResponse = postService.getPostBySlug(slug);
+            postRedisService.savePostBySlug(postResponse, slug);
+        }
+
         return ResponseEntity.ok(ResponseObject.builder()
                 .status(HttpStatus.OK)
                 .data(postResponse)
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
                 .build());
     }
-
-
 }
+
+
+

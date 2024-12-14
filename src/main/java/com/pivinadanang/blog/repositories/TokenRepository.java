@@ -12,4 +12,4 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
     List<Token> findByUser(UserEntity user);
     Token findByToken(String token);
     Token findByRefreshToken(String token);
-}
+    void deleteByUserId(Long userId);}

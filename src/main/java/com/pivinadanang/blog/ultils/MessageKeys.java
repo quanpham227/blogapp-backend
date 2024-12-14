@@ -7,6 +7,7 @@ public class MessageKeys {
     public static final String USER_IS_LOCKED = "user.login.user_is_locked";
     public static final String WRONG_PHONE_PASSWORD = "user.login.wrong_phone_password";
 
+
     public static final String INSERT_CATEGORY_SUCCESSFULLY = "category.create_category.create_successfully";
     public static final String INSERT_CATEGORY_ALREADY_EXISTS = "category.create_category.create_already_exists";
     public static final String UPDATE_CATEGORY_SUCCESSFULLY = "category.update_category.update_successfully";
@@ -20,6 +21,7 @@ public class MessageKeys {
     public static final String GET_POST_SUCCESSFULLY = "post.get_post.get_successfully";
     public static final String INSERT_POST_ALREADY_EXISTS = "post.create_post.create_already_exists";
     public static final String INSERT_POST_THUMBNAIL_REQUIRED = "post.create_post.thumbnail_required";
+    public static final String DISABLE_POST_SUCCESSFULLY = "post.disable_posts.disable_successfully";
 
 
     public static final String GET_CLIENT_SUCCESSFULLY = "client.get_client.get_successfully";

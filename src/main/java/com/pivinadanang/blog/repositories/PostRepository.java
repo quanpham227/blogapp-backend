@@ -32,7 +32,6 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     @Query("SELECT p.createdAt FROM PostEntity p")
     List<LocalDateTime> findAllCreatedAt();
 
-    Long countByStatus(PostStatus status);
 
     long count ();
 

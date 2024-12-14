@@ -2,9 +2,11 @@ package com.pivinadanang.blog.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pivinadanang.blog.components.LocalizationUtils;
+import com.pivinadanang.blog.components.SecurityUtils;
 import com.pivinadanang.blog.dtos.PostDTO;
 import com.pivinadanang.blog.dtos.UpdatePostDTO;
 import com.pivinadanang.blog.enums.PostStatus;
+import com.pivinadanang.blog.models.UserEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.post.PostListResponse;
 import com.pivinadanang.blog.responses.post.PostResponse;
@@ -21,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -40,7 +43,8 @@ public class PostAdminController {
     private  static final Logger logger = LoggerFactory.getLogger(PostAdminController.class);
     private final IPostService postService;
     private final LocalizationUtils localizationUtils;
-    private final PostRedisService postRedisService;
+    private final SecurityUtils securityUtils;
+
 
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
@@ -87,27 +91,36 @@ public class PostAdminController {
                         .data(postResponse)
                         .build());
     }
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/disable/{id}/{isPermanent}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> deletePost(@PathVariable Long id) throws Exception{
-            postService.deletePost(id);
-            return ResponseEntity.ok(ResponseObject.builder()
-                            .data(null)
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_POST_SUCCESSFULLY))
-                            .status(HttpStatus.OK)
-                    .build());
-    }
-    @DeleteMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> deletePosts(@RequestBody List<Long> ids) throws Exception {
-        postService.deletePosts(ids);
+    public ResponseEntity<ResponseObject> deleteOrDisablePost(@PathVariable Long id, @PathVariable boolean isPermanent) throws Exception {
+        UserEntity loggedInUser = securityUtils.getLoggedInUser();
+        if (loggedInUser == null) {
+            throw new AccessDeniedException("You must be logged in to perform this action.");
+        }
+
+        if (securityUtils.hasRole("ROLE_MODERATOR")) {
+            if (isPermanent) {
+                postService.deletePost(id);
+            } else {
+                postService.disablePost(id);
+            }
+        } else if (securityUtils.hasRole("ROLE_ADMIN")) {
+            if (isPermanent) {
+                throw new AccessDeniedException("Admins are not allowed to permanently delete posts.");
+            } else {
+                postService.disablePost(id);
+            }
+        } else {
+            throw new AccessDeniedException("You do not have permission to perform this action.");
+        }
+
         return ResponseEntity.ok(ResponseObject.builder()
                 .data(null)
-                .message(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_POST_SUCCESSFULLY))
+                .message(localizationUtils.getLocalizedMessage(isPermanent ? MessageKeys.DELETE_POST_SUCCESSFULLY : MessageKeys.DISABLE_POST_SUCCESSFULLY))
                 .status(HttpStatus.OK)
                 .build());
     }
-
     @GetMapping("")
     public ResponseEntity<ResponseObject> getPosts(
             @RequestParam(defaultValue = "") String keyword,
@@ -120,21 +133,6 @@ public class PostAdminController {
             throws JsonProcessingException {
         // Tạo Pageable từ thông tin trang và giới hạn
         PageRequest pageRequest = PageRequest.of(page, limit);
-//        List<PostResponse> postResponses = postRedisService.getAllPosts(keyword, categoryId, status, createdAt, pageRequest);
-//
-//        if (postResponses == null || postResponses.isEmpty()) {
-//            Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, createdAt, pageRequest);
-//            postResponses = postPage.getContent();
-//            int totalPages = postPage.getTotalPages();
-//            postResponses.forEach(post -> post.setTotalPages(totalPages));
-//            postRedisService.saveAllPosts(postResponses, keyword, categoryId, status, createdAt, pageRequest);
-//        }
-//        PostListResponse postListResponse = PostListResponse.builder()
-//                .posts(postResponses)
-//                .totalPages(postResponses.isEmpty() ? 0 : postResponses.get(0).getTotalPages())
-//                .build();
-
-
         Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, startDate, endDate, pageRequest);
         List<PostResponse> postResponses = postPage.getContent();
         int totalPages = postPage.getTotalPages();
@@ -151,33 +149,4 @@ public class PostAdminController {
 
     }
 
-
-
-    @GetMapping("/month-years")
-    public ResponseEntity<ResponseObject> getAllMonthYears () {
-        List<String> monthYears = postService.getAllMonthYears();
-        return ResponseEntity.ok(ResponseObject.builder()
-                .message("Get all month years successfully")
-                .status(HttpStatus.OK)
-                .data(monthYears)
-                .build());
-    }
-    @GetMapping("/counts")
-    public ResponseEntity<ResponseObject> getPostStatusCounts() {
-        try {
-            Map<PostStatus, Long> postCounts = postService.getPostCountsByStatus();
-
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .status(HttpStatus.OK)
-                    .data(postCounts)
-                    .message("Successfully retrieved post counts.")
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseObject.builder()
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .message("Error retrieving post counts: " + e.getMessage())
-                            .build());
-        }
-    }
 }

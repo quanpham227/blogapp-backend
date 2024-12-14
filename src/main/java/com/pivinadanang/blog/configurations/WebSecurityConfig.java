@@ -53,8 +53,9 @@ class WebSecurityConfig {
                                     "/webjars/swagger-ui/**",
                                     "/swagger-ui/index.html",
 
-                                    // WebSocket endpoint
-                                    "/progress"
+                                    //Google login
+                                    "users/auth/social-login",
+                                    "users/auth/social/callback"
 
                             )
                             .permitAll()

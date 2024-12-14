@@ -22,12 +22,12 @@ public interface IPostService {
     PostResponse getPostById(long id) throws Exception;
     Page<PostResponse> getAllPosts(String keyword , Long categoryId, PostStatus status, LocalDate startDate, LocalDate endDate, PageRequest pageRequest);
     PostResponse updatePost(long id, UpdatePostDTO postDTO) throws Exception;
-    void deletePost(long id);
+    void disablePost(long id) throws Exception;
+    void deletePost(long id) throws Exception;
     void deletePosts(List<Long> ids);
     boolean existsPostByTitle(String title);
     Page<PostResponse> getRecentPosts(Pageable pageable);
-    List<String> getAllMonthYears();
-    Map<PostStatus, Long> getPostCountsByStatus();
+
 
     //user
     PostResponse getPostBySlug( String slug) throws Exception;

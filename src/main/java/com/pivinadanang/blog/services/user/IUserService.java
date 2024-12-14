@@ -22,7 +22,8 @@ public interface IUserService {
     void resetPassword(Long userId, String newPassword)
             throws InvalidPasswordException, DataNotFoundException;
     void blockOrEnable(Long userId, Boolean active) throws DataNotFoundException;
-    void changeProfileImage(Long userId, String imageName) throws Exception;
     UserResponse updateUserByAdmin(Long userId, UpdateUserByAdminDTO updateUserByAdminDTO) throws Exception;
     UserEntity getUserById(Long userId) throws DataNotFoundException;
+    String loginSocial(UserLoginDTO userLoginDTO) throws Exception;
+    void deleteUser(Long userId) throws Exception;
 }

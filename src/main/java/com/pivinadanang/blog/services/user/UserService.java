@@ -50,6 +50,8 @@ public class UserService implements IUserService{
     private final AuthenticationManager authenticationManager;
 
 
+
+
     private final LocalizationUtils localizationUtils;
     @Override
     public UserEntity createUser(UserDTO userDTO) throws Exception {
@@ -134,13 +136,14 @@ public class UserService implements IUserService{
     public String login(UserLoginDTO userLoginDTO) throws Exception {
         Optional<UserEntity> optionalUser = Optional.empty();
         String subject = null;
+
         // Check if the user exists by email
         if (userLoginDTO.getEmail() != null && !userLoginDTO.getEmail().isBlank()) {
             optionalUser = userRepository.findByEmail(userLoginDTO.getEmail());
             subject = userLoginDTO.getEmail();
         }
 
-        // If the user is not found by email, check by  phone number
+        // If the user is not found by email, check by phone number
         if (optionalUser.isEmpty() && userLoginDTO.getPhoneNumber() != null) {
             optionalUser = userRepository.findByPhoneNumber(userLoginDTO.getPhoneNumber());
             subject = userLoginDTO.getPhoneNumber();
@@ -154,25 +157,33 @@ public class UserService implements IUserService{
         // Get the existing user
         UserEntity existingUser = optionalUser.get();
 
-        //check password
-        if ((existingUser.getFacebookAccountId() == null || existingUser.getFacebookAccountId().isEmpty()) &&
-                (existingUser.getGoogleAccountId() == null || existingUser.getGoogleAccountId().isEmpty())) {
-            if (!passwordEncoder.matches(userLoginDTO.getPassword(), existingUser.getPassword())) {
-                throw new BadCredentialsException("Wrong email or password");
-            }
-        }
-
-        if(!existingUser.isActive()) {
+        // Check if the user is active
+        if (!existingUser.isActive()) {
             throw new DataNotFoundException(localizationUtils.getLocalizedMessage(MessageKeys.USER_IS_LOCKED));
         }
+
+        // Check if the account is linked to Facebook or Google
+        if (existingUser.getFacebookAccountId() != null && !existingUser.getFacebookAccountId().isEmpty()) {
+            throw new BadCredentialsException("Tài khoản này được đăng ký bằng Facebook. Vui lòng đăng nhập bằng Facebook.");
+        }
+        if (existingUser.getGoogleAccountId() != null && !existingUser.getGoogleAccountId().isEmpty()) {
+            throw new BadCredentialsException("Tài khoản này được đăng ký bằng Google. Vui lòng đăng nhập bằng Google.");
+        }
+
+        // Check password
+        if (!passwordEncoder.matches(userLoginDTO.getPassword(), existingUser.getPassword())) {
+            throw new BadCredentialsException("Wrong email or password");
+        }
+
+        // Authenticate with Java Spring Security
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                subject, userLoginDTO.getPassword(),
-                existingUser.getAuthorities()
-        );
-        //authenticate with Java Spring security
+                subject, userLoginDTO.getPassword(), existingUser.getAuthorities());
         authenticationManager.authenticate(authenticationToken);
+
+        // Generate JWT token
         return jwtTokenUtil.generateToken(existingUser);
     }
+
     @Transactional
     @Override
     public UserEntity updateUser(Long userId, UpdateUserDTO updatedUserDTO) throws Exception {
@@ -243,10 +254,7 @@ public class UserService implements IUserService{
         userRepository.save(existingUser);
     }
 
-    @Override
-    public void changeProfileImage(Long userId, String imageName) throws Exception {
 
-    }
 
     @Override
     @Transactional
@@ -294,4 +302,79 @@ public class UserService implements IUserService{
         return userRepository.findById(userId)
                 .orElseThrow(() -> new DataNotFoundException("User not found"));
     }
+
+    @Override
+    public String loginSocial(UserLoginDTO userLoginDTO) throws Exception {
+        Optional<UserEntity> optionalUser = Optional.empty();
+        RoleEntity roleUser = roleRepository.findByName(RoleEntity.USER)
+                .orElseThrow(() -> new DataNotFoundException(
+                        localizationUtils.getLocalizedMessage(MessageKeys.ROLE_DOES_NOT_EXISTS)));
+
+        // Kiểm tra Google Account ID
+        if (userLoginDTO.isGoogleAccountIdValid()) {
+            optionalUser = userRepository.findByGoogleAccountId(userLoginDTO.getGoogleAccountId());
+
+            // Tạo người dùng mới nếu không tìm thấy
+            if (optionalUser.isEmpty()) {
+                UserEntity newUser = UserEntity.builder()
+                        .fullName(Optional.ofNullable(userLoginDTO.getFullName()).orElse(""))
+                        .email(Optional.ofNullable(userLoginDTO.getEmail()).orElse(""))
+                        .profileImage(Optional.ofNullable(userLoginDTO.getProfileImage()).orElse(""))
+                        .role(roleUser)
+                        .googleAccountId(userLoginDTO.getGoogleAccountId())
+                        .password("") // Mật khẩu trống cho đăng nhập mạng xã hội
+                        .active(true)
+                        .build();
+
+                // Lưu người dùng mới
+                newUser = userRepository.save(newUser);
+                optionalUser = Optional.of(newUser);
+            }
+        }
+        // Kiểm tra Facebook Account ID
+        else if (userLoginDTO.isFacebookAccountIdValid()) {
+            optionalUser = userRepository.findByFacebookAccountId(userLoginDTO.getFacebookAccountId());
+
+            // Tạo người dùng mới nếu không tìm thấy
+            if (optionalUser.isEmpty()) {
+                UserEntity newUser = UserEntity.builder()
+                        .fullName(Optional.ofNullable(userLoginDTO.getFullName()).orElse(""))
+                        .email(Optional.ofNullable(userLoginDTO.getEmail()).orElse(""))
+                        .profileImage(Optional.ofNullable(userLoginDTO.getProfileImage()).orElse(""))
+                        .role(roleUser)
+                        .facebookAccountId(userLoginDTO.getFacebookAccountId())
+                        .password("") // Mật khẩu trống cho đăng nhập mạng xã hội
+                        .active(true)
+                        .build();
+
+                // Lưu người dùng mới
+                newUser = userRepository.save(newUser);
+                optionalUser = Optional.of(newUser);
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid social account information.");
+        }
+
+        UserEntity user = optionalUser.get();
+
+        // Kiểm tra nếu tài khoản bị khóa
+        if (!user.isActive()) {
+            throw new DataNotFoundException(localizationUtils.getLocalizedMessage(MessageKeys.USER_IS_LOCKED));
+        }
+
+        // Tạo JWT token cho người dùng
+        return jwtTokenUtil.generateToken(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long userId) throws Exception {
+        // Xóa các token liên quan đến người dùng
+        tokenRepository.deleteByUserId(userId);
+
+        // Xóa người dùng
+        UserEntity existingUser = getUserById(userId);
+        userRepository.delete(existingUser);
+    }
+
 }

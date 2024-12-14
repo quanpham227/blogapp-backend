@@ -94,6 +94,7 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                 Pair.of(String.format("/%s/users/register", apiPrefix), "POST"),
                 Pair.of(String.format("/%s/users/login", apiPrefix), "POST"),
                 Pair.of(String.format("/%s/users/refreshToken", apiPrefix), "POST"),
+                Pair.of(String.format("/%s/users/auth/social/callback", apiPrefix), "GET"),
 
                 // Swagger
                 // Swagger
@@ -107,8 +108,9 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                 Pair.of("/swagger-ui.html", "GET"),
                 Pair.of("/swagger-ui/index.html", "GET"),
 
-                // WebSocket
-                Pair.of("/progress", "GET")
+                //Đăng nhập social
+                Pair.of(String.format("/%s/users/auth/social-login**", apiPrefix), "GET"),
+                Pair.of(String.format("/%s/users/auth/social/callback**", apiPrefix), "GET")
 
         );
 

@@ -336,14 +336,19 @@ public class PostService implements IPostService {
 
     @Override
     @Transactional
-    public void deletePost(long id) {
-        Optional<PostEntity> optionalPost = postRepository.findById(id);
-        optionalPost.ifPresent(post -> {
-            // Kiểm tra giá trị trạng thái hợp lệ trước khi cập nhật
-            post.setStatus(PostStatus.DELETED);
-            postRepository.save(post);
-        });
+    public void disablePost(long id) throws DataNotFoundException {
+        PostEntity post = findPostByIdOrThrow(id);
+        post.setStatus(PostStatus.DELETED);
+        postRepository.save(post);
     }
+
+    @Override
+    @Transactional
+    public void deletePost(long id) throws DataNotFoundException {
+        PostEntity post = findPostByIdOrThrow(id);
+        postRepository.delete(post);
+    }
+
 
     @Override
     @Transactional
@@ -378,26 +383,7 @@ public class PostService implements IPostService {
         return postsPage.map(PostResponse::fromPost);
     }
 
-    @Override
-    public List<String> getAllMonthYears() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
-        return postRepository.findAllCreatedAt().stream()
-                .map(date -> date.format(formatter))
-                .distinct()
-                .collect(Collectors.toList());
-    }
 
-    @Override
-    public Map<PostStatus, Long> getPostCountsByStatus() {
-        Map<PostStatus, Long> postCounts = new HashMap<>();
-        // Đếm số lượng bài viết theo từng trạng thái
-        postCounts.put(PostStatus.PUBLISHED, postRepository.countByStatus(PostStatus.PUBLISHED));
-        postCounts.put(PostStatus.DRAFT, postRepository.countByStatus(PostStatus.DRAFT));
-        postCounts.put(PostStatus.DELETED, postRepository.countByStatus(PostStatus.DELETED));
-        postCounts.put(PostStatus.PENDING, postRepository.countByStatus(PostStatus.PENDING));
-
-        return postCounts;
-    }
 
     @Override
     public Page<PostResponse> searchPosts(String keyword, String categorySlug, String tagSlug,  Pageable pageable) {
@@ -432,6 +418,9 @@ public class PostService implements IPostService {
                 .build();
     }
 
-
+    private PostEntity findPostByIdOrThrow(long id) throws DataNotFoundException {
+        return postRepository.findById(id)
+                .orElseThrow(() -> new DataNotFoundException("Cannot find post with id " + id));
+    }
 
 }

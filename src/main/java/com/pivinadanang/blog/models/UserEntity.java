@@ -6,10 +6,9 @@ import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 @Entity
 @Table(name = "users")
@@ -18,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserEntity extends BaseEntity implements UserDetails {
+public class UserEntity extends BaseEntity implements UserDetails, OAuth2User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,11 +25,11 @@ public class UserEntity extends BaseEntity implements UserDetails {
     @Column(name = "full_name", length = 100)
     private String fullName;
 
-    @Column(name = "phone_number", length = 10, nullable = true)
+    @Column(name = "phone_number", length = 15)
     private String phoneNumber;
 
     // ALTER TABLE users ADD COLUMN email VARCHAR(255) DEFAULT '';
-    @Column(name = "email", length = 100, nullable = false)
+    @Column(name = "email", length = 255)
     private String email;
 
     //ALTER TABLE users ADD COLUMN profile_image VARCHAR(255) DEFAULT '';
@@ -56,6 +55,8 @@ public class UserEntity extends BaseEntity implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonManagedReference
     private List<CommentEntity> comments = new ArrayList<>();
+
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -91,5 +92,13 @@ public class UserEntity extends BaseEntity implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+    @Override
+    public Map<String, Object> getAttributes() {
+        return new HashMap<String, Object>();
+    }
+    @Override
+    public String getName() {
+        return getAttribute("name");
     }
 }

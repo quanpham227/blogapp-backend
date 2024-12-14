@@ -215,7 +215,9 @@ public class CommentController {
         }
 
         // Check if the user has permission to update the comment status
-        if (!loginUser.getRole().getName().equals(RoleEntity.ADMIN) && !Objects.equals(loginUser.getId(), commentResponse.getUserId())) {
+        if (!loginUser.getRole().getName().equals(RoleEntity.ADMIN) &&
+                !loginUser.getRole().getName().equals(RoleEntity.MODERATOR) &&
+                !Objects.equals(loginUser.getId(), commentResponse.getUserId())) {
             return ResponseEntity.badRequest()
                     .body(ResponseObject.builder()
                             .message("You do not have permission")

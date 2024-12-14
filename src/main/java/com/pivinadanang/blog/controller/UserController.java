@@ -11,6 +11,7 @@ import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.user.LoginResponse;
 import com.pivinadanang.blog.responses.user.UserListResponse;
 import com.pivinadanang.blog.responses.user.UserResponse;
+import com.pivinadanang.blog.services.auth.IAuthService;
 import com.pivinadanang.blog.services.role.RoleService;
 import com.pivinadanang.blog.services.token.ITokenService;
 import com.pivinadanang.blog.services.user.IUserService;
@@ -37,6 +38,8 @@ import org.springframework.security.core.GrantedAuthority;
 
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @RestController
@@ -47,6 +50,7 @@ public class UserController {
     private final LocalizationUtils localizationUtils;
     private final ITokenService tokenService;
     private final RoleService roleService;
+    private final IAuthService authService;
 
 
     @GetMapping("")
@@ -429,5 +433,121 @@ public class UserController {
                 .build());
     }
 
+    //@PostMapping("/login/social")
+    private ResponseEntity<ResponseObject> loginSocial(
+            @Valid @RequestBody UserLoginDTO userLoginDTO,
+            HttpServletRequest request
+    ) throws Exception {
+        // Gọi hàm loginSocial từ UserService cho đăng nhập mạng xã hội
+        String token = userService.loginSocial(userLoginDTO);
+
+        // Xử lý token và thông tin người dùng
+        String userAgent = request.getHeader("User-Agent");
+        UserEntity userDetail = userService.getUserDetailsFromToken(token);
+        Token jwtToken = tokenService.addToken(userDetail, token, isMobileDevice(userAgent));
+
+        // Tạo đối tượng LoginResponse
+        LoginResponse loginResponse = LoginResponse.builder()
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_SUCCESSFULLY))
+                .token(jwtToken.getToken())
+                .tokenType(jwtToken.getTokenType())
+                .refreshToken(jwtToken.getRefreshToken())
+                .username(userDetail.getUsername())
+                .roles(userDetail.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
+                .id(userDetail.getId())
+                .build();
+
+        // Trả về phản hồi
+        return ResponseEntity.ok().body(
+                ResponseObject.builder()
+                        .message("Login successfully")
+                        .data(loginResponse)
+                        .status(HttpStatus.OK)
+                        .build()
+        );
+    }
+
+    //Angular, bấm đăng nhập gg, redirect đến trang đăng nhập google, đăng nhập xong có "code"
+    //Từ "code" => google token => lấy ra các thông tin khác
+    @GetMapping("/auth/social-login")
+    public ResponseEntity<String> socialAuth(@RequestParam("login_type") String loginType, HttpServletRequest request){
+        //request.getRequestURI()
+        loginType = loginType.trim().toLowerCase();  // Loại bỏ dấu cách và chuyển thành chữ thường
+        String url = authService.generateAuthUrl(loginType);
+        return ResponseEntity.ok(url);
+    }
+
+    @GetMapping("/auth/social/callback")
+    public ResponseEntity<ResponseObject> callback(@RequestParam("code") String code, @RequestParam("login_type") String loginType, HttpServletRequest request) throws Exception {
+        // Call the AuthService to get user info
+        Map<String, Object> userInfo = authService.authenticateAndFetchProfile(code, loginType);
+
+        if (userInfo == null) {
+            return ResponseEntity.badRequest().body(new ResponseObject(
+                    "Failed to authenticate", HttpStatus.BAD_REQUEST, null
+            ));
+        }
+
+        // Extract user information from userInfo map
+        String accountId = "";
+        String name = "";
+        String picture = "";
+        String email = "";
+
+        if (loginType.trim().equals("google")) {
+            accountId = (String) Objects.requireNonNullElse(userInfo.get("sub"), "");
+            name = (String) Objects.requireNonNullElse(userInfo.get("name"), "");
+            picture = (String) Objects.requireNonNullElse(userInfo.get("picture"), "");
+            email = (String) Objects.requireNonNullElse(userInfo.get("email"), "");
+        } else if (loginType.trim().equals("facebook")) {
+            accountId = (String) Objects.requireNonNullElse(userInfo.get("id"), "");
+            name = (String) Objects.requireNonNullElse(userInfo.get("name"), "");
+            email = (String) Objects.requireNonNullElse(userInfo.get("email"), "");
+            // Lấy URL ảnh từ cấu trúc dữ liệu của Facebook
+            Object pictureObj = userInfo.get("picture");
+            if (pictureObj instanceof Map) {
+                Map<?, ?> pictureData = (Map<?, ?>) pictureObj;
+                Object dataObj = pictureData.get("data");
+                if (dataObj instanceof Map) {
+                    Map<?, ?> dataMap = (Map<?, ?>) dataObj;
+                    Object urlObj = dataMap.get("url");
+                    if (urlObj instanceof String) {
+                        picture = (String) urlObj;
+                    }
+                }
+            }
+        }
+
+        // Tạo đối tượng UserLoginDTO
+        UserLoginDTO userLoginDTO = UserLoginDTO.builder()
+                .email(email)
+                .fullName(name)
+                .password("")
+                .phoneNumber("")
+                .profileImage(picture)
+                .build();
+
+        if (loginType.trim().equals("google")) {
+            userLoginDTO.setGoogleAccountId(accountId);
+            //userLoginDTO.setFacebookAccountId("");
+        } else if (loginType.trim().equals("facebook")) {
+            userLoginDTO.setFacebookAccountId(accountId);
+            //userLoginDTO.setGoogleAccountId("");
+        }
+
+        return this.loginSocial(userLoginDTO, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('MODERATOR')")
+    public ResponseEntity<ResponseObject> deleteUser(@PathVariable Long id) throws Exception {
+
+        userService.deleteUser(id);
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message("Delete user successfully")
+                .status(HttpStatus.OK)
+                .data(null)
+                .build());
+    }
 
 }

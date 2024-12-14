@@ -21,7 +21,7 @@ public class UserDTO extends SocialAccountDTO{
     private String fullName;
 
     @JsonProperty("phone_number")
-    @Size(max = 11, message = "Phone number must be less than or equal to 11 characters")
+    @Size(max = 15, message = "Phone number must be less than or equal to 15 characters")
     private String phoneNumber = "";
 
     @JsonProperty("email")
