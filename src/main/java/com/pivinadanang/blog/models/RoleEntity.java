@@ -21,4 +21,8 @@ public class RoleEntity {
     public static String ADMIN = "ADMIN";
     public static String USER = "USER";
     public static String MODERATOR = "MODERATOR";
+    public RoleEntity(String name) {
+        this.name = name;
+    }
+
 }

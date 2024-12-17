@@ -129,17 +129,17 @@ public class ImageService implements IImageService {
         imagePage = imageRepository.searchImages(keyword,objectType ,pageable);
         return imagePage.map(ImageResponse::fromImage);
     }
-
-    @Override
-    public Long getTotalFileSize() {
-        return imageRepository.getTotalFileSize();
-    }
-
     @Override
     public Page<ImageResponse> getUnusedImages( Pageable pageable) {
         Page<ImageEntity> imageEntities = imageRepository.findUnusedImages(pageable);
         return imageEntities.map(ImageResponse::fromImage);
     }
+    @Override
+    public Long getTotalFileSize() {
+        return imageRepository.getTotalFileSize();
+    }
+
+
 
     @Override
     @Transactional

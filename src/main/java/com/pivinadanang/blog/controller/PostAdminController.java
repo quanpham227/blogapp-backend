@@ -48,15 +48,15 @@ public class PostAdminController {
 
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO) throws Exception{
-        if(postService.existsPostByTitle(postDTO.getTitle())){
+    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO) throws Exception {
+        if (postService.existsPostByTitle(postDTO.getTitle())) {
             return ResponseEntity.badRequest()
                     .body(ResponseObject.builder()
                             .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_ALREADY_EXISTS))
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
-        if(postDTO.getThumbnail() == null || postDTO.getThumbnail().isEmpty() || postDTO.getPublicId() == null || postDTO.getPublicId().isEmpty()){
+        if (postDTO.getThumbnail() == null || postDTO.getThumbnail().isEmpty() || postDTO.getPublicId() == null || postDTO.getPublicId().isEmpty()) {
             return ResponseEntity.badRequest()
                     .body(ResponseObject.builder()
                             .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_THUMBNAIL_REQUIRED))
@@ -65,11 +65,12 @@ public class PostAdminController {
         }
 
         PostResponse postResponse = postService.createPost(postDTO);
-        return ResponseEntity.ok(ResponseObject.builder()
-                .status(HttpStatus.CREATED)
-                .data(postResponse)
-                .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_SUCCESSFULLY))
-                .build());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ResponseObject.builder()
+                        .status(HttpStatus.CREATED)
+                        .data(postResponse)
+                        .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_SUCCESSFULLY))
+                        .build());
     }
     @GetMapping("/details/{id}")
     public ResponseEntity<ResponseObject> getPostById(@PathVariable Long id) throws Exception {

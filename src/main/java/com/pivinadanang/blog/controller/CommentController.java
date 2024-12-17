@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,32 +37,34 @@ public class CommentController {
     private final IUserService userService;
 
     @GetMapping("")
-    public ResponseEntity<ResponseObject> getAllUser(
+    public ResponseEntity<ResponseObject> getAllComment(
             @RequestParam(defaultValue = "", required = false) String keyword,
             @RequestParam(required = false) CommentStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit
-    ) throws Exception{
-        // Tạo Pageable từ thông tin trang và giới hạn
+    ) throws Exception {
         Pageable pageable = PageRequest.of(
                 page, limit,
                 Sort.by("createdAt").descending()
         );
-        Page<CommentResponse> commentResponsePage = commentService.findAll(keyword,status, pageable);
-        // Lấy tổng số trang
-        int totalPages = commentResponsePage.getTotalPages();
-        List<CommentResponse> commentResponses = commentResponsePage.getContent();
-        CommentListResponse commentListResponse = CommentListResponse
-                .builder()
-                .comments(commentResponses)
-                .totalPages(totalPages)
-                .build();
+        Page<CommentResponse> commentResponsePage = commentService.findAll(keyword, status, pageable);
+
+        // Nếu không có comment, trả về danh sách rỗng
+        List<CommentResponse> commentResponses = commentResponsePage != null ? commentResponsePage.getContent() : new ArrayList<>();
+        int totalPages = commentResponsePage != null ? commentResponsePage.getTotalPages() : 0;
+
+        CommentListResponse commentListResponse = new CommentListResponse();
+        commentListResponse.setComments(commentResponses);
+        commentListResponse.setTotalPages(totalPages);
+
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .message("Get comments list successfully")
                 .status(HttpStatus.OK)
                 .data(commentListResponse)
                 .build());
     }
+
+
     @GetMapping("/post/{id}")
     public ResponseEntity<ResponseObject> getCommentsByPostId(@PathVariable Long id,
                                                               @RequestParam(defaultValue = "0") int page,

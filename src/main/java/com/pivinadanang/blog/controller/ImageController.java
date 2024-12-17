@@ -3,15 +3,13 @@ package com.pivinadanang.blog.controller;
 import com.pivinadanang.blog.components.LocalizationUtils;
 import com.pivinadanang.blog.models.ImageEntity;
 import com.pivinadanang.blog.responses.ResponseObject;
+import com.pivinadanang.blog.responses.comment.CommentResponse;
 import com.pivinadanang.blog.responses.image.ImageListResponse;
 import com.pivinadanang.blog.responses.image.ImageResponse;
 import com.pivinadanang.blog.services.image.IImageService;
 import com.pivinadanang.blog.ultils.MessageKeys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -41,9 +40,9 @@ public class ImageController {
         } else {
             imagePage = fileUploadService.getAllImages(keyword, objectType, pageable);
         }
-        int totalPages = imagePage.getTotalPages();
-        List<ImageResponse> images = imagePage.getContent();
-        int totalImages = imagePage.getTotalPages();
+
+        List<ImageResponse> images = imagePage != null ? imagePage.getContent() : new ArrayList<>();
+        int totalPages = imagePage != null ? imagePage.getTotalPages() : 0;
         Long totalFileSize = fileUploadService.getTotalFileSize();
 
         ImageListResponse imageListResponse = ImageListResponse.builder()
@@ -88,11 +87,13 @@ public class ImageController {
         }
         // Gọi service để upload file
         List<ImageResponse> imageResponses = fileUploadService.uploadImages(objectType, files);
-        return ResponseEntity.ok(ResponseObject.builder()
-                .status(HttpStatus.CREATED)
-                .data(imageResponses)
-                .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
-                .build());
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.CREATED)
+                        .data(imageResponses)
+                        .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
+                        .build()
+        );
     }
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     @PostMapping(value = "upload/single",consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
