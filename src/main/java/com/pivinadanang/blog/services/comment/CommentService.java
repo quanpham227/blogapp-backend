@@ -45,7 +45,7 @@ public class CommentService implements ICommentService{
         if (user == null || post == null) {
             throw new IllegalArgumentException("User or post not found");
         }
-        CommentStatus status = user.getRole().getName().equals(RoleEntity.ADMIN) ? CommentStatus.APPROVED : CommentStatus.PENDING;
+        CommentStatus status =  CommentStatus.APPROVED;
 
         CommentEntity newComment = CommentEntity.builder()
                 .user(user)
@@ -70,7 +70,7 @@ public class CommentService implements ICommentService{
         if (parentComment.getParentComment() != null) {
             throw new IllegalArgumentException("You can only reply to root comments.");
         }
-        CommentStatus status = user.getRole().getName().equals(RoleEntity.ADMIN) ? CommentStatus.APPROVED : CommentStatus.PENDING;
+        CommentStatus status = CommentStatus.APPROVED ;
 
         CommentEntity replyComment = CommentEntity.builder()
                 .user(user)

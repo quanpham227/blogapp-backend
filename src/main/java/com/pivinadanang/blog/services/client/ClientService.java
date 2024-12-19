@@ -92,14 +92,19 @@ public class ClientService implements IClientService{
             String newFileId = clientDTO.getPublicId();
             // Tìm hình ảnh hiện tại dựa trên publicId
             ImageEntity currentImage = imageRepository.findByPublicId(existingClient.getPublicId())
-                    .orElseThrow(() -> new RuntimeException("Current image not found"));
+                    .orElse(null);
 
-            // Giảm usageCount và cập nhật isUsed của hình ảnh hiện tại nếu cần
-            currentImage.setUsageCount(currentImage.getUsageCount() - 1);
-            if (currentImage.getUsageCount() <= 0) {
-                currentImage.setIsUsed(false);
+            if (currentImage != null) {
+                // Giảm usageCount và cập nhật isUsed của hình ảnh hiện tại nếu cần
+                currentImage.setUsageCount(currentImage.getUsageCount() - 1);
+                if (currentImage.getUsageCount() <= 0) {
+                    currentImage.setIsUsed(false);
+                }
+                imageRepository.save(currentImage);
+            } else {
+                // Log a warning if the current image is not found
+                System.out.println("Warning: Current image not found, proceeding with new image.");
             }
-            imageRepository.save(currentImage);
 
             // Tìm hình ảnh mới dựa trên publicId
             ImageEntity newImage = imageRepository.findByPublicId(newFileId)
@@ -110,7 +115,6 @@ public class ClientService implements IClientService{
             newImage.setUsageCount(newImage.getUsageCount() + 1);
 
             imageRepository.save(newImage);
-
 
             existingClient.setLogo(clientDTO.getLogo());
             existingClient.setPublicId(newFileId);
