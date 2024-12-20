@@ -70,15 +70,15 @@ public class CommentResponse extends BaseResponse {
         CommentResponse result = CommentResponse.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
-                .userId(comment.getUser().getId())
-                .fullName(comment.getUser().getFullName())
-                .email(comment.getUser().getEmail())
-                .profileImage(comment.getUser().getProfileImage())
-                .status(comment.getStatus().name())
-                .parentCommentId(comment.getParentComment() != null ? comment.getParentComment().getId() : null)
-                .postId(comment.getPost().getId())
+                .userId(comment.getUser() != null ? comment.getUser().getId() : null) // Kiểm tra không null cho userId
+                .fullName(comment.getUser() != null ? comment.getUser().getFullName() : null) // Kiểm tra không null cho fullName
+                .email(comment.getUser() != null ? comment.getUser().getEmail() : null) // Kiểm tra không null cho email
+                .profileImage(comment.getUser() != null ? comment.getUser().getProfileImage() : null) // Kiểm tra không null cho profileImage
+                .status(comment.getStatus() != null ? comment.getStatus().name() : "UNKNOWN") // Xử lý null cho status
+                .parentCommentId(comment.getParentComment() != null ? comment.getParentComment().getId() : null) // Xử lý null cho parentCommentId
+                .postId(comment.getPost() != null ? comment.getPost().getId() : null) // Kiểm tra không null cho postId
                 .replies(replies)
-                .userRole(comment.getUser().getRole().getName())
+                .userRole(comment.getUser() != null && comment.getUser().getRole() != null ? comment.getUser().getRole().getName() : null) // Kiểm tra không null cho userRole
                 .build();
         result.setCreatedAt(comment.getCreatedAt());
         result.setUpdatedAt(comment.getUpdatedAt());

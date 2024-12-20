@@ -2,11 +2,10 @@ package com.pivinadanang.blog.responses.image;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pivinadanang.blog.models.ImageEntity;
-import com.pivinadanang.blog.models.PostEntity;
 import com.pivinadanang.blog.responses.BaseResponse;
-import com.pivinadanang.blog.responses.post.PostResponse;
-import jakarta.persistence.Column;
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -53,8 +52,8 @@ public class ImageResponse extends BaseResponse {
                 .isUsed(image.getIsUsed())
                 .usageCount(image.getUsageCount())
                 .build();
-        imageResponse.setCreatedAt(image.getCreatedAt());
-        imageResponse.setUpdatedAt(image.getUpdatedAt());
+        imageResponse.setCreatedAt(image.getCreatedAt() != null ? image.getCreatedAt() :  LocalDateTime.now());
+        imageResponse.setUpdatedAt(image.getUpdatedAt() != null ? image.getUpdatedAt() :  LocalDateTime.now());
         return imageResponse;
     }
 }

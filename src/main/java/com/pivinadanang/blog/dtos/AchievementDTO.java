@@ -8,6 +8,7 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class AchievementDTO {
     @NotEmpty(message = "Title is required")
     @Size(max = 100, message = "Title must be less than or equal to 100 characters")

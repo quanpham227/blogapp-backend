@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class ClientDTO {
 
     @NotEmpty(message = "name cannot be empty")

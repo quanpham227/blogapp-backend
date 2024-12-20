@@ -22,10 +22,10 @@ public class AchievementResponse  extends BaseResponse {
     public static AchievementResponse fromAchievement (AchievementEntity achievement) {
         AchievementResponse achievementResponse =  AchievementResponse.builder()
                 .id(achievement.getId())
-                .title(achievement.getTitle())
-                .value(achievement.getValue())
-                .description(achievement.getDescription())
-                .isActive(achievement.getIsActive())
+                .title(achievement.getTitle() != null ? achievement.getTitle() : "") // Xử lý null với giá trị mặc định rỗng
+                .value(achievement.getValue() != null ? achievement.getValue() : 0) // Xử lý null với giá trị mặc định 0
+                .description(achievement.getDescription() != null ? achievement.getDescription() : "") // Xử lý null với giá trị mặc định rỗng
+                .isActive(achievement.getIsActive() != null ? achievement.getIsActive() : false) // Xử lý null với giá trị mặc định false
                 .build();
         achievementResponse.setCreatedAt(achievement.getCreatedAt());
         achievementResponse.setUpdatedAt(achievement.getUpdatedAt());

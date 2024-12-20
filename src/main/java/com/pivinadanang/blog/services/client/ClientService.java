@@ -10,6 +10,7 @@ import com.pivinadanang.blog.responses.client.ClientResponse;
 import com.pivinadanang.blog.services.cloudinary.ICloudinaryService;
 
 import com.pivinadanang.blog.ultils.HtmlSanitizer;
+import com.pivinadanang.blog.ultils.HtmlSanitizerWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,8 @@ import java.util.List;
 public class ClientService implements IClientService{
     private final ClientRepository clientRepository;
     private final ImageRepository imageRepository;
+    private final HtmlSanitizerWrapper htmlSanitizerWrapper;
+
 
     @Override
     public boolean exitsByName(String name) {
@@ -35,7 +38,7 @@ public class ClientService implements IClientService{
     }
 
     public ClientResponse createClient(ClientDTO clientDTO) throws IOException {
-        String sanitizedDescription = HtmlSanitizer.sanitize(clientDTO.getDescription());
+        String sanitizedDescription = htmlSanitizerWrapper.sanitize(clientDTO.getDescription());
 
         // Tìm hình ảnh tương ứng dựa trên publicId
         ImageEntity imageEntity = imageRepository.findByPublicId(clientDTO.getPublicId())
@@ -82,7 +85,7 @@ public class ClientService implements IClientService{
         }
 
         if (clientDTO.getDescription() != null && !clientDTO.getDescription().isEmpty()) {
-            String sanitizedDescription = HtmlSanitizer.sanitize(clientDTO.getDescription());
+            String sanitizedDescription = htmlSanitizerWrapper.sanitize(clientDTO.getDescription());
             existingClient.setDescription(sanitizedDescription);
         }
 

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pivinadanang.blog.models.MetaEntity;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -38,8 +40,8 @@ public class MetaResponse extends BaseResponse {
                 .slug(meta.getSlug())
                 .build();
 
-        metaResponse.setCreatedAt(meta.getCreatedAt());
-        metaResponse.setUpdatedAt(meta.getUpdatedAt());
+        metaResponse.setCreatedAt(meta.getCreatedAt() != null ? meta.getCreatedAt() : LocalDateTime.now());
+        metaResponse.setUpdatedAt(meta.getUpdatedAt() != null ? meta.getUpdatedAt() : LocalDateTime.now());
         return metaResponse;
     }
 }

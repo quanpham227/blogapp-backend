@@ -17,12 +17,16 @@ public class ClientResponse {
 
     private String logo;
 
+    private String publicId;
+
+
     public static ClientResponse fromClient (ClientEntity client){
         return ClientResponse.builder()
                 .id(client.getId())
-                .name(client.getName())
-                .description(client.getDescription())
-                .logo(client.getLogo())
+                .name(client.getName() != null ? client.getName() : "") // Xử lý null với giá trị mặc định rỗng
+                .description(client.getDescription() != null ? client.getDescription() : "") // Xử lý null với giá trị mặc định rỗng
+                .logo(client.getLogo() != null ? client.getLogo() : "") // Xử lý null với giá trị mặc định rỗng
+                .publicId(client.getPublicId() != null ? client.getPublicId() : "") // Xử lý null với giá trị mặc định rỗng
                 .build();
 
     }

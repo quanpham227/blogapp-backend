@@ -9,6 +9,7 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class CategoryDTO {
     @NotEmpty(message = "Category cannot be empty")
     @Size(min = 3, max = 100, message = "Category name must be between 3 and 50 characters")

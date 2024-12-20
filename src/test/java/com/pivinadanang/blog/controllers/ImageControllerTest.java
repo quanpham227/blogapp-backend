@@ -12,10 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,7 +42,27 @@ public class ImageControllerTest {
     }
 
 
+    @Test
+    public void testGetImages() {
+        String keyword = "test";
+        String objectType = "unused";
+        int page = 0;
+        int limit = 24;
+        Pageable pageable = PageRequest.of(page, limit, Sort.by("createdAt").descending());
+        List<ImageResponse> imageResponses = Arrays.asList(new ImageResponse(), new ImageResponse());
+        Page<ImageResponse> imagePage = new PageImpl<>(imageResponses, pageable, imageResponses.size());
+        Long totalFileSize = 100L;
 
+        when(fileUploadService.getUnusedImages(pageable)).thenReturn(imagePage);
+        when(fileUploadService.getTotalFileSize()).thenReturn(totalFileSize);
+
+        ResponseEntity<ResponseObject> responseEntity = imageController.getImages(keyword, objectType, page, limit);
+
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals("Get images successfully", responseEntity.getBody().getMessage());
+        assertEquals(imageResponses, ((ImageListResponse) responseEntity.getBody().getData()).getImages());
+        assertEquals(totalFileSize, ((ImageListResponse) responseEntity.getBody().getData()).getTotalFileSizes());
+    }
 
     @Test
     public void testGetImage() throws Exception {

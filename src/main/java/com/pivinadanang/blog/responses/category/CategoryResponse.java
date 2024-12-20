@@ -18,14 +18,14 @@ public class CategoryResponse  {
 
     private String description;
 
-    private long postCount;
+
 
     public static CategoryResponse fromCategory (CategoryEntity category){
         return CategoryResponse.builder()
                 .id(category.getId())
-                .name(category.getName())
-                .code(category.getCode())
-                .description(category.getDescription())
+                .name(category.getName() != null ? category.getName() : "") // Xử lý null với giá trị mặc định rỗng
+                .code(category.getCode() != null ? category.getCode() : "") // Xử lý null với giá trị mặc định rỗng
+                .description(category.getDescription() != null ? category.getDescription() : "") // Xử lý null với giá trị mặc định rỗng
                 .build();
     }
 }

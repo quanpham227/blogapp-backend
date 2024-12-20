@@ -43,21 +43,22 @@ public class AboutResponse {
     @JsonProperty("ceo_name")
     private String ceoName; // Tên của CEO hoặc người đứng đầu công ty
 
-     public static AboutResponse fromAbout (AboutEntity about){
-         return AboutResponse.builder()
-                 .id(about.getId())
-                 .title(about.getTitle())
-                 .content(about.getContent())
-                 .imageUrl(about.getImageUrl())
-                 .address(about.getAddress())
-                 .phoneNumber(about.getPhoneNumber())
-                 .email(about.getEmail())
-                 .workingHours(about.getWorkingHours())
-                 .facebookLink(about.getFacebookLink())
-                 .youtube(about.getYoutube())
-                 .visionStatement(about.getVisionStatement())
-                 .foundingDate(about.getFoundingDate())
-                 .ceoName(about.getCeoName())
-                 .build();
-     }
+    public static AboutResponse fromAbout(AboutEntity about) {
+        return AboutResponse.builder()
+                .id(about.getId())
+                .title(about.getTitle())
+                .content(about.getContent())
+                .imageUrl(about.getImageUrl() != null ? about.getImageUrl() : "") // Xử lý null với giá trị mặc định rỗng
+                .address(about.getAddress() != null ? about.getAddress() : "") // Xử lý null với giá trị mặc định rỗng
+                .phoneNumber(about.getPhoneNumber() != null ? about.getPhoneNumber() : "") // Xử lý null với giá trị mặc định rỗng
+                .email(about.getEmail() != null ? about.getEmail() : "") // Xử lý null với giá trị mặc định rỗng
+                .workingHours(about.getWorkingHours() != null ? about.getWorkingHours() : "") // Xử lý null với giá trị mặc định rỗng
+                .facebookLink(about.getFacebookLink() != null ? about.getFacebookLink() : "") // Xử lý null với giá trị mặc định rỗng
+                .youtube(about.getYoutube() != null ? about.getYoutube() : "") // Xử lý null với giá trị mặc định rỗng
+                .visionStatement(about.getVisionStatement() != null ? about.getVisionStatement() : "") // Xử lý null với giá trị mặc định rỗng
+                .foundingDate(about.getFoundingDate() != null ? about.getFoundingDate() : "") // Xử lý null với giá trị mặc định rỗng
+                .ceoName(about.getCeoName() != null ? about.getCeoName() : "") // Xử lý null với giá trị mặc định rỗng
+                .build();
+    }
+
 }

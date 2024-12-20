@@ -268,19 +268,29 @@ public class PostService implements IPostService {
         return publicIds;
     }
     private Set<String> extractImageUrls(String content) {
+        // Kiểm tra null hoặc chuỗi rỗng
+        if (content == null || content.trim().isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        // Tạo một tập hợp để lưu trữ các URL hình ảnh
         Set<String> imageUrls = new HashSet<>();
 
+        // Phân tích nội dung HTML
         Document document = Jsoup.parse(content);
+
+        // Lấy tất cả các thẻ <img>
         Elements imgElements = document.select("img");
 
-        for (Element imgElement : imgElements) {
-            String src = imgElement.attr("src");
-            if (src != null && !src.isEmpty()) {
-                imageUrls.add(src);
-            }
-        }
+        // Duyệt qua các thẻ <img> để lấy giá trị thuộc tính "src"
+        imgElements.stream()
+                .map(img -> img.attr("src"))
+                .filter(src -> src != null && !src.isEmpty()) // Lọc ra các giá trị hợp lệ
+                .forEach(imageUrls::add);
+
         return imageUrls;
     }
+
     public String extractPublicId(String url) {
         // Tìm vị trí của phần "/upload/" trong URL
         int uploadIndex = url.indexOf("/upload/");

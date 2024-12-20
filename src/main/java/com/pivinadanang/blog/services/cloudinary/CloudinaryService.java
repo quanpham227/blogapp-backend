@@ -13,6 +13,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
 @Service
 @RequiredArgsConstructor
@@ -21,24 +22,30 @@ public class CloudinaryService  implements ICloudinaryService{
     @Override
     public CloudinaryDTO upload(MultipartFile file, String folderName, int width, int height) {
         try {
-            // Tạo biến Transformation để thay đổi kích thước ảnh
+            // Create Transformation to resize the image
             Transformation transformation = new Transformation()
                     .width(width)
                     .height(height)
-                    .crop("scale"); // Crop để đảm bảo ảnh có kích thước chính xác
+                    .crop("scale"); // Crop to ensure the image has the exact size
             Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(),
                     ObjectUtils.asMap(
                             "folder", "blogapp/" + folderName,
                             "resource_type", "auto",
                             "transformation", transformation
                     ));
-            return mapUploadResultToDTO(uploadResult, file.getOriginalFilename());
+
+            // Create a new map with the correct type
+            Map<String, Object> typedUploadResult = new HashMap<>();
+            for (Map.Entry<?, ?> entry : uploadResult.entrySet()) {
+                typedUploadResult.put((String) entry.getKey(), entry.getValue());
+            }
+
+            return mapUploadResultToDTO(typedUploadResult, file.getOriginalFilename());
 
         } catch (Exception ex) {
             throw new CloudinaryException("failed to load to Cloudinary the image file: ", ex);
         }
     }
-
     @Override
     public CloudinaryDTO update(String publicId, MultipartFile file, int width, int height) {
         try {
@@ -96,27 +103,25 @@ public class CloudinaryService  implements ICloudinaryService{
             throw new CloudinaryException("failed to download image from Cloudinary with public ID " + publicId, ex);
         }
     }
-    private CloudinaryDTO mapUploadResultToDTO(Map<?, ?> uploadResult, String originalFileName) {
+    private CloudinaryDTO mapUploadResultToDTO(Map<String, Object> uploadResult, String originalFileName) {
         CloudinaryDTO cloudinaryDTO = new CloudinaryDTO();
-        cloudinaryDTO.setPublicId(uploadResult.get("public_id").toString());
-        cloudinaryDTO.setUrl((String) uploadResult.get("secure_url"));
-        if (originalFileName != null) {
-            cloudinaryDTO.setFileName(originalFileName);
-        }
-        cloudinaryDTO.setFileSize(Long.parseLong(uploadResult.get("bytes").toString()));
+        cloudinaryDTO.setPublicId(uploadResult.get("public_id") != null ? uploadResult.get("public_id").toString() : null);
+        cloudinaryDTO.setUrl(uploadResult.get("secure_url") != null ? uploadResult.get("secure_url").toString() : null);
+        cloudinaryDTO.setFileName(originalFileName);
+        cloudinaryDTO.setFileSize(uploadResult.get("bytes") != null ? Long.parseLong(uploadResult.get("bytes").toString()) : 0L);
         return cloudinaryDTO;
     }
-
     // Phương thức kiểm tra sự tồn tại của hình ảnh trên Cloudinary
     public boolean checkImageExistsOnCloudinary(String publicId) {
         try {
             Map<?, ?> result = cloudinary.api().resource(publicId, ObjectUtils.emptyMap());
-            return result != null;
+            return result != null && result.get("public_id") != null;
         } catch (Exception e) {
             // Hình ảnh không tồn tại hoặc có lỗi xảy ra
             return false;
         }
     }
+
     // Lấy danh sách tài nguyên trong một thư mục cụ thể
     @Override
     public Map<?, ?> listResources(String folderName) {

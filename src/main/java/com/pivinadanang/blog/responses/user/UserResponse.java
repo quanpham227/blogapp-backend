@@ -40,6 +40,8 @@ public class UserResponse {
     @JsonProperty("role")
     RoleResponse role;
     public static UserResponse fromUser(UserEntity user) {
+        RoleResponse roleResponse = (user.getRole() != null) ? RoleResponse.fromRole(user.getRole()) : null;
+
         return UserResponse.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
@@ -49,7 +51,7 @@ public class UserResponse {
                 .active(user.isActive())
                 .facebookAccountId(user.getFacebookAccountId())
                 .googleAccountId(user.getGoogleAccountId())
-                .role(RoleResponse.fromRole(user.getRole()))
+                .role(roleResponse)
                 .build();
     }
 }

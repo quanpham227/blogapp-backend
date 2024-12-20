@@ -11,6 +11,7 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class AboutDTO {
     @NotEmpty(message = "Title cannot be empty")
     @Size(max = 255, message = "Title cannot exceed 255 characters")

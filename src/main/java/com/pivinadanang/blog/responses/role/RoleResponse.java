@@ -22,8 +22,10 @@ public class RoleResponse {
                 .build();
     }
     public static List<RoleResponse> fromRoles(List<RoleEntity> roles) {
-        return roles.stream()
-                .map(RoleResponse::fromRole)
-                .collect(Collectors.toList());
+        return roles == null ?
+                List.of() : // Trả về danh sách rỗng nếu roles là null
+                roles.stream()
+                        .map(RoleResponse::fromRole)
+                        .collect(Collectors.toList());
     }
 }

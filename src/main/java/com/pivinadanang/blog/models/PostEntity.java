@@ -136,4 +136,11 @@ public class PostEntity extends BaseEntity{
     public void incrementRevisionCount() {
         this.revisionCount++;
     }
+    public Long getCategoryId() {
+        if (category != null) {
+            return category.getId();
+        } else {
+            throw new IllegalStateException("Category is null");
+        }
+    }
 }
