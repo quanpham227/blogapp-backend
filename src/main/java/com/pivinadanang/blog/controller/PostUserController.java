@@ -38,17 +38,30 @@ public class PostUserController {
 
     @GetMapping("")
     public ResponseEntity<ResponseObject> searchPosts(
-            @RequestParam(defaultValue = "",required = false ) String keyword,
-            @RequestParam (defaultValue = "",required = false) String categorySlug,
-            @RequestParam (defaultValue = "",required = false) String tagSlug,
+            @RequestParam(defaultValue = "", required = false) String keyword,
+            @RequestParam(defaultValue = "", required = false) String categorySlug,
+            @RequestParam(defaultValue = "", required = false) String tagSlug,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "6") int limit) throws JsonProcessingException {
+        if (limit < 1) {
+            return ResponseEntity.badRequest()
+                    .body(ResponseObject.builder()
+                            .message("Invalid limit parameter")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
         Pageable pageable = createPageable(page, limit);
+        List<PostResponse> postResponses;
 
-        List<PostResponse> postResponses = postRedisService.getAllPosts(keyword, categorySlug, tagSlug, pageable);
+        try {
+            postResponses = postRedisService.getAllPosts(keyword, categorySlug, tagSlug, pageable);
+        } catch (RuntimeException e) {
+            logger.error("Redis error: {}", e.getMessage());
+            postResponses = null;
+        }
 
         if (postResponses == null || postResponses.isEmpty()) {
-            Page<PostResponse> postPage = postService.searchPosts(keyword,categorySlug, tagSlug, pageable);
+            Page<PostResponse> postPage = postService.searchPosts(keyword, categorySlug, tagSlug, pageable);
             postResponses = postPage.getContent();
             int totalPages = postPage.getTotalPages();
             postResponses.forEach(post -> post.setTotalPages(totalPages));
@@ -60,10 +73,8 @@ public class PostUserController {
                 .totalPages(postResponses.isEmpty() ? 0 : postResponses.get(0).getTotalPages())
                 .build();
 
-
-
         return ResponseEntity.ok(ResponseObject.builder()
-                .message("Get  posts successfully")
+                .message("Get posts successfully")
                 .status(HttpStatus.OK)
                 .data(postListResponse)
                 .build());
@@ -109,20 +120,31 @@ public class PostUserController {
 
 
     @GetMapping("/{slug}")
-    public ResponseEntity<ResponseObject> getPostBySlug(@PathVariable String slug) throws Exception {
-        PostResponse postResponse = postRedisService.getPostBySlug(slug);
+    public ResponseEntity<ResponseObject> getPostBySlug(@PathVariable String slug) {
+        try {
+            PostResponse postResponse = postRedisService.getPostBySlug(slug);
 
-        if (postResponse == null || postResponse.getSlug() == null) {
-            postResponse = postService.getPostBySlug(slug);
-            postRedisService.savePostBySlug(postResponse, slug);
+            if (postResponse == null || postResponse.getSlug() == null) {
+                postResponse = postService.getPostBySlug(slug);
+                postRedisService.savePostBySlug(postResponse, slug);
+            }
+
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .status(HttpStatus.OK)
+                    .data(postResponse)
+                    .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
+                    .build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseObject.builder()
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .message(e.getMessage())
+                            .build());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        return ResponseEntity.ok(ResponseObject.builder()
-                .status(HttpStatus.OK)
-                .data(postResponse)
-                .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
-                .build());
     }
+
 }
 
 

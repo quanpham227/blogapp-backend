@@ -11,117 +11,107 @@ import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.responses.post.PostListResponse;
 import com.pivinadanang.blog.responses.post.PostResponse;
 import com.pivinadanang.blog.services.post.IPostService;
-import com.pivinadanang.blog.services.post.PostRedisService;
-import com.pivinadanang.blog.ultils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("${api.prefix}/admin/posts")
 @Validated
 @RequiredArgsConstructor
 public class PostAdminController {
-    private  static final Logger logger = LoggerFactory.getLogger(PostAdminController.class);
+    private static final Logger logger = LoggerFactory.getLogger(PostAdminController.class);
     private final IPostService postService;
     private final LocalizationUtils localizationUtils;
     private final SecurityUtils securityUtils;
 
-
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO) throws Exception {
-        if (postService.existsPostByTitle(postDTO.getTitle())) {
-            return ResponseEntity.badRequest()
-                    .body(ResponseObject.builder()
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_ALREADY_EXISTS))
-                            .status(HttpStatus.BAD_REQUEST)
-                            .build());
+    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO) {
+        try {
+            if (postService.existsPostByTitle(postDTO.getTitle())) {
+                return buildBadRequestResponse("Post title already exists");
+            }
+            if (postDTO.getThumbnail() == null || postDTO.getThumbnail().isEmpty() || postDTO.getPublicId() == null || postDTO.getPublicId().isEmpty()) {
+                return buildBadRequestResponse("Thumbnail or publicId is required");
+            }
+
+            PostResponse postResponse = postService.createPost(postDTO);
+            return buildCreatedResponse(postResponse, "Insert post successfully");
+        } catch (RuntimeException e) {
+            return buildErrorResponse(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        if (postDTO.getThumbnail() == null || postDTO.getThumbnail().isEmpty() || postDTO.getPublicId() == null || postDTO.getPublicId().isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(ResponseObject.builder()
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_THUMBNAIL_REQUIRED))
-                            .status(HttpStatus.BAD_REQUEST)
-                            .build());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ResponseObject> getPostById(@PathVariable Long id) {
+        try {
+            PostResponse postResponse = postService.getPostById(id);
+            return buildOkResponse(postResponse, "Get post successfully");
+        } catch (RuntimeException e) {
+            return handleException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
+    public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody UpdatePostDTO updatePostDTO, @PathVariable Long id) {
+        if (updatePostDTO == null || updatePostDTO.getTitle() == null || updatePostDTO.getTitle().isEmpty()) {
+            return buildBadRequestResponse("Invalid UpdatePostDTO");
         }
 
-        PostResponse postResponse = postService.createPost(postDTO);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ResponseObject.builder()
-                        .status(HttpStatus.CREATED)
-                        .data(postResponse)
-                        .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_POST_SUCCESSFULLY))
-                        .build());
+        try {
+            PostResponse updatedPost = postService.updatePost(id, updatePostDTO);
+            return buildOkResponse(updatedPost, "Update post successfully");
+        } catch (RuntimeException e) {
+            return handleException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
-    @GetMapping("/details/{id}")
-    public ResponseEntity<ResponseObject> getPostById(@PathVariable Long id) throws Exception {
-        PostResponse existingPost = postService.getPostById(id);
-        return ResponseEntity.ok(ResponseObject.builder()
-                .status(HttpStatus.OK)
-                .data(existingPost)
-                .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
-                .build());
-    }
-    @PutMapping(value = "/{id}")
+
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody UpdatePostDTO postDTO, @PathVariable Long id) throws Exception {
-        PostResponse postResponse = postService.updatePost(id,postDTO);
-        return ResponseEntity.ok(
-                ResponseObject.builder()
-                        .message(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_POST_SUCCESSFULLY))
-                        .status(HttpStatus.OK)
-                        .data(postResponse)
-                        .build());
-    }
-    @DeleteMapping("/disable/{id}/{isPermanent}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> deleteOrDisablePost(@PathVariable Long id, @PathVariable boolean isPermanent) throws Exception {
+    public ResponseEntity<ResponseObject> deleteOrDisablePost(@PathVariable Long id, @RequestParam boolean isPermanent) {
         UserEntity loggedInUser = securityUtils.getLoggedInUser();
         if (loggedInUser == null) {
-            throw new AccessDeniedException("You must be logged in to perform this action.");
+            return buildForbiddenResponse("You must be logged in to perform this action.");
         }
 
-        if (securityUtils.hasRole("ROLE_MODERATOR")) {
-            if (isPermanent) {
-                postService.deletePost(id);
-            } else {
-                postService.disablePost(id);
-            }
-        } else if (securityUtils.hasRole("ROLE_ADMIN")) {
-            if (isPermanent) {
-                throw new AccessDeniedException("Admins are not allowed to permanently delete posts.");
-            } else {
-                postService.disablePost(id);
-            }
-        } else {
-            throw new AccessDeniedException("You do not have permission to perform this action.");
+        if (securityUtils.hasRole("ROLE_ADMIN") && isPermanent) {
+            return buildForbiddenResponse("Admins are not allowed to permanently delete posts.");
         }
 
-        return ResponseEntity.ok(ResponseObject.builder()
-                .data(null)
-                .message(localizationUtils.getLocalizedMessage(isPermanent ? MessageKeys.DELETE_POST_SUCCESSFULLY : MessageKeys.DISABLE_POST_SUCCESSFULLY))
-                .status(HttpStatus.OK)
-                .build());
+        if (!securityUtils.hasRole("ROLE_MODERATOR") && !securityUtils.hasRole("ROLE_ADMIN")) {
+            return buildForbiddenResponse("You do not have permission to perform this action.");
+        }
+
+        try {
+            postService.deletePost(id);
+            return buildOkResponse(null, "Delete post successfully");
+        } catch (RuntimeException e) {
+            return handleException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
+
     @GetMapping("")
     public ResponseEntity<ResponseObject> getPosts(
             @RequestParam(defaultValue = "") String keyword,
@@ -130,24 +120,75 @@ public class PostAdminController {
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(required = false) PostStatus status,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate)
-            throws JsonProcessingException {
-        // Tạo Pageable từ thông tin trang và giới hạn
-        PageRequest pageRequest = PageRequest.of(page, limit);
-        Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, startDate, endDate, pageRequest);
-        List<PostResponse> postResponses = postPage.getContent();
-        int totalPages = postPage.getTotalPages();
-        postResponses.forEach(post -> post.setTotalPages(totalPages));
-        PostListResponse postListResponse = PostListResponse.builder()
-                .posts(postResponses)
-                .totalPages(totalPages)
-                .build();
-        return ResponseEntity.ok(ResponseObject.builder()
-                .message("Get posts successfully")
-                .status(HttpStatus.OK)
-                .data(postListResponse)
-                .build());
-
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) throws JsonProcessingException {
+        if (page < 0) {
+            return buildBadRequestResponse("Page index must not be less than zero");
+        }
+        try {
+            PageRequest pageRequest = PageRequest.of(page, limit);
+            Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, startDate, endDate, pageRequest);
+            List<PostResponse> postResponses = postPage.getContent();
+            int totalPages = postPage.getTotalPages();
+            postResponses.forEach(post -> post.setTotalPages(totalPages));
+            PostListResponse postListResponse = PostListResponse.builder()
+                    .posts(postResponses)
+                    .totalPages(totalPages)
+                    .build();
+            return buildOkResponse(postListResponse, "Get posts successfully");
+        } catch (RuntimeException e) {
+            return buildErrorResponse(e);
+        }
     }
 
+    private ResponseEntity<ResponseObject> buildBadRequestResponse(String message) {
+        return ResponseEntity.badRequest()
+                .body(ResponseObject.builder()
+                        .message(message)  // Truyền trực tiếp thông điệp
+                        .status(HttpStatus.BAD_REQUEST)
+                        .build());
+    }
+
+    private ResponseEntity<ResponseObject> buildForbiddenResponse(String message) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ResponseObject.builder()
+                        .message(message)  // Truyền trực tiếp thông điệp
+                        .status(HttpStatus.FORBIDDEN)
+                        .build());
+    }
+
+    private ResponseEntity<ResponseObject> buildOkResponse(Object data, String message) {
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message(message)  // Truyền trực tiếp thông điệp
+                .status(HttpStatus.OK)
+                .data(data)
+                .build());
+    }
+
+    private ResponseEntity<ResponseObject> buildCreatedResponse(Object data, String message) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ResponseObject.builder()
+                        .status(HttpStatus.CREATED)
+                        .data(data)
+                        .message(message)  // Truyền trực tiếp thông điệp
+                        .build());
+    }
+
+    private ResponseEntity<ResponseObject> buildErrorResponse(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ResponseObject.builder()
+                        .message(e.getMessage())
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .build());
+    }
+
+    private ResponseEntity<ResponseObject> handleException(RuntimeException e) {
+        if (e.getMessage().equals("Post not found")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseObject.builder()
+                            .message(e.getMessage())
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+        }
+        return buildErrorResponse(e);
+    }
 }

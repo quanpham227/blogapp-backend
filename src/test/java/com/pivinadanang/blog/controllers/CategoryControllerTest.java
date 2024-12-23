@@ -1,6 +1,5 @@
 package com.pivinadanang.blog.controllers;
 
-
 import com.pivinadanang.blog.components.LocalizationUtils;
 import com.pivinadanang.blog.controller.CategoryController;
 import com.pivinadanang.blog.dtos.CategoryDTO;
@@ -21,7 +20,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 
 public class CategoryControllerTest {
 
@@ -57,6 +58,20 @@ public class CategoryControllerTest {
     }
 
     @Test
+    public void testInsertCategoryAlreadyExists() throws Exception {
+        CategoryDTO categoryDTO = new CategoryDTO();
+        categoryDTO.setName("Existing Category");
+
+        when(categoryService.existsCategoryByName(categoryDTO.getName())).thenReturn(true);
+        when(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_CATEGORY_ALREADY_EXISTS)).thenReturn("Category already exists");
+
+        ResponseEntity<ResponseObject> responseEntity = categoryController.insertCategory(categoryDTO);
+
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        assertEquals("Category already exists", responseEntity.getBody().getMessage());
+    }
+
+    @Test
     public void testGetAllCategories() {
         List<CategoryResponse> categories = Arrays.asList(new CategoryResponse(), new CategoryResponse());
 
@@ -84,6 +99,18 @@ public class CategoryControllerTest {
     }
 
     @Test
+    public void testGetCategoryByIdNotFound() {
+        Long categoryId = 1L;
+
+        when(categoryService.getCategoryById(categoryId)).thenReturn(null);
+
+        ResponseEntity<ResponseObject> responseEntity = categoryController.getCategoryById(categoryId);
+
+        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+        assertEquals("Category not found", responseEntity.getBody().getMessage());
+    }
+
+    @Test
     public void testUpdateCategory() throws Exception {
         Long id = 1L;
         CategoryDTO categoryDTO = new CategoryDTO();
@@ -100,6 +127,20 @@ public class CategoryControllerTest {
     }
 
     @Test
+    public void testUpdateCategoryNotFound() throws Exception {
+        Long id = 1L;
+        CategoryDTO categoryDTO = new CategoryDTO();
+
+        when(categoryService.updateCategory(id, categoryDTO)).thenThrow(new Exception("Category not found"));
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            categoryController.updateCategory(id, categoryDTO);
+        });
+
+        assertEquals("Category not found", exception.getMessage());
+    }
+
+    @Test
     public void testDeleteCategory() throws Exception {
         Long id = 1L;
 
@@ -109,6 +150,19 @@ public class CategoryControllerTest {
 
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Delete category successfully", responseEntity.getBody().getMessage());
+    }
+
+    @Test
+    public void testDeleteCategoryNotFound() throws Exception {
+        Long id = 1L;
+
+        doThrow(new Exception("Category not found")).when(categoryService).deleteCategory(id);
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            categoryController.deleteCategory(id);
+        });
+
+        assertEquals("Category not found", exception.getMessage());
     }
 
     @Test

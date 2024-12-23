@@ -67,7 +67,7 @@ public class CategoryService implements ICategoryService{
                         .name(dto.getName())
                         .code(dto.getCode())
                         .description(dto.getDescription())
-
+                        .postCount(dto.getPostCount())
                         .build())
                 .collect(Collectors.toList());
     }

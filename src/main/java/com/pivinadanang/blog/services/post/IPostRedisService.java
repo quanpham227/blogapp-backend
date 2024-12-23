@@ -5,7 +5,6 @@ import com.pivinadanang.blog.enums.PostStatus;
 import com.pivinadanang.blog.responses.post.PostResponse;
 import org.springframework.data.domain.Pageable;
 
-import java.time.YearMonth;
 import java.util.List;
 
 public interface IPostRedisService {

@@ -25,11 +25,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 
 public class CommentControllerTest {
 
@@ -68,8 +70,6 @@ public class CommentControllerTest {
         assertEquals(0, ((CommentListResponse) responseEntity.getBody().getData()).getTotalPages());  // Kiểm tra tổng số trang là 0
     }
 
-
-
     @Test
     public void testGetCommentsByPostId() {
         Long postId = 1L;
@@ -83,6 +83,21 @@ public class CommentControllerTest {
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Get comments successfully", responseEntity.getBody().getMessage());
         assertEquals(commentResponses, responseEntity.getBody().getData());
+    }
+
+    @Test
+    public void testGetCommentsByPostId_NoComments() {
+        Long postId = 1L;
+        Pageable pageable = PageRequest.of(0, 10);
+        List<CommentResponse> commentResponses = Arrays.asList();
+
+        when(commentService.getCommentsByPostId(postId, pageable)).thenReturn(commentResponses);
+
+        ResponseEntity<ResponseObject> responseEntity = commentController.getCommentsByPostId(postId, 0, 10);
+
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals("Get comments successfully", responseEntity.getBody().getMessage());
+        assertTrue(((List<CommentResponse>) responseEntity.getBody().getData()).isEmpty());
     }
 
     @Test
@@ -101,6 +116,21 @@ public class CommentControllerTest {
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Insert comment successfully", responseEntity.getBody().getMessage());
         assertEquals(commentResponse, responseEntity.getBody().getData());
+    }
+
+    @Test
+    public void testAddComment_InvalidUser() {
+        CommentDTO commentDTO = new CommentDTO();
+        commentDTO.setUserId(2L);
+        UserEntity loginUser = new UserEntity();
+        loginUser.setId(1L);
+
+        when(securityUtils.getLoggedInUser()).thenReturn(loginUser);
+
+        ResponseEntity<ResponseObject> responseEntity = commentController.addComment(commentDTO);
+
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        assertEquals("You cannot comment as another user", responseEntity.getBody().getMessage());
     }
 
     @Test
@@ -126,6 +156,25 @@ public class CommentControllerTest {
     }
 
     @Test
+    public void testUpdateComment_InvalidUser() throws Exception {
+        Long commentId = 1L;
+        UpdateCommentDTO updateCommentDTO = new UpdateCommentDTO();
+        updateCommentDTO.setUserId(2L);
+        UserEntity loginUser = new UserEntity();
+        loginUser.setId(1L);
+        RoleEntity userRole = new RoleEntity();
+        userRole.setName(RoleEntity.USER);
+        loginUser.setRole(userRole);
+
+        when(securityUtils.getLoggedInUser()).thenReturn(loginUser);
+
+        ResponseEntity<ResponseObject> responseEntity = commentController.updateComment(commentId, updateCommentDTO);
+
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        assertEquals("You cannot update another user's comment", responseEntity.getBody().getMessage());
+    }
+
+    @Test
     public void testDeleteComment() throws Exception {
         Long commentId = 1L;
         UserEntity loginUser = new UserEntity();
@@ -147,6 +196,18 @@ public class CommentControllerTest {
     }
 
     @Test
+    public void testDeleteComment_NotFound() throws Exception {
+        Long commentId = 1L;
+
+        when(commentService.getCommentById(commentId)).thenReturn(null);
+
+        ResponseEntity<ResponseObject> responseEntity = commentController.deleteComment(commentId);
+
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        assertEquals("Comment not found", responseEntity.getBody().getMessage());
+    }
+
+    @Test
     public void testUpdateCommentStatus() throws Exception {
         Long commentId = 1L;
         CommentStatus status = CommentStatus.APPROVED;
@@ -164,4 +225,105 @@ public class CommentControllerTest {
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Update comment status successfully", responseEntity.getBody().getMessage());
     }
+
+    @Test
+    public void testUpdateCommentStatus_NotFound() throws Exception {
+        Long commentId = 1L;
+        CommentStatus status = CommentStatus.APPROVED;
+        UserEntity loginUser = new UserEntity();
+        RoleEntity adminRole = new RoleEntity();
+        adminRole.setName(RoleEntity.ADMIN);
+        loginUser.setRole(adminRole);
+
+        when(securityUtils.getLoggedInUser()).thenReturn(loginUser);
+        when(commentService.getCommentById(commentId)).thenReturn(null);
+
+        ResponseEntity<ResponseObject> responseEntity = commentController.updateCommentStatus(commentId, Map.of("status", status));
+
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        assertEquals("Comment not found", responseEntity.getBody().getMessage());
+    }
+    @Test
+    public void testGetAllUser_InvalidPagination() throws Exception {
+        ResponseEntity<ResponseObject> responseEntity = commentController.getAllComment("", null, -1, 10);
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        assertEquals("Invalid pagination parameters", responseEntity.getBody().getMessage());
+    }
+
+    @Test
+    public void testGetCommentsByPostId_InvalidPagination() {
+        ResponseEntity<ResponseObject> responseEntity = commentController.getCommentsByPostId(1L, -1, 10);
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        assertEquals("Invalid pagination parameters", responseEntity.getBody().getMessage());
+    }
+
+    @Test
+    public void testAddComment_InvalidPayload() {
+        CommentDTO commentDTO = new CommentDTO(); // Missing required fields
+        UserEntity loginUser = new UserEntity();
+        loginUser.setId(1L);
+
+        when(securityUtils.getLoggedInUser()).thenReturn(loginUser);
+
+        ResponseEntity<ResponseObject> responseEntity = commentController.addComment(commentDTO);
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+    }
+    @Test
+    public void testUpdateComment_InvalidPayload() throws Exception {
+        Long commentId = 1L;
+        UpdateCommentDTO updateCommentDTO = new UpdateCommentDTO(); // Missing required fields
+        UserEntity loginUser = new UserEntity();
+        loginUser.setId(1L);
+        RoleEntity userRole = new RoleEntity();
+        userRole.setName(RoleEntity.USER);
+        loginUser.setRole(userRole);
+
+        when(securityUtils.getLoggedInUser()).thenReturn(loginUser);
+
+        ResponseEntity<ResponseObject> responseEntity = commentController.updateComment(commentId, updateCommentDTO);
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+    }
+    @Test
+    public void testUpdateCommentStatus_InvalidStatus() throws Exception {
+        Long commentId = 1L;
+        UserEntity loginUser = new UserEntity();
+        loginUser.setId(1L);
+        RoleEntity adminRole = new RoleEntity();
+        adminRole.setName(RoleEntity.ADMIN);
+        loginUser.setRole(adminRole);
+
+        when(securityUtils.getLoggedInUser()).thenReturn(loginUser);
+
+        CommentResponse commentResponse = new CommentResponse();
+        when(commentService.getCommentById(commentId)).thenReturn(commentResponse);
+
+        Map<String, CommentStatus> request = new HashMap<>();
+        request.put("status", null);
+
+        ResponseEntity<ResponseObject> responseEntity = commentController.updateCommentStatus(commentId, request);
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        assertEquals("Invalid CommentStatus", responseEntity.getBody().getMessage());
+    }
+    @Test
+    public void testDeleteComment_WithReplies() throws Exception {
+        Long commentId = 1L;
+        UserEntity loginUser = new UserEntity();
+        loginUser.setId(1L);
+        RoleEntity adminRole = new RoleEntity();
+        adminRole.setName(RoleEntity.ADMIN);
+        loginUser.setRole(adminRole);
+        CommentResponse commentResponse = new CommentResponse();
+        commentResponse.setUserId(1L);
+        commentResponse.setUserRole(RoleEntity.ADMIN);
+
+        when(securityUtils.getLoggedInUser()).thenReturn(loginUser);
+        when(commentService.getCommentById(commentId)).thenReturn(commentResponse);
+
+        ResponseEntity<ResponseObject> responseEntity = commentController.deleteComment(commentId);
+
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals("Delete comment successfully", responseEntity.getBody().getMessage());
+    }
+
+
 }

@@ -21,6 +21,7 @@ import com.pivinadanang.blog.ultils.MessageKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,7 +42,6 @@ import static com.pivinadanang.blog.ultils.ValidationUtils.isValidPhoneNumber;
 @Service
 @RequiredArgsConstructor
 public class UserService implements IUserService{
-    private static final List<String> VALID_ROLES = Arrays.asList(RoleEntity.ADMIN, RoleEntity.USER, RoleEntity.MODERATOR);
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -48,10 +49,6 @@ public class UserService implements IUserService{
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtils jwtTokenUtil;
     private final AuthenticationManager authenticationManager;
-
-
-
-
     private final LocalizationUtils localizationUtils;
     @Override
     public UserEntity createUser(UserDTO userDTO) throws Exception {
@@ -228,14 +225,14 @@ public class UserService implements IUserService{
     }
 
     @Override
-    public Page<UserEntity> findAll(String keyword,Boolean status, Long roleId, Pageable pageable) throws Exception {
-
-        return userRepository.findAll(keyword, status, roleId,pageable);
+    public Page<UserEntity> findAll(String keyword, Boolean status, Long roleId, Pageable pageable) throws Exception {
+        Page<UserEntity> userPage = userRepository.findAll(keyword, status, roleId, pageable);
+        return userPage != null ? userPage : Page.empty(pageable); // Đảm bảo trả về `Page.empty` nếu kết quả là `null`.
     }
 
     @Override
     @Transactional
-    public void resetPassword(Long userId, String newPassword) throws InvalidPasswordException, DataNotFoundException {
+    public void resetPassword(Long userId, String newPassword) throws InvalidPasswordException, DataNotFoundException{
         UserEntity existingUser = getUserById(userId);
         String encodedPassword = passwordEncoder.encode(newPassword);
         existingUser.setPassword(encodedPassword);

@@ -63,6 +63,13 @@ public class CategoryController {
             @PathVariable("id") Long categoryId
     ) {
         CategoryEntity existingCategory = categoryService.getCategoryById(categoryId);
+        if (existingCategory == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseObject.builder()
+                            .message("Category not found")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+        }
         return ResponseEntity.ok(ResponseObject.builder()
                 .data(existingCategory)
                 .message("Get category information successfully")

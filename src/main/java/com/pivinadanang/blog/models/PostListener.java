@@ -6,8 +6,10 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.stereotype.Component;
+@Component
 @AllArgsConstructor
+
 public class PostListener {
     private final IPostRedisService postRedisService;
     private static final Logger logger = LoggerFactory.getLogger(PostListener.class);

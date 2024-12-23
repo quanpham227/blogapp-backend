@@ -1,1 +1,0 @@
-CREATE INDEX idx_priority ON posts(priority);

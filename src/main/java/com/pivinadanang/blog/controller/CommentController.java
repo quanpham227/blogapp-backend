@@ -43,6 +43,10 @@ public class CommentController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit
     ) throws Exception {
+        if (page < 0 || limit <= 0) {
+            return ResponseEntity.badRequest().body(
+                    new ResponseObject("Invalid pagination parameters", HttpStatus.BAD_REQUEST, null));
+        }
         Pageable pageable = PageRequest.of(
                 page, limit,
                 Sort.by("createdAt").descending()
@@ -69,6 +73,10 @@ public class CommentController {
     public ResponseEntity<ResponseObject> getCommentsByPostId(@PathVariable Long id,
                                                               @RequestParam(defaultValue = "0") int page,
                                                               @RequestParam(defaultValue = "10") int size) {
+        if (page < 0 || size <= 0) {
+            return ResponseEntity.badRequest().body(
+                    new ResponseObject("Invalid pagination parameters", HttpStatus.BAD_REQUEST, null));
+        }
         Pageable pageable = PageRequest.of(page, size);
         List<CommentResponse> commentResponses = commentService.getCommentsByPostId(id, pageable);
         return ResponseEntity.ok().body(ResponseObject.builder()
@@ -80,6 +88,7 @@ public class CommentController {
     @PostMapping("/add")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> addComment(@Valid @RequestBody CommentDTO commentDTO) {
+
         UserEntity loginUser = securityUtils.getLoggedInUser();
         if(!Objects.equals(loginUser.getId(), commentDTO.getUserId())) {
             return ResponseEntity.badRequest().body(
@@ -201,12 +210,22 @@ public class CommentController {
                         .build());
     }
 
+// src/main/java/com/pivinadanang/blog/controller/CommentController.java
+
     @PutMapping("/updateStatus/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> updateCommentStatus(
             @PathVariable("id") Long commentId,
             @RequestBody Map<String, CommentStatus> request) throws Exception {
         CommentStatus status = request.get("status");
+        if (status == null) {
+            return ResponseEntity.badRequest().body(ResponseObject.builder()
+                    .message("Invalid CommentStatus")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .data(null)
+                    .build());
+        }
+
         UserEntity loginUser = securityUtils.getLoggedInUser();
         CommentResponse commentResponse = commentService.getCommentById(commentId);
         if (commentResponse == null) {

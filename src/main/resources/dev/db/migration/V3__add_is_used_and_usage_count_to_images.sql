@@ -1,3 +1,0 @@
-ALTER TABLE images
-    ADD COLUMN is_used BOOLEAN DEFAULT FALSE,
-    ADD COLUMN usage_count INT DEFAULT 0;

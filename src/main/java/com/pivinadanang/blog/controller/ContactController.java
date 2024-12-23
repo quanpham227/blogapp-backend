@@ -22,9 +22,36 @@ public class ContactController {
     @Value("${app.contact.recipient-email}")
     private String recipientEmail;
 
+    // src/main/java/com/pivinadanang/blog/controller/ContactController.java
+
+// src/main/java/com/pivinadanang/blog/controller/ContactController.java
+
+    // src/main/java/com/pivinadanang/blog/controller/ContactController.java
+
     @PostMapping
     @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER') or hasRole('ROLE_MODERATOR')")
     public ResponseEntity<ResponseObject> sendContactEmail(@Valid @RequestBody ContactDTO contactForm) {
+        if (contactForm.getEmail() == null || contactForm.getSubject() == null || contactForm.getMessage() == null) {
+            return ResponseEntity.badRequest().body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.BAD_REQUEST)
+                            .data(null)
+                            .message("Missing required fields")
+                            .build()
+            );
+        }
+
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+        if (!contactForm.getEmail().matches(emailRegex)) {
+            return ResponseEntity.badRequest().body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.BAD_REQUEST)
+                            .data(null)
+                            .message("Invalid email format")
+                            .build()
+            );
+        }
+
         String to = recipientEmail; // Địa chỉ email nhận thông tin liên hệ từ cấu hình
         String subject = "New Contact Form Submission";
         String text = "Name: " + contactForm.getName() + "\n" +
@@ -33,7 +60,17 @@ public class ContactController {
                 "Message: " + contactForm.getMessage();
         String from = contactForm.getEmail();
 
-        emailService.sendEmail(to, subject, text, from);
+        try {
+            emailService.sendEmail(to, subject, text, from);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    ResponseObject.builder()
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .data(null)
+                            .message("Failed to send email. Please try again later.")
+                            .build()
+            );
+        }
 
         return ResponseEntity.ok(
                 ResponseObject.builder()
@@ -43,4 +80,5 @@ public class ContactController {
                         .build()
         );
     }
+
 }

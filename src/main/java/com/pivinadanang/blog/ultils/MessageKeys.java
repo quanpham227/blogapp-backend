@@ -37,7 +37,9 @@ public class MessageKeys {
     public static final String SLIDE_ALREADY_EXISTS = "slide.create_slide.slide_already_exists";
     public static final String UPDATE_SLIDE_SUCCESSFULLY = "slide.update_slide.update_successfully";
     public static final String DELETE_SLIDE_SUCCESSFULLY = "slide.delete_slide.delete_successfully";
-    public static final String DELETE_SLIDE_FAILED = "slide.delete_slide.delete_failed";
+    public static final String SLIDE_TITLE_ALREADY_EXISTS = "slide.title.already.exists"; // Add this line
+    public static final String INVALID_INPUT = "invalid.input";
+    public static final String SLIDE_NOT_FOUND = "slide.not.found";
 
 
 

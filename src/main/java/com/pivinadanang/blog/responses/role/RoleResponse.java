@@ -15,6 +15,10 @@ public class RoleResponse {
     Long id;
     private String name;
 
+    public RoleResponse(String name) {
+        this.name = name;
+    }
+
     public static RoleResponse fromRole(RoleEntity role) {
         return RoleResponse.builder()
                 .id(role.getId())

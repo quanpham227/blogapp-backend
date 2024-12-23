@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -19,11 +20,16 @@ import java.util.List;
 public class RoleController {
     private final IRoleService roleService;
     private final LocalizationUtils localizationUtils;
+
     @RequestMapping("")
     public ResponseEntity<ResponseObject> getAllRoles() {
         List<RoleResponse> roles = roleService.getAllRoles();
+        if (roles == null) {
+            roles = Collections.emptyList();
+        }
+        String message = roles.isEmpty() ? "" : "Get all roles successfully";
         return ResponseEntity.ok(ResponseObject.builder()
-                .message("Get all roles successfully")
+                .message(message)
                 .status(HttpStatus.OK)
                 .data(roles)
                 .build());

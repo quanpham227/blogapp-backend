@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 public class ContactControllerTest {
@@ -55,5 +56,53 @@ public class ContactControllerTest {
         assertEquals("Thank you for your message. We will get back to you soon.", responseEntity.getBody().getMessage());
 
         verify(emailService).sendEmail(to, subject, text, from);
+    }
+
+    @Test
+    public void testSendContactEmail_MissingFields() {
+        ContactDTO contactForm = new ContactDTO();
+        contactForm.setName("John Doe");
+        // Missing email, subject, and message
+
+        ResponseEntity<ResponseObject> responseEntity = contactController.sendContactEmail(contactForm);
+
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+    }
+
+    @Test
+    public void testSendContactEmail_InvalidEmail() {
+        ContactDTO contactForm = new ContactDTO();
+        contactForm.setName("John Doe");
+        contactForm.setEmail("invalid-email");
+        contactForm.setSubject("Test Subject");
+        contactForm.setMessage("Test Message");
+
+        ResponseEntity<ResponseObject> responseEntity = contactController.sendContactEmail(contactForm);
+
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+    }
+
+    @Test
+    public void testSendContactEmail_Exception() {
+        ContactDTO contactForm = new ContactDTO();
+        contactForm.setName("John Doe");
+        contactForm.setEmail("john.doe@example.com");
+        contactForm.setSubject("Test Subject");
+        contactForm.setMessage("Test Message");
+
+        String to = "test@example.com";
+        String subject = "New Contact Form Submission";
+        String text = "Name: " + contactForm.getName() + "\n" +
+                "Email: " + contactForm.getEmail() + "\n" +
+                "Subject: " + contactForm.getSubject() + "\n" +
+                "Message: " + contactForm.getMessage();
+        String from = contactForm.getEmail();
+
+        doThrow(new RuntimeException("Email service failed")).when(emailService).sendEmail(to, subject, text, from);
+
+        ResponseEntity<ResponseObject> responseEntity = contactController.sendContactEmail(contactForm);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
+        assertEquals("Failed to send email. Please try again later.", responseEntity.getBody().getMessage());
     }
 }

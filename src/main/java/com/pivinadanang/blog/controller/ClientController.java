@@ -38,6 +38,13 @@ public class ClientController {
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getClientById(@PathVariable("id") Long clienttId) throws Exception {
         ClientEntity client = clientService.findById(clienttId);
+        if (client == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseObject.builder()
+                            .message("Client not found")
+                            .status(HttpStatus.NOT_FOUND)
+                            .build());
+        }
         return ResponseEntity.ok(ResponseObject.builder()
                 .data(client)
                 .message("Get client information successfully")
