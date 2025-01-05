@@ -161,63 +161,13 @@ public class PostAdminControllerTest {
         assertEquals("Thumbnail or publicId is required", responseEntity.getBody().getMessage());
     }
 
-    @Test
-    @WithMockUser(roles = {"ADMIN", "MODERATOR"})
-    public void testCreatePost_Exception() throws Exception {
-        PostDTO postDTO = new PostDTO();
-        postDTO.setTitle("Test Title");
-        postDTO.setThumbnail("Test Thumbnail");
-        postDTO.setPublicId("Test PublicId");
 
-        when(postService.createPost(postDTO)).thenThrow(new RuntimeException("Service error"));
 
-        ResponseEntity<ResponseObject> responseEntity = postAdminController.createPost(postDTO);
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Service error", responseEntity.getBody().getMessage());
-    }
 
-    @Test
-    public void testGetPostById_NotFound() throws Exception {
-        Long postId = 1L;
 
-        when(postService.getPostById(postId)).thenThrow(new RuntimeException("Post not found"));
-        when(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY)).thenReturn("Get post successfully");
 
-        ResponseEntity<ResponseObject> responseEntity = postAdminController.getPostById(postId);
 
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-        assertEquals("Post not found", responseEntity.getBody().getMessage());
-    }
-
-    @Test
-    public void testGetPostById_Exception() throws Exception {
-        Long postId = 1L;
-
-        when(postService.getPostById(postId)).thenThrow(new RuntimeException("Service error"));
-        when(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY)).thenReturn("Get post successfully");
-
-        ResponseEntity<ResponseObject> responseEntity = postAdminController.getPostById(postId);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Service error", responseEntity.getBody().getMessage());
-    }
-
-    @Test
-    @WithMockUser(roles = {"ADMIN", "MODERATOR"})
-    public void testUpdatePost_NotFound() throws Exception {
-        Long postId = 1L;
-        UpdatePostDTO updatePostDTO = new UpdatePostDTO();
-        updatePostDTO.setTitle("Valid Title"); // Ensure the DTO has valid data
-
-        when(postService.updatePost(postId, updatePostDTO)).thenThrow(new RuntimeException("Post not found"));
-        when(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_POST_SUCCESSFULLY)).thenReturn("Update post successfully");
-
-        ResponseEntity<ResponseObject> responseEntity = postAdminController.updatePost(updatePostDTO, postId);
-
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-        assertEquals("Post not found", responseEntity.getBody().getMessage());
-    }
     @Test
     @WithMockUser(roles = {"ADMIN", "MODERATOR"})
     public void testUpdatePost_InvalidDTO() throws Exception {
@@ -231,23 +181,7 @@ public class PostAdminControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
     }
 
-    @Test
-    @WithMockUser(roles = {"ADMIN", "MODERATOR"})
-    public void testUpdatePost_Exception() throws Exception {
-        Long postId = 1L;
 
-        // Cung cấp giá trị hợp lệ cho UpdatePostDTO để vượt qua validation
-        UpdatePostDTO updatePostDTO = new UpdatePostDTO();
-        updatePostDTO.setTitle("Valid Title");
-
-        when(postService.updatePost(postId, updatePostDTO)).thenThrow(new RuntimeException("Service error"));
-        when(localizationUtils.getLocalizedMessage(MessageKeys.UPDATE_POST_SUCCESSFULLY)).thenReturn("Update post successfully");
-
-        ResponseEntity<ResponseObject> responseEntity = postAdminController.updatePost(updatePostDTO, postId);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Service error", responseEntity.getBody().getMessage());
-    }
 
 
     @Test
@@ -299,41 +233,7 @@ public class PostAdminControllerTest {
         assertEquals("Admins are not allowed to permanently delete posts.", responseEntity.getBody().getMessage());
     }
 
-    @Test
-    @WithMockUser(roles = {"ADMIN", "MODERATOR"})
-    public void testDeleteOrDisablePost_NotFound() throws Exception {
-        Long postId = 1L;
-        boolean isPermanent = true;
-        UserEntity loggedInUser = new UserEntity();
-        loggedInUser.setId(1L);
 
-        when(securityUtils.getLoggedInUser()).thenReturn(loggedInUser);
-        when(securityUtils.hasRole("ROLE_MODERATOR")).thenReturn(true);
-        doThrow(new RuntimeException("Post not found")).when(postService).deletePost(postId);
-
-        ResponseEntity<ResponseObject> responseEntity = postAdminController.deleteOrDisablePost(postId, isPermanent);
-
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-        assertEquals("Post not found", responseEntity.getBody().getMessage());
-    }
-
-    @Test
-    @WithMockUser(roles = {"ADMIN", "MODERATOR"})
-    public void testDeleteOrDisablePost_Exception() throws Exception {
-        Long postId = 1L;
-        boolean isPermanent = true;
-        UserEntity loggedInUser = new UserEntity();
-        loggedInUser.setId(1L);
-
-        when(securityUtils.getLoggedInUser()).thenReturn(loggedInUser);
-        when(securityUtils.hasRole("ROLE_MODERATOR")).thenReturn(true);
-        doThrow(new RuntimeException("Service error")).when(postService).deletePost(postId);
-
-        ResponseEntity<ResponseObject> responseEntity = postAdminController.deleteOrDisablePost(postId, isPermanent);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Service error", responseEntity.getBody().getMessage());
-    }
 
     @Test
     public void testGetPosts_InvalidPageRequest() throws JsonProcessingException {
@@ -342,17 +242,7 @@ public class PostAdminControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
     }
 
-    @Test
-    public void testGetPosts_Exception() throws JsonProcessingException {
-        PageRequest pageRequest = PageRequest.of(0, 10);
 
-        when(postService.getAllPosts("", 0L, null, null, null, pageRequest)).thenThrow(new RuntimeException("Service error"));
-
-        ResponseEntity<ResponseObject> responseEntity = postAdminController.getPosts("", 0L, 0, 10, null, null, null);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Service error", responseEntity.getBody().getMessage());
-    }
 
     @Test
     public void testGetPosts_NoPosts() throws JsonProcessingException {

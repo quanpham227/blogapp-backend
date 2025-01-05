@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -32,7 +31,7 @@ public class ImageController {
     public ResponseEntity<ResponseObject> getImages(@RequestParam(defaultValue = "") String keyword,
                                                     @RequestParam(defaultValue = "", name = "object_type") String objectType,
                                                     @RequestParam(defaultValue = "0") int page,
-                                                    @RequestParam(defaultValue = "24") int limit) {
+                                                    @RequestParam(defaultValue = "24") int limit) throws Exception {
 
         if (page < 0 || limit <= 0) {
             return ResponseEntity.badRequest().body(
@@ -43,43 +42,35 @@ public class ImageController {
         }
         Pageable pageable = PageRequest.of(page, limit, Sort.by("createdAt").descending());
 
-        try {
-            Page<ImageResponse> imagePage;
-            if ("unused".equals(objectType)) {
-                imagePage = fileUploadService.getUnusedImages(pageable);
-            } else {
-                imagePage = fileUploadService.getAllImages(keyword, objectType, pageable);
-            }
-
-            List<ImageResponse> images = imagePage != null ? imagePage.getContent() : new ArrayList<>();
-            int totalPages = imagePage != null ? imagePage.getTotalPages() : 0;
-            Long totalFileSize = fileUploadService.getTotalFileSize();
-            if (totalFileSize == null) {
-                totalFileSize = 0L;
-            }
-
-            ImageListResponse imageListResponse = ImageListResponse.builder()
-                    .images(images)
-                    .totalPages(totalPages)
-                    .status(HttpStatus.OK)
-                    .totalFileSizes(totalFileSize)
-                    .build();
-
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .message("Get images successfully")
-                    .status(HttpStatus.OK)
-                    .data(imageListResponse)
-                    .build());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    ResponseObject.builder()
-                            .message(e.getMessage())
-                            .build()
-            );
+        Page<ImageResponse> imagePage;
+        if ("unused".equals(objectType)) {
+            imagePage = fileUploadService.getUnusedImages(pageable);
+        } else {
+            imagePage = fileUploadService.getAllImages(keyword, objectType, pageable);
         }
+
+        List<ImageResponse> images = imagePage != null ? imagePage.getContent() : new ArrayList<>();
+        int totalPages = imagePage != null ? imagePage.getTotalPages() : 0;
+        Long totalFileSize = fileUploadService.getTotalFileSize();
+        if (totalFileSize == null) {
+            totalFileSize = 0L;
+        }
+
+        ImageListResponse imageListResponse = ImageListResponse.builder()
+                .images(images)
+                .totalPages(totalPages)
+                .status(HttpStatus.OK)
+                .totalFileSizes(totalFileSize)
+                .build();
+
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Get images successfully")
+                .status(HttpStatus.OK)
+                .data(imageListResponse)
+                .build());
     }
 
-    public ResponseEntity<ResponseObject> getImage(Long id) {
+    public ResponseEntity<ResponseObject> getImage(Long id) throws Exception {
         if (id == null) {
             return ResponseEntity.badRequest().body(
                     ResponseObject.builder()
@@ -87,22 +78,14 @@ public class ImageController {
                             .build()
             );
         }
-        try {
-            ImageResponse imageResponse = fileUploadService.getImage(id);
-            return ResponseEntity.ok(
-                    ResponseObject.builder()
-                            .status(HttpStatus.OK)
-                            .data(imageResponse)
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_IMAGE_SUCCESSFULLY))
-                            .build()
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    ResponseObject.builder()
-                            .message(e.getMessage())
-                            .build()
-            );
-        }
+        ImageResponse imageResponse = fileUploadService.getImage(id);
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .status(HttpStatus.OK)
+                        .data(imageResponse)
+                        .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_IMAGE_SUCCESSFULLY))
+                        .build()
+        );
     }
 
 
@@ -139,23 +122,14 @@ public class ImageController {
             }
         }
 
-        try {
-            // Call service to upload files
-            List<ImageResponse> imageResponses = fileUploadService.uploadImages(objectType, files);
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    ResponseObject.builder()
-                            .status(HttpStatus.CREATED)
-                            .data(imageResponses)
-                            .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
-                            .build()
-            );
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    ResponseObject.builder()
-                            .message("Service error")
-                            .build()
-            );
-        }
+        List<ImageResponse> imageResponses = fileUploadService.uploadImages(objectType, files);
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.CREATED)
+                        .data(imageResponses)
+                        .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
+                        .build()
+        );
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
@@ -178,21 +152,12 @@ public class ImageController {
             );
         }
 
-        try {
-            // Call service to upload file
-            ImageResponse image = fileUploadService.uploadImage(objectType, file);
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .status(HttpStatus.OK)
-                    .data(image)
-                    .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
-                    .build());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    ResponseObject.builder()
-                            .message("Service error")
-                            .build()
-            );
-        }
+        ImageResponse image = fileUploadService.uploadImage(objectType, file);
+        return ResponseEntity.ok(ResponseObject.builder()
+                .status(HttpStatus.CREATED)
+                .data(image)
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGE_SUCCESSFULLY))
+                .build());
     }
 
     @DeleteMapping
@@ -206,21 +171,7 @@ public class ImageController {
             );
         }
 
-        try {
-            fileUploadService.deleteImages(ids);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    ResponseObject.builder()
-                            .message("Service error")
-                            .build()
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    ResponseObject.builder()
-                            .message("Image not found")
-                            .build()
-            );
-        }
+        fileUploadService.deleteImages(ids);
 
         return ResponseEntity.ok(
                 ResponseObject.builder()

@@ -39,56 +39,38 @@ public class PostAdminController {
 
     @PostMapping("")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO) {
-        try {
-            if (postService.existsPostByTitle(postDTO.getTitle())) {
-                return buildBadRequestResponse("Post title already exists");
-            }
-            if (postDTO.getThumbnail() == null || postDTO.getThumbnail().isEmpty() || postDTO.getPublicId() == null || postDTO.getPublicId().isEmpty()) {
-                return buildBadRequestResponse("Thumbnail or publicId is required");
-            }
-
-            PostResponse postResponse = postService.createPost(postDTO);
-            return buildCreatedResponse(postResponse, "Insert post successfully");
-        } catch (RuntimeException e) {
-            return buildErrorResponse(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public ResponseEntity<ResponseObject> createPost(@Valid @RequestBody PostDTO postDTO) throws Exception {
+        if (postService.existsPostByTitle(postDTO.getTitle())) {
+            return buildBadRequestResponse("Post title already exists");
         }
+        if (postDTO.getThumbnail() == null || postDTO.getThumbnail().isEmpty() || postDTO.getPublicId() == null || postDTO.getPublicId().isEmpty()) {
+            return buildBadRequestResponse("Thumbnail or publicId is required");
+        }
+
+        PostResponse postResponse = postService.createPost(postDTO);
+        return buildCreatedResponse(postResponse, "Insert post successfully");
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseObject> getPostById(@PathVariable Long id) {
-        try {
-            PostResponse postResponse = postService.getPostById(id);
-            return buildOkResponse(postResponse, "Get post successfully");
-        } catch (RuntimeException e) {
-            return handleException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public ResponseEntity<ResponseObject> getPostById(@PathVariable Long id) throws Exception {
+        PostResponse postResponse = postService.getPostById(id);
+        return buildOkResponse(postResponse, "Get post successfully");
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody UpdatePostDTO updatePostDTO, @PathVariable Long id) {
+    public ResponseEntity<ResponseObject> updatePost(@Valid @RequestBody UpdatePostDTO updatePostDTO, @PathVariable Long id) throws Exception {
         if (updatePostDTO == null || updatePostDTO.getTitle() == null || updatePostDTO.getTitle().isEmpty()) {
             return buildBadRequestResponse("Invalid UpdatePostDTO");
         }
 
-        try {
-            PostResponse updatedPost = postService.updatePost(id, updatePostDTO);
-            return buildOkResponse(updatedPost, "Update post successfully");
-        } catch (RuntimeException e) {
-            return handleException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        PostResponse updatedPost = postService.updatePost(id, updatePostDTO);
+        return buildOkResponse(updatedPost, "Update post successfully");
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> deleteOrDisablePost(@PathVariable Long id, @RequestParam boolean isPermanent) {
+    public ResponseEntity<ResponseObject> deleteOrDisablePost(@PathVariable Long id, @RequestParam boolean isPermanent) throws Exception {
         UserEntity loggedInUser = securityUtils.getLoggedInUser();
         if (loggedInUser == null) {
             return buildForbiddenResponse("You must be logged in to perform this action.");
@@ -102,14 +84,12 @@ public class PostAdminController {
             return buildForbiddenResponse("You do not have permission to perform this action.");
         }
 
-        try {
+        if (isPermanent) {
             postService.deletePost(id);
-            return buildOkResponse(null, "Delete post successfully");
-        } catch (RuntimeException e) {
-            return handleException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } else {
+            postService.disablePost(id);
         }
+        return buildOkResponse(null, isPermanent ? "Delete post successfully" : "Disable post successfully");
     }
 
     @GetMapping("")
@@ -124,20 +104,16 @@ public class PostAdminController {
         if (page < 0) {
             return buildBadRequestResponse("Page index must not be less than zero");
         }
-        try {
-            PageRequest pageRequest = PageRequest.of(page, limit);
-            Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, startDate, endDate, pageRequest);
-            List<PostResponse> postResponses = postPage.getContent();
-            int totalPages = postPage.getTotalPages();
-            postResponses.forEach(post -> post.setTotalPages(totalPages));
-            PostListResponse postListResponse = PostListResponse.builder()
-                    .posts(postResponses)
-                    .totalPages(totalPages)
-                    .build();
-            return buildOkResponse(postListResponse, "Get posts successfully");
-        } catch (RuntimeException e) {
-            return buildErrorResponse(e);
-        }
+        PageRequest pageRequest = PageRequest.of(page, limit);
+        Page<PostResponse> postPage = postService.getAllPosts(keyword, categoryId, status, startDate, endDate, pageRequest);
+        List<PostResponse> postResponses = postPage.getContent();
+        int totalPages = postPage.getTotalPages();
+        postResponses.forEach(post -> post.setTotalPages(totalPages));
+        PostListResponse postListResponse = PostListResponse.builder()
+                .posts(postResponses)
+                .totalPages(totalPages)
+                .build();
+        return buildOkResponse(postListResponse, "Get posts successfully");
     }
 
     private ResponseEntity<ResponseObject> buildBadRequestResponse(String message) {

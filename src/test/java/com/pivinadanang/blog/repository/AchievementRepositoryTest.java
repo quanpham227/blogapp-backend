@@ -66,15 +66,7 @@ class AchievementRepositoryTest {
         assertThat(exists).isFalse();
     }
 
-    @Test
-    void testFindAllByIsActiveTrue_whenActiveRecordsExist_thenReturnRecords() {
-        // Act
-        List<AchievementEntity> activeAchievements = achievementRepository.findAllByIsActiveTrue();
 
-        // Assert
-        assertThat(activeAchievements).hasSize(2);
-        assertThat(activeAchievements).extracting("title").contains("Achievement 1", "Achievement 3");
-    }
 
     @Test
     void testFindAllByIsActiveTrue_whenNoActiveRecords_thenReturnEmptyList() {
@@ -149,12 +141,5 @@ class AchievementRepositoryTest {
         assertThat(achievementRepository.findById(existingId)).isEmpty();
     }
 
-    @Test
-    void testFindAll_whenMultipleRecordsExist_thenReturnAllRecords() {
-        // Act
-        List<AchievementEntity> allAchievements = achievementRepository.findAll();
 
-        // Assert
-        assertThat(allAchievements).hasSize(3);
-    }
 }

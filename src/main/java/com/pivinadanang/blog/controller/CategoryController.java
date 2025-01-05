@@ -41,7 +41,7 @@ public class CategoryController {
         CategoryResponse category = categoryService.createCategory(categoryDTO);
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_CATEGORY_SUCCESSFULLY))
-                .status(HttpStatus.OK)
+                .status(HttpStatus.CREATED)
                 .data(category)
                 .build());
     }

@@ -42,7 +42,7 @@ public class PostUserController {
             @RequestParam(defaultValue = "", required = false) String categorySlug,
             @RequestParam(defaultValue = "", required = false) String tagSlug,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "6") int limit) throws JsonProcessingException {
+            @RequestParam(defaultValue = "6") int limit) throws Exception {
         if (limit < 1) {
             return ResponseEntity.badRequest()
                     .body(ResponseObject.builder()
@@ -53,12 +53,7 @@ public class PostUserController {
         Pageable pageable = createPageable(page, limit);
         List<PostResponse> postResponses;
 
-        try {
-            postResponses = postRedisService.getAllPosts(keyword, categorySlug, tagSlug, pageable);
-        } catch (RuntimeException e) {
-            logger.error("Redis error: {}", e.getMessage());
-            postResponses = null;
-        }
+        postResponses = postRedisService.getAllPosts(keyword, categorySlug, tagSlug, pageable);
 
         if (postResponses == null || postResponses.isEmpty()) {
             Page<PostResponse> postPage = postService.searchPosts(keyword, categorySlug, tagSlug, pageable);
@@ -120,29 +115,19 @@ public class PostUserController {
 
 
     @GetMapping("/{slug}")
-    public ResponseEntity<ResponseObject> getPostBySlug(@PathVariable String slug) {
-        try {
-            PostResponse postResponse = postRedisService.getPostBySlug(slug);
+    public ResponseEntity<ResponseObject> getPostBySlug(@PathVariable String slug) throws Exception {
+        PostResponse postResponse = postRedisService.getPostBySlug(slug);
 
-            if (postResponse == null || postResponse.getSlug() == null) {
-                postResponse = postService.getPostBySlug(slug);
-                postRedisService.savePostBySlug(postResponse, slug);
-            }
-
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .status(HttpStatus.OK)
-                    .data(postResponse)
-                    .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
-                    .build());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseObject.builder()
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .message(e.getMessage())
-                            .build());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (postResponse == null || postResponse.getSlug() == null) {
+            postResponse = postService.getPostBySlug(slug);
+            postRedisService.savePostBySlug(postResponse, slug);
         }
+
+        return ResponseEntity.ok(ResponseObject.builder()
+                .status(HttpStatus.OK)
+                .data(postResponse)
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.GET_POST_SUCCESSFULLY))
+                .build());
     }
 
 }

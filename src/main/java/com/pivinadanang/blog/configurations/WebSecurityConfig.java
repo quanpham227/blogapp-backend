@@ -73,7 +73,6 @@ class WebSecurityConfig {
                                     String.format("%s/images/**", apiPrefix)).permitAll()
                             .requestMatchers(GET,
                                     String.format("%s/slides/**", apiPrefix)).permitAll()
-
                             .requestMatchers(GET,
                                     String.format("%s/about/**", apiPrefix)).permitAll()
                             .requestMatchers(GET,
@@ -82,8 +81,6 @@ class WebSecurityConfig {
                                     String.format("%s/achievements/**", apiPrefix)).permitAll()
                             .requestMatchers(GET,
                                     String.format("%s/dashboard/**", apiPrefix)).permitAll()
-                            .requestMatchers(POST,
-                                    String.format("%s/email/**", apiPrefix)).permitAll()
                             .anyRequest()
                             .authenticated();
                     //.anyRequest().permitAll();

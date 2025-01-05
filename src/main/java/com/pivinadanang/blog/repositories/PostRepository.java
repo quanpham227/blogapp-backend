@@ -72,15 +72,15 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
                                  @Param("deletedStatus") PostStatus deletedStatus,
                                  Pageable pageable);
 
-    @Query("SELECT DISTINCT p FROM PostEntity p "
-            + "LEFT JOIN FETCH p.category c "
-            + "LEFT JOIN FETCH p.tags t "
-            + "WHERE (:keyword IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) "
-            + "AND (:categorySlug IS NULL OR :categorySlug = '' OR c.code = :categorySlug) "
-            + "AND (:tagSlug IS NULL OR :tagSlug = '' OR t.slug = :tagSlug) "
-            + "AND p.status = :status "
-            + "AND p.visibility = :visibility "
-            + "ORDER BY p.priority DESC, p.createdAt DESC")
+    @Query("SELECT DISTINCT p FROM PostEntity p " +
+            "LEFT JOIN FETCH p.category c " +
+            "LEFT JOIN FETCH p.tags t " +
+            "WHERE (:keyword IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:categorySlug IS NULL OR :categorySlug = '' OR c.code = :categorySlug) " +
+            "AND (:tagSlug IS NULL OR :tagSlug = '' OR t.slug = :tagSlug) " +
+            "AND p.status = :status " +
+            "AND p.visibility = :visibility " +
+            "ORDER BY p.priority DESC, p.createdAt DESC")
     Page<PostEntity> searchPostsForUser(
             @Param("keyword") String keyword,
             @Param("categorySlug") String categorySlug,

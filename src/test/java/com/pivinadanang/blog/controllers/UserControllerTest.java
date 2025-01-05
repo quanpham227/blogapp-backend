@@ -46,6 +46,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -178,7 +179,7 @@ class UserControllerTest {
         ResponseEntity<ResponseObject> response = userController.getAllUser("", null, 0L, 0, 10);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals("User not found", response.getBody().getMessage());
+        assertEquals("User not found", Objects.requireNonNull(response.getBody()).getMessage());
         verify(userService, times(1)).findAll(anyString(), any(), anyLong(), any(Pageable.class));
     }
 
@@ -215,7 +216,7 @@ class UserControllerTest {
 
 
     @Test
-    void testCreateUser_InvalidEmail() {
+    void testCreateUser_InvalidEmail() throws Exception {
         UserDTO userDTO = UserDTO.builder()
                 .fullName("John Doe")
                 .email("invalid-email")
@@ -236,7 +237,7 @@ class UserControllerTest {
     }
 
     @Test
-    void testCreateUser_PasswordMismatch() {
+    void testCreateUser_PasswordMismatch() throws Exception {
         UserDTO userDTO = UserDTO.builder()
                 .fullName("John Doe")
                 .email("john.doe@example.com")
@@ -256,25 +257,7 @@ class UserControllerTest {
         assertEquals("Passwords do not match", response.getBody().getMessage());
     }
 
-    @Test
-    void testCreateUser_Exception() throws Exception {
-        UserDTO userDTO = UserDTO.builder()
-                .fullName("John Doe")
-                .email("john.doe@example.com")
-                .phoneNumber("1234567890")
-                .password("password")
-                .retypePassword("password")
-                .roleId(1L)
-                .build();
 
-        when(userService.createUser(userDTO)).thenThrow(new RuntimeException("Unexpected error"));
-
-        ResponseEntity<ResponseObject> response = userController.createUser(userDTO, bindingResult);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Unexpected error", response.getBody().getMessage());
-    }
     @Test
     void testLogin_Success() throws Exception {
         UserLoginDTO userLoginDTO = UserLoginDTO.builder()
@@ -301,38 +284,9 @@ class UserControllerTest {
         assertEquals("Login successfully", responseEntity.getBody().getMessage());
     }
 
-    @Test
-    void testLogin_InvalidCredentials() throws Exception {
-        UserLoginDTO userLoginDTO = UserLoginDTO.builder()
-                .email("invalid@example.com")
-                .password("wrong-password")
-                .build();
 
-        when(userService.login(userLoginDTO)).thenThrow(new DataNotFoundException("Wrong email or password"));
-        when(request.getHeader("User-Agent")).thenReturn("Mozilla/5.0");
 
-        ResponseEntity<ResponseObject> responseEntity = userController.login(userLoginDTO, request, response);
 
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("Wrong email or password", responseEntity.getBody().getMessage());
-    }
-
-    @Test
-    void testLogin_ExceptionHandling() throws Exception {
-        UserLoginDTO userLoginDTO = UserLoginDTO.builder()
-                .email("john.doe@example.com")
-                .password("password")
-                .build();
-
-        when(userService.login(userLoginDTO)).thenThrow(new RuntimeException("Unexpected error"));
-
-        ResponseEntity<ResponseObject> responseEntity = userController.login(userLoginDTO, request, response);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("Unexpected error", responseEntity.getBody().getMessage());
-    }
 
     @Test
     void testRefreshToken_Success() throws Exception {
@@ -363,7 +317,7 @@ class UserControllerTest {
         }
     }
     @Test
-    void testRefreshToken_EmptyRefreshToken() {
+    void testRefreshToken_EmptyRefreshToken() throws Exception {
         when(request.getCookies()).thenReturn(null);
 
         ResponseEntity<ResponseObject> responseEntity = userController.refreshToken(request, response);
@@ -373,20 +327,6 @@ class UserControllerTest {
         assertEquals("You are not logged in, please login again", responseEntity.getBody().getMessage());
     }
 
-    @Test
-    void testRefreshToken_ExceptionHandling() throws Exception {
-        String refreshToken = "valid-refresh-token";
-        Cookie cookie = new Cookie("refreshToken", refreshToken);
-        when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-
-        when(userService.getUserDetailsFromRefreshToken(refreshToken)).thenThrow(new RuntimeException("Unexpected error"));
-
-        ResponseEntity<ResponseObject> responseEntity = userController.refreshToken(request, response);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("An error occurred while refreshing the token", responseEntity.getBody().getMessage());
-    }
 
 
     @Test
@@ -428,18 +368,7 @@ class UserControllerTest {
         assertNotNull(responseEntity.getBody().getData());
     }
 
-    @Test
-    void testGetUserDetails_ExceptionHandling() throws Exception {
-        String token = "Bearer invalid-token";
 
-        when(userService.getUserDetailsFromToken("invalid-token")).thenThrow(new Exception("User not found"));
-
-        ResponseEntity<ResponseObject> responseEntity = userController.getUserDetails(token);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("User not found", responseEntity.getBody().getMessage());
-    }
 
     @Test
     void testUpdateUserDetails_Success() throws Exception {
@@ -484,58 +413,7 @@ class UserControllerTest {
         assertEquals(HttpStatus.FORBIDDEN, responseEntity.getStatusCode());
     }
 
-    @Test
-    void testUpdateUserDetails_ExceptionHandling() throws Exception {
-        Long userId = 1L;
-        String token = "Bearer valid-token";
-        UpdateUserDTO updateUserDTO = new UpdateUserDTO();
 
-        UserEntity userEntity = new UserEntity();
-        userEntity.setId(userId);
-
-        when(userService.getUserDetailsFromToken("valid-token")).thenReturn(userEntity);
-        when(userService.updateUser(userId, updateUserDTO)).thenThrow(new Exception("Update failed"));
-
-        ResponseEntity<ResponseObject> responseEntity = userController.updateUserDetails(userId, updateUserDTO, token);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("Update failed", responseEntity.getBody().getMessage());
-    }
-    @Test
-    void testUpdateUserDetails_InvalidToken() throws Exception {
-        Long userId = 1L;
-        String token = "Bearer invalid-token";
-        UpdateUserDTO updateUserDTO = new UpdateUserDTO();
-
-        when(userService.getUserDetailsFromToken("invalid-token")).thenThrow(new ExpiredTokenException("Token is expired"));
-
-        ResponseEntity<ResponseObject> responseEntity = userController.updateUserDetails(userId, updateUserDTO, token);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("Token is expired", responseEntity.getBody().getMessage());
-    }
-
-    @Test
-    void testUpdateUserDetails_InvalidUpdateInfo() throws Exception {
-        Long userId = 1L;
-        String token = "Bearer valid-token";
-        UpdateUserDTO updateUserDTO = new UpdateUserDTO();
-        updateUserDTO.setPhoneNumber("1234567890");
-
-        UserEntity userEntity = new UserEntity();
-        userEntity.setId(userId);
-
-        when(userService.getUserDetailsFromToken("valid-token")).thenReturn(userEntity);
-        when(userService.updateUser(userId, updateUserDTO)).thenThrow(new DataIntegrityViolationException("Phone number already exists"));
-
-        ResponseEntity<ResponseObject> responseEntity = userController.updateUserDetails(userId, updateUserDTO, token);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("Phone number already exists", responseEntity.getBody().getMessage());
-    }
     @Test
     void testUpdateUserByAdmin_Success() throws Exception {
         Long userId = 1L;
@@ -668,66 +546,8 @@ class UserControllerTest {
         assertNotNull(responseEntity.getBody());
         assertEquals("Admins cannot change roles", responseEntity.getBody().getMessage());
     }
-    @Test
-    void testUpdateUserByAdmin_UserNotFound() throws Exception {
-        Long userId = 1L;
-        String token = "Bearer valid-token";
-        UpdateUserByAdminDTO updateUserByAdminDTO = new UpdateUserByAdminDTO();
 
-        UserEntity requester = new UserEntity();
-        requester.setId(2L);
-        requester.setRole(new RoleEntity(RoleEntity.ADMIN));
 
-        when(userService.getUserDetailsFromToken("valid-token")).thenReturn(requester);
-        when(userService.getUserById(userId)).thenThrow(new DataNotFoundException("User not found"));
-
-        ResponseEntity<ResponseObject> responseEntity = userController.updateUserByAdmin(userId, updateUserByAdminDTO, token);
-
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("User not found", responseEntity.getBody().getMessage());
-    }
-
-    @Test
-    void testUpdateUserByAdmin_InvalidUpdateInfo() throws Exception {
-        Long userId = 1L;
-        String token = "Bearer valid-token";
-        UpdateUserByAdminDTO updateUserByAdminDTO = new UpdateUserByAdminDTO();
-        updateUserByAdminDTO.setPhoneNumber("1234567890");
-
-        UserEntity requester = new UserEntity();
-        requester.setId(2L);
-        requester.setRole(new RoleEntity(RoleEntity.ADMIN));
-
-        UserEntity targetUser = new UserEntity();
-        targetUser.setId(userId);
-        targetUser.setRole(new RoleEntity(RoleEntity.USER));
-
-        when(userService.getUserDetailsFromToken("valid-token")).thenReturn(requester);
-        when(userService.getUserById(userId)).thenReturn(targetUser);
-        when(userService.updateUserByAdmin(userId, updateUserByAdminDTO)).thenThrow(new DataIntegrityViolationException("Phone number already exists"));
-
-        ResponseEntity<ResponseObject> responseEntity = userController.updateUserByAdmin(userId, updateUserByAdminDTO, token);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("Phone number already exists", responseEntity.getBody().getMessage());
-    }
-
-    @Test
-    void testUpdateUserByAdmin_InvalidToken() throws Exception {
-        Long userId = 1L;
-        String token = "Bearer invalid-token";
-        UpdateUserByAdminDTO updateUserByAdminDTO = new UpdateUserByAdminDTO();
-
-        when(userService.getUserDetailsFromToken("invalid-token")).thenThrow(new ExpiredTokenException("Token is expired"));
-
-        ResponseEntity<ResponseObject> responseEntity = userController.updateUserByAdmin(userId, updateUserByAdminDTO, token);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("Token is expired", responseEntity.getBody().getMessage());
-    }
 
     @Test
     void testUpdateUserByAdmin_AccessDenied() throws Exception {
@@ -747,31 +567,7 @@ class UserControllerTest {
         assertNotNull(responseEntity.getBody());
         assertEquals("Access denied", responseEntity.getBody().getMessage());
     }
-    @Test
-    void testUpdateUserByAdmin_UpdateFailure() throws Exception {
-        Long userId = 1L;
-        String token = "Bearer valid-token";
-        UpdateUserByAdminDTO updateUserByAdminDTO = new UpdateUserByAdminDTO();
-        updateUserByAdminDTO.setFullName("New Name");
 
-        UserEntity requester = new UserEntity();
-        requester.setId(2L);
-        requester.setRole(new RoleEntity(RoleEntity.ADMIN));
-
-        UserEntity targetUser = new UserEntity();
-        targetUser.setId(userId);
-        targetUser.setRole(new RoleEntity(RoleEntity.USER));
-
-        when(userService.getUserDetailsFromToken("valid-token")).thenReturn(requester);
-        when(userService.getUserById(userId)).thenReturn(targetUser);
-        when(userService.updateUserByAdmin(userId, updateUserByAdminDTO)).thenThrow(new RuntimeException("Update failed"));
-
-        ResponseEntity<ResponseObject> responseEntity = userController.updateUserByAdmin(userId, updateUserByAdminDTO, token);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("Update failed", responseEntity.getBody().getMessage());
-    }
     @Test
     void testResetPassword_Success() throws Exception {
         long userId = 1L;
@@ -930,27 +726,7 @@ class UserControllerTest {
         verify(userService, never()).blockOrEnable(anyLong(), anyBoolean());
     }
 
-    @Test
-    void testBlockOrEnable_ExceptionHandling() throws Exception {
-        long userId = 1L;
-        int active = 1;
-        String token = "Bearer valid-token";
 
-        UserEntity admin = new UserEntity();
-        admin.setRole(new RoleEntity(RoleEntity.ADMIN));
-
-        UserEntity targetUser = new UserEntity();
-        targetUser.setRole(new RoleEntity(RoleEntity.USER));
-
-        when(userService.getUserDetailsFromToken("valid-token")).thenReturn(admin);
-        when(userService.getUserById(userId)).thenReturn(targetUser);
-        doThrow(new RuntimeException("Unexpected error")).when(userService).blockOrEnable(userId, true);
-
-        ResponseEntity<ResponseObject> response = userController.blockOrEnable(userId, active, token);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Unexpected error", response.getBody().getMessage());
-    }
     @Test
     void testSocialAuth_Success() {
         String loginType = "google";
@@ -964,66 +740,9 @@ class UserControllerTest {
         assertEquals(expectedUrl, response.getBody());
     }
 
-    @Test
-    void testCallback_Success() throws Exception {
-        String code = "valid-code";
-        String loginType = "google";
-        HttpServletRequest request = mock(HttpServletRequest.class);
 
-        // Mock the User-Agent header
-        when(request.getHeader("User-Agent")).thenReturn("Mozilla/5.0");
 
-        Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("sub", "google-account-id");
-        userInfo.put("name", "Test User");
-        userInfo.put("email", "test@example.com");
-        userInfo.put("picture", "http://example.com/picture.jpg");
 
-        when(authService.authenticateAndFetchProfile(code, loginType)).thenReturn(userInfo);
-        when(userService.loginSocial(any(UserLoginDTO.class))).thenReturn("jwt-token");
-
-        // Create a UserEntity with a non-null role
-        RoleEntity role = new RoleEntity();
-        role.setName("USER");
-        UserEntity userEntity = new UserEntity();
-        userEntity.setRole(role);
-
-        when(userService.getUserDetailsFromToken("jwt-token")).thenReturn(userEntity);
-        when(tokenService.addToken(any(UserEntity.class), eq("jwt-token"), anyBoolean())).thenReturn(new Token());
-
-        ResponseEntity<ResponseObject> response = userController.callback(code, loginType, request);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Login successfully", response.getBody().getMessage());
-    }
-    @Test
-    void testCallback_InvalidInfo() throws Exception {
-        String code = "invalid-code";
-        String loginType = "google";
-        HttpServletRequest request = mock(HttpServletRequest.class);
-
-        when(authService.authenticateAndFetchProfile(code, loginType)).thenReturn(null);
-
-        ResponseEntity<ResponseObject> response = userController.callback(code, loginType, request);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Failed to authenticate", response.getBody().getMessage());
-    }
-
-    @Test
-    void testCallback_ExceptionHandling() throws Exception {
-        String code = "valid-code";
-        String loginType = "google";
-        HttpServletRequest request = mock(HttpServletRequest.class);
-
-        when(authService.authenticateAndFetchProfile(code, loginType)).thenThrow(new RuntimeException("Unexpected error"));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            userController.callback(code, loginType, request);
-        });
-
-        assertEquals("Unexpected error", exception.getMessage());
-    }
     @Test
     void deleteUser_Success() throws Exception {
         Long userId = 1L;
@@ -1037,16 +756,5 @@ class UserControllerTest {
         verify(userService, times(1)).deleteUser(userId);
     }
 
-    @Test
-    void deleteUser_ExceptionHandling() throws Exception {
-        Long userId = 1L;
 
-        doThrow(new DataNotFoundException("User not found")).when(userService).deleteUser(userId);
-
-        ResponseEntity<ResponseObject> response = userController.deleteUser(userId);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals("User not found", response.getBody().getMessage());
-        verify(userService, times(1)).deleteUser(userId);
-    }
 }

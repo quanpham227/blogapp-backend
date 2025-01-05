@@ -64,7 +64,7 @@ public class ClientController {
         ClientResponse client = clientService.createClient(clientDTO);
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_CLIENT_SUCCESSFULLY))
-                .status(HttpStatus.OK)
+                .status(HttpStatus.CREATED)
                 .data(client)
                 .build());
     }

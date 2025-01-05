@@ -197,44 +197,9 @@ public class SlideControllerTest {
         assertEquals(1, ((List<?>) responseEntity.getBody().getData()).size());
     }
 
-    @Test
-    public void testUpdateSlideNonExistentId() throws Exception {
-        Long slideId = 1L;
-        SlideDTO slideDTO = new SlideDTO();
-        BindingResult result = mock(BindingResult.class);
 
-        when(slideService.updateSlide(slideId, slideDTO)).thenThrow(new RuntimeException("Slide not found"));
-        when(localizationUtils.getLocalizedMessage(MessageKeys.SLIDE_NOT_FOUND, slideId)).thenReturn("Slide not found");
 
-        ResponseEntity<ResponseObject> responseEntity = slideController.updateSlide(slideDTO, slideId, result);
 
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-        assertEquals("Slide not found", responseEntity.getBody().getMessage());
-    }
-
-    @Test
-    public void testGetSlideByIdNonExistentId() throws Exception {
-        Long slideId = 1L;
-        when(slideService.findById(slideId)).thenThrow(new RuntimeException("Slide not found"));
-        when(localizationUtils.getLocalizedMessage(MessageKeys.SLIDE_NOT_FOUND, slideId)).thenReturn("Slide not found");
-
-        ResponseEntity<ResponseObject> responseEntity = slideController.getSlideById(slideId);
-
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-        assertEquals("Slide not found", responseEntity.getBody().getMessage());
-    }
-
-    @Test
-    public void testDeleteSlideNonExistentId() throws Exception {
-        Long slideId = 1L;
-        doThrow(new RuntimeException("Slide not found")).when(slideService).deleteSlide(slideId);
-        when(localizationUtils.getLocalizedMessage(MessageKeys.SLIDE_NOT_FOUND, slideId)).thenReturn("Slide not found");
-
-        ResponseEntity<ResponseObject> responseEntity = slideController.deleteSlide(slideId);
-
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-        assertEquals("Slide not found", responseEntity.getBody().getMessage());
-    }
 
     @Test
     public void testFindAllByStatusTrueNoSlides() {
@@ -260,17 +225,6 @@ public class SlideControllerTest {
         assertTrue(((List<?>) responseEntity.getBody().getData()).isEmpty());
     }
 
-    @Test
-    public void testUpdateSlideOrderInvalidInput() throws Exception {
-        List<SlideOrderDTO> slideOrderDTOs = Arrays.asList(new SlideOrderDTO(), new SlideOrderDTO());
-        doThrow(new RuntimeException("Invalid input")).when(slideService).updateSlideOrder(slideOrderDTOs);
-        when(localizationUtils.getLocalizedMessage(MessageKeys.INVALID_INPUT)).thenReturn("Invalid input");
-
-        ResponseEntity<ResponseObject> responseEntity = slideController.updateSlideOrder(slideOrderDTOs);
-
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
-        assertEquals("Invalid input", responseEntity.getBody().getMessage());
-    }
 
 
 

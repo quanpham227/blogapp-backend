@@ -48,7 +48,7 @@ public class PostUserControllerTest {
     }
 
     @Test
-    public void testSearchPosts() throws JsonProcessingException {
+    public void testSearchPosts() throws Exception {
         Pageable pageable = PageRequest.of(0, 6);
         List<PostResponse> postResponses = Arrays.asList(new PostResponse(), new PostResponse());
         Page<PostResponse> postPage = new PageImpl<>(postResponses, pageable, postResponses.size());
@@ -99,7 +99,7 @@ public class PostUserControllerTest {
         assertEquals(postResponse, responseEntity.getBody().getData());
     }
     @Test
-    public void testSearchPostsCacheMiss() throws JsonProcessingException {
+    public void testSearchPostsCacheMiss() throws Exception {
         Pageable pageable = PageRequest.of(0, 6);
         List<PostResponse> postResponses = Arrays.asList(new PostResponse(), new PostResponse());
         Page<PostResponse> postPage = new PageImpl<>(postResponses, pageable, postResponses.size());
@@ -118,7 +118,7 @@ public class PostUserControllerTest {
         assertEquals(postResponses, ((PostListResponse) responseEntity.getBody().getData()).getPosts());
     }
     @Test
-    public void testSearchPostsCacheAndDatabaseMiss() throws JsonProcessingException {
+    public void testSearchPostsCacheAndDatabaseMiss() throws Exception {
         Pageable pageable = PageRequest.of(0, 6);
 
         // Giả lập cache Redis trống
@@ -131,38 +131,6 @@ public class PostUserControllerTest {
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Get posts successfully", responseEntity.getBody().getMessage());
         assertEquals(Collections.emptyList(), ((PostListResponse) responseEntity.getBody().getData()).getPosts());
-    }
-    @Test
-    public void testSearchPostsRedisError() throws JsonProcessingException {
-        Pageable pageable = PageRequest.of(0, 6);
-        List<PostResponse> postResponses = Arrays.asList(new PostResponse(), new PostResponse());
-        Page<PostResponse> postPage = new PageImpl<>(postResponses, pageable, postResponses.size());
-
-        // Giả lập lỗi khi truy cập Redis
-        when(postRedisService.getAllPosts("", "", "", pageable)).thenThrow(new RuntimeException("Redis error"));
-        // Giả lập lấy dữ liệu từ database
-        when(postService.searchPosts("", "", "", pageable)).thenReturn(postPage);
-        // Đảm bảo dữ liệu được lưu vào Redis
-        doNothing().when(postRedisService).saveAllPosts(postResponses, "", "", "", pageable);
-
-        ResponseEntity<ResponseObject> responseEntity = postUserController.searchPosts("", "", "", 0, 6);
-
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("Get posts successfully", responseEntity.getBody().getMessage());
-        assertEquals(postResponses, ((PostListResponse) responseEntity.getBody().getData()).getPosts());
-    }
-
-    @Test
-    public void testGetPostBySlugError() throws Exception {
-        String slug = "test-slug";
-        // Giả lập việc không tìm thấy bài viết và ném ra ngoại lệ
-        when(postRedisService.getPostBySlug(slug)).thenReturn(null);
-        when(postService.getPostBySlug(slug)).thenThrow(new RuntimeException("Post not found"));
-
-        ResponseEntity<ResponseObject> responseEntity = postUserController.getPostBySlug(slug);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Post not found", responseEntity.getBody().getMessage());
     }
 
     @Test
@@ -187,23 +155,13 @@ public class PostUserControllerTest {
         assertEquals(postResponse, responseEntity.getBody().getData());
     }
     @Test
-    public void testSearchPostsWithInvalidParameters() throws JsonProcessingException {
+    public void testSearchPostsWithInvalidParameters() throws Exception {
         Pageable pageable = PageRequest.of(0, 6);
         // Trường hợp tham số `limit` không hợp lệ (quá nhỏ hoặc quá lớn)
         ResponseEntity<ResponseObject> responseEntity = postUserController.searchPosts("", "", "", 0, -1);
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
         assertEquals("Invalid limit parameter", responseEntity.getBody().getMessage());
     }
-    @Test
-    public void testGetPostBySlugUnexpectedError() throws Exception {
-        String slug = "test-slug";
-        when(postRedisService.getPostBySlug(slug)).thenReturn(null);
-        when(postService.getPostBySlug(slug)).thenThrow(new RuntimeException("Unexpected error"));
 
-        ResponseEntity<ResponseObject> responseEntity = postUserController.getPostBySlug(slug);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Unexpected error", responseEntity.getBody().getMessage());
-    }
 
 }

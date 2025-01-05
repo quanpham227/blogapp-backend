@@ -101,7 +101,7 @@ public class CommentController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .message("Insert comment successfully")
-                        .status(HttpStatus.OK)
+                        .status(HttpStatus.CREATED)
                         .data(comment)
                         .build());
     }
@@ -169,7 +169,7 @@ public class CommentController {
         return ResponseEntity.ok(
                 ResponseObject.builder()
                         .message("Reply comment successfully")
-                        .status(HttpStatus.OK)
+                        .status(HttpStatus.CREATED)
                         .data(comment)
                         .build());
     }

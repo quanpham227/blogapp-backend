@@ -41,7 +41,7 @@ public class ImageControllerTest {
     }
 
     @Test
-    public void testGetImages_Success_NoKeyword() {
+    public void testGetImages_Success_NoKeyword() throws Exception {
         Pageable pageable = PageRequest.of(0, 24, Sort.by("createdAt").descending());
         List<ImageResponse> imageResponses = Arrays.asList(new ImageResponse(), new ImageResponse());
         Page<ImageResponse> imagePage = new PageImpl<>(imageResponses, pageable, imageResponses.size());
@@ -59,7 +59,7 @@ public class ImageControllerTest {
     }
 
     @Test
-    public void testGetImages_Success_WithKeyword() {
+    public void testGetImages_Success_WithKeyword() throws Exception {
         Pageable pageable = PageRequest.of(0, 24, Sort.by("createdAt").descending());
         List<ImageResponse> imageResponses = Arrays.asList(new ImageResponse(), new ImageResponse());
         Page<ImageResponse> imagePage = new PageImpl<>(imageResponses, pageable, imageResponses.size());
@@ -77,7 +77,7 @@ public class ImageControllerTest {
     }
 
     @Test
-    public void testGetImages_Success_UnusedObjectType() {
+    public void testGetImages_Success_UnusedObjectType() throws Exception {
         Pageable pageable = PageRequest.of(0, 24, Sort.by("createdAt").descending());
         List<ImageResponse> imageResponses = Arrays.asList(new ImageResponse(), new ImageResponse());
         Page<ImageResponse> imagePage = new PageImpl<>(imageResponses, pageable, imageResponses.size());
@@ -95,7 +95,7 @@ public class ImageControllerTest {
     }
 
     @Test
-    public void testGetImages_Success_WithPagination() {
+    public void testGetImages_Success_WithPagination() throws Exception {
         Pageable pageable = PageRequest.of(1, 10, Sort.by("createdAt").descending());
         List<ImageResponse> imageResponses = Arrays.asList(new ImageResponse(), new ImageResponse());
         Page<ImageResponse> imagePage = new PageImpl<>(imageResponses, pageable, imageResponses.size());
@@ -113,7 +113,7 @@ public class ImageControllerTest {
     }
 
     @Test
-    public void testGetImages_Failure_InvalidPageAndLimit() {
+    public void testGetImages_Failure_InvalidPageAndLimit() throws Exception {
         ResponseEntity<ResponseObject> responseEntity = imageController.getImages("", "", -1, -1);
 
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
@@ -121,7 +121,7 @@ public class ImageControllerTest {
     }
 
     @Test
-    public void testGetImages_Failure_NoImagesFound() {
+    public void testGetImages_Failure_NoImagesFound() throws Exception {
         Pageable pageable = PageRequest.of(0, 24, Sort.by("createdAt").descending());
         Page<ImageResponse> imagePage = new PageImpl<>(Collections.emptyList(), pageable, 0);
         Long totalFileSize = 0L;
@@ -152,17 +152,7 @@ public class ImageControllerTest {
         assertEquals(imageResponse, responseEntity.getBody().getData());
     }
 
-    @Test
-    public void testGetImage_Failure_IdNotFound() throws Exception {
-        Long imageId = 1L;
 
-        when(fileUploadService.getImage(imageId)).thenThrow(new Exception("Image not found"));
-
-        ResponseEntity<ResponseObject> responseEntity = imageController.getImage(imageId);
-
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-        assertEquals("Image not found", responseEntity.getBody().getMessage());
-    }
 
     @Test
     public void testGetImage_Failure_InvalidId() throws Exception {
@@ -307,17 +297,7 @@ public class ImageControllerTest {
         assertEquals("Invalid image IDs", responseEntity.getBody().getMessage());
     }
 
-    @Test
-    public void testDeleteImages_Failure_IdNotFound() throws Exception {
-        List<Long> ids = Arrays.asList(1L, 2L);
 
-        doThrow(new Exception("Image not found")).when(fileUploadService).deleteImages(ids);
-
-        ResponseEntity<ResponseObject> responseEntity = imageController.deleteImages(ids);
-
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-        assertEquals("Image not found", responseEntity.getBody().getMessage());
-    }
 
     @Test
     public void testDeleteImages_Failure_Unauthorized() throws Exception {
@@ -335,41 +315,11 @@ public class ImageControllerTest {
         // Simulate unauthorized access
         // This test case requires a security context setup to simulate unauthorized access
     }
-    @Test
-    public void testServiceError_GetUnusedImages() throws Exception {
-        Pageable pageable = PageRequest.of(0, 24, Sort.by("createdAt").descending());
-
-        when(fileUploadService.getUnusedImages(pageable)).thenThrow(new RuntimeException("Service error"));
-
-        ResponseEntity<ResponseObject> responseEntity = imageController.getImages("", "unused", 0, 24);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Service error", responseEntity.getBody().getMessage());
-    }
-
-    @Test
-    public void testServiceError_GetAllImages() throws Exception {
-        Pageable pageable = PageRequest.of(0, 24, Sort.by("createdAt").descending());
-
-        when(fileUploadService.getAllImages("", "", pageable)).thenThrow(new RuntimeException("Service error"));
-
-        ResponseEntity<ResponseObject> responseEntity = imageController.getImages("", "", 0, 24);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Service error", responseEntity.getBody().getMessage());
-    }
 
 
 
-    @Test
-    public void testServiceError_DeleteImages() throws Exception {
-        List<Long> ids = Arrays.asList(1L, 2L);
 
-        doThrow(new RuntimeException("Service error")).when(fileUploadService).deleteImages(ids);
 
-        ResponseEntity<ResponseObject> responseEntity = imageController.deleteImages(ids);
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Service error", responseEntity.getBody().getMessage());
-    }
+
 }

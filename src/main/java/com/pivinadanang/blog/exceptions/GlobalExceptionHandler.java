@@ -1,7 +1,6 @@
 package com.pivinadanang.blog.exceptions;
 
 import com.pivinadanang.blog.responses.ResponseObject;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +18,16 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
 
-
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ResponseObject> handleRuntimeException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ResponseObject.builder()
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .message(ex.getMessage())
+                        .data(null)
+                        .build()
+        );
+    }
     @ExceptionHandler(DataNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResponseEntity<ResponseObject> handleResourceNotFoundException(DataNotFoundException exception) {

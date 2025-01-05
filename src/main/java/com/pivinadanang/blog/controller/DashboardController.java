@@ -20,7 +20,6 @@ public class DashboardController {
     private final IDashboardService dashboardService;
 
     @GetMapping("")
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER') or hasRole('ROLE_MODERATOR')")
     public ResponseEntity<ResponseObject> getDashboardData() {
         DashboardResponse dashboardResponse = dashboardService.getDashboardData();
         return ResponseEntity.ok(ResponseObject.builder()

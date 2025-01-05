@@ -40,7 +40,6 @@ public class PostDTO {
     private PostStatus status;
 
     private PostVisibility visibility;
-    @NotEmpty(message = "Tags cannot be empty")
     @Size(max = 5, message = "Tags cannot be more than 5")
     private Set<@Valid TagDTO> tags = new HashSet<>();
 

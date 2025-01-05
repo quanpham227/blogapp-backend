@@ -23,27 +23,19 @@ public class TagController {
     private final TagService tagService;
 
     @GetMapping("/top")
-    public ResponseEntity<ResponseObject> getTopTags(@RequestParam(defaultValue = "10") int limit, @RequestParam(defaultValue = "0") int page) {
-        try {
-            if (limit <= 0 || page < 0) {
-                return ResponseEntity.badRequest().body(ResponseObject.builder()
-                        .message("Invalid limit or page")
-                        .status(HttpStatus.BAD_REQUEST)
-                        .build());
-            }
-            Pageable pageable = PageRequest.of(page, limit);
-            List<TagResponse> tags = tagService.getTopTags(pageable);
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .message("Get top tags successfully")
-                    .status(HttpStatus.OK)
-                    .data(tags)
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                    .message(e.getMessage())
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<ResponseObject> getTopTags(@RequestParam(defaultValue = "10") int limit, @RequestParam(defaultValue = "0") int page) throws Exception {
+        if (limit <= 0 || page < 0) {
+            return ResponseEntity.badRequest().body(ResponseObject.builder()
+                    .message("Invalid limit or page")
+                    .status(HttpStatus.BAD_REQUEST)
                     .build());
         }
-
+        Pageable pageable = PageRequest.of(page, limit);
+        List<TagResponse> tags = tagService.getTopTags(pageable);
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Get top tags successfully")
+                .status(HttpStatus.OK)
+                .data(tags)
+                .build());
     }
 }

@@ -25,7 +25,7 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
     @Query("SELECT c FROM CommentEntity c WHERE c.post.id = :postId AND c.status = :status AND c.parentComment IS NULL ORDER BY c.createdAt DESC ")
     List<CommentEntity> findParentCommentsByPostIdAndStatus(@Param("postId") Long postId, @Param("status") CommentStatus status, Pageable pageable);
 
-    @Query("SELECT r FROM CommentEntity r WHERE r.parentComment.id IN :parentIds AND r.status = :status")
+    @Query("SELECT r FROM CommentEntity r LEFT JOIN FETCH r.parentComment WHERE r.parentComment.id IN :parentIds AND r.status = :status")
     List<CommentEntity> findRepliesByParentIdsAndStatus(@Param("parentIds") List<Long> parentIds, @Param("status") CommentStatus status);
 
     List<CommentEntity> findByParentCommentId(Long parentCommentId);

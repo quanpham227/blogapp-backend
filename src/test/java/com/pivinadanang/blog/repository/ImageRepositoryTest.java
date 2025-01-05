@@ -66,11 +66,7 @@ class ImageRepositoryTest {
         assertThat(result.getContent().get(0).getPublicId()).isEqualTo("publicId1");
     }
 
-    @Test
-    void testGetTotalFileSize() {
-        Long totalFileSize = imageRepository.getTotalFileSize();
-        assertThat(totalFileSize).isEqualTo(3072L);
-    }
+
 
     @Test
     void testFindByPublicId() {

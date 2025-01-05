@@ -38,7 +38,7 @@ public class AchievementController {
         AchievementResponse achievement = achievementService.addAchievement(achievementDTO) ;
         return ResponseEntity.ok().body(ResponseObject.builder()
                 .message(localizationUtils.getLocalizedMessage(MessageKeys.INSERT_ACHIEVEMENT_SUCCESSFULLY))
-                .status(HttpStatus.OK)
+                .status(HttpStatus.CREATED)
                 .data(achievement)
                 .build());
     }

@@ -22,14 +22,10 @@ public class ContactController {
     @Value("${app.contact.recipient-email}")
     private String recipientEmail;
 
-    // src/main/java/com/pivinadanang/blog/controller/ContactController.java
 
-// src/main/java/com/pivinadanang/blog/controller/ContactController.java
-
-    // src/main/java/com/pivinadanang/blog/controller/ContactController.java
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER') or hasRole('ROLE_MODERATOR')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER') or hasRole('MODERATOR')")
     public ResponseEntity<ResponseObject> sendContactEmail(@Valid @RequestBody ContactDTO contactForm) {
         if (contactForm.getEmail() == null || contactForm.getSubject() == null || contactForm.getMessage() == null) {
             return ResponseEntity.badRequest().body(

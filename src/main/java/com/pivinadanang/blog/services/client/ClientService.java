@@ -135,14 +135,17 @@ public class ClientService implements IClientService{
         try {
             // Tìm hình ảnh hiện tại dựa trên publicId
             ImageEntity currentImage = imageRepository.findByPublicId(existingClient.getPublicId())
-                    .orElseThrow(() -> new DataNotFoundException("Current image not found"));
+                    .orElse(null);
 
-            // Giảm usageCount và cập nhật isUsed của hình ảnh hiện tại nếu cần
-            currentImage.setUsageCount(currentImage.getUsageCount() - 1);
-            if (currentImage.getUsageCount() <= 0) {
-                currentImage.setIsUsed(false);
+            if (currentImage != null) {
+                // Giảm usageCount và cập nhật isUsed của hình ảnh hiện tại nếu cần
+                currentImage.setUsageCount(currentImage.getUsageCount() - 1);
+                if (currentImage.getUsageCount() <= 0) {
+                    currentImage.setIsUsed(false);
+                }
+                imageRepository.save(currentImage);
             }
-            imageRepository.save(currentImage);
+
 
             // Xóa client khỏi cơ sở dữ liệu
             clientRepository.delete(existingClient);

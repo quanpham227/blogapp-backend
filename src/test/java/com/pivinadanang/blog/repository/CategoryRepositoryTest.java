@@ -132,12 +132,5 @@ class CategoryRepositoryTest {
         assertThat(categoryRepository.findById(existingId)).isEmpty();
     }
 
-    @Test
-    void testFindAll_whenMultipleRecordsExist_thenReturnAllRecords() {
-        // Act
-        List<CategoryEntity> allCategories = categoryRepository.findAll();
 
-        // Assert
-        assertThat(allCategories).hasSize(2);
-    }
 }

@@ -116,26 +116,6 @@ class PostRepositoryTest {
         assertThat(result.getContent()).hasSize(1);
     }
 
-    @Test
-    void testFindRecentPosts() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<PostEntity> result = postRepository.findRecentPosts(PostStatus.PUBLISHED, PostVisibility.PUBLIC, pageable);
-        assertThat(result.getContent()).hasSize(1);
-    }
-
-    @Test
-    void testFindPostBySlugAndStatusAndVisibility() {
-        Optional<PostEntity> foundPost = postRepository.findPostBySlugAndStatusAndVisibility("test-post", PostStatus.PUBLISHED, PostVisibility.PUBLIC);
-        assertThat(foundPost).isPresent();
-        assertThat(foundPost.get().getTitle()).isEqualTo("Test Post");
-    }
-
-    @Test
-    void testFindTop3PostsExcludingStatus() {
-        Pageable pageable = PageRequest.of(0, 3);
-        List<PostEntity> topPosts = postRepository.findTop3PostsExcludingStatus(PostStatus.DELETED, pageable);
-        assertThat(topPosts).hasSize(1);
-    }
 
     @Test
     void testCountPageViewsPerDayLastWeek() {

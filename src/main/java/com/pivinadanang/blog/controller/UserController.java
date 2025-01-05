@@ -33,6 +33,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -101,174 +102,125 @@ public class UserController {
     }
     @PostMapping("/register")
     public ResponseEntity<ResponseObject> createUser(@Valid @RequestBody UserDTO userDTO,
-                                                     BindingResult result) {
-        try {
-            if (result.hasErrors()) {
-                List<String> errorMessages = result.getFieldErrors()
-                        .stream()
-                        .map(FieldError::getDefaultMessage)
-                        .toList();
-                return ResponseEntity.badRequest().body(ResponseObject.builder()
-                        .status(HttpStatus.BAD_REQUEST)
-                        .data(null)
-                        .message(errorMessages.toString())
-                        .build());
-            }
+                                                     BindingResult result) throws Exception {
 
-            if (userDTO.getEmail() == null || userDTO.getEmail().trim().isBlank()) {
-                if (userDTO.getPhoneNumber() == null || userDTO.getPhoneNumber().isBlank()) {
-                    return ResponseEntity.badRequest().body(ResponseObject.builder()
-                            .status(HttpStatus.BAD_REQUEST)
-                            .data(null)
-                            .message("At least email or phone number is required")
-                            .build());
-                } else {
-                    // phone number not blank
-                    if (!ValidationUtils.isValidPhoneNumber(userDTO.getPhoneNumber())) {
-                        return ResponseEntity.badRequest().body(ResponseObject.builder()
-                                .status(HttpStatus.BAD_REQUEST)
-                                .data(null)
-                                .message("Invalid phone number")
-                                .build());
-                    }
-                }
-            } else {
-                // Email not blank
-                if (!ValidationUtils.isValidEmail(userDTO.getEmail())) {
-                    return ResponseEntity.badRequest().body(ResponseObject.builder()
-                            .status(HttpStatus.BAD_REQUEST)
-                            .data(null)
-                            .message("Invalid email format")
-                            .build());
-                }
-            }
-
-            // Check if password and retype password match
-            if (!userDTO.getPassword().equals(userDTO.getRetypePassword())) {
-                return ResponseEntity.badRequest().body(ResponseObject.builder()
-                        .status(HttpStatus.BAD_REQUEST)
-                        .data(null)
-                        .message(localizationUtils.getLocalizedMessage(MessageKeys.PASSWORD_NOT_MATCH))
-                        .build());
-            }
-
-            UserEntity user = userService.createUser(userDTO);
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .status(HttpStatus.OK)
-                    .data(UserResponse.fromUser(user))
-                    .message(localizationUtils.getLocalizedMessage(MessageKeys.REGISTER_SUCCESSFULLY))
-                    .build());
-        } catch (DataIntegrityViolationException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseObject.builder()
-                    .status(HttpStatus.CONFLICT)
+        if (result.hasErrors()) {
+            List<String> errorMessages = result.getFieldErrors()
+                    .stream()
+                    .map(FieldError::getDefaultMessage)
+                    .toList();
+            return ResponseEntity.badRequest().body(ResponseObject.builder()
+                    .status(HttpStatus.BAD_REQUEST)
                     .data(null)
-                    .message(e.getMessage())
-                    .build());
-        } catch (PermissionDenyException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseObject.builder()
-                    .status(HttpStatus.FORBIDDEN)
-                    .data(null)
-                    .message(e.getMessage())
-                    .build());
-        } catch (DataNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                    .status(HttpStatus.NOT_FOUND)
-                    .data(null)
-                    .message(e.getMessage())
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .data(null)
-                    .message(e.getMessage())
+                    .message(errorMessages.toString())
                     .build());
         }
-    }
 
+        if (userDTO.getEmail() == null || userDTO.getEmail().trim().isBlank()) {
+            if (userDTO.getPhoneNumber() == null || userDTO.getPhoneNumber().isBlank()) {
+                return ResponseEntity.badRequest().body(ResponseObject.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .data(null)
+                        .message("At least email or phone number is required")
+                        .build());
+            } else {
+                // phone number not blank
+                if (!ValidationUtils.isValidPhoneNumber(userDTO.getPhoneNumber())) {
+                    return ResponseEntity.badRequest().body(ResponseObject.builder()
+                            .status(HttpStatus.BAD_REQUEST)
+                            .data(null)
+                            .message("Invalid phone number")
+                            .build());
+                }
+            }
+        } else {
+            // Email not blank
+            if (!ValidationUtils.isValidEmail(userDTO.getEmail())) {
+                return ResponseEntity.badRequest().body(ResponseObject.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .data(null)
+                        .message("Invalid email format")
+                        .build());
+            }
+        }
+
+        // Check if password and retype password match
+        if (!userDTO.getPassword().equals(userDTO.getRetypePassword())) {
+            return ResponseEntity.badRequest().body(ResponseObject.builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .data(null)
+                    .message(localizationUtils.getLocalizedMessage(MessageKeys.PASSWORD_NOT_MATCH))
+                    .build());
+        }
+
+        UserEntity user = userService.createUser(userDTO);
+        return ResponseEntity.ok(ResponseObject.builder()
+                .status(HttpStatus.CREATED)
+                .data(UserResponse.fromUser(user))
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.REGISTER_SUCCESSFULLY))
+                .build());
+    }
     @PostMapping("/login")
     public ResponseEntity<ResponseObject> login(@Valid @RequestBody UserLoginDTO userLoginDTO,
                                                 HttpServletRequest request,
-                                                HttpServletResponse response) {
-        try {
-            // Kiểm tra thông tin đăng nhập và sinh token
-            String token = userService.login(userLoginDTO);
-            // Lấy thông tin user từ token
-            String userAgent = request.getHeader("User-Agent");
-            UserEntity userDetail = userService.getUserDetailsFromToken(token);
-            Token jwtToken = tokenService.addToken(userDetail, token, isMobileDevice(userAgent));
+                                                HttpServletResponse response) throws Exception {
+        // Kiểm tra thông tin đăng nhập và sinh token
+        String token = userService.login(userLoginDTO);
+        // Lấy thông tin user từ token
+        String userAgent = request.getHeader("User-Agent");
+        UserEntity userDetail = userService.getUserDetailsFromToken(token);
+        Token jwtToken = tokenService.addToken(userDetail, token, isMobileDevice(userAgent));
 
-            // Thiết lập cookies từ phía server
-            setCookies(response, jwtToken.getRefreshToken());
+        // Thiết lập cookies từ phía server
+        setCookies(response, jwtToken.getRefreshToken());
 
-            LoginResponse loginResponse = LoginResponse.builder()
-                    .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_SUCCESSFULLY))
-                    .token(token)
-                    .tokenType(jwtToken.getTokenType())
-                    .refreshToken(jwtToken.getRefreshToken())
-                    .username(userDetail.getUsername())
-                    .roles(userDetail.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
-                    .id(userDetail.getId())
-                    .build();
+        LoginResponse loginResponse = LoginResponse.builder()
+                .message(localizationUtils.getLocalizedMessage(MessageKeys.LOGIN_SUCCESSFULLY))
+                .token(token)
+                .tokenType(jwtToken.getTokenType())
+                .refreshToken(jwtToken.getRefreshToken())
+                .username(userDetail.getUsername())
+                .roles(userDetail.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
+                .id(userDetail.getId())
+                .build();
 
-            // Trả về token trong response
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .message("Login successfully")
-                    .data(loginResponse)
-                    .status(HttpStatus.OK)
-                    .build());
-        } catch (DataNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ResponseObject.builder()
-                            .message(e.getMessage())
-                            .status(HttpStatus.NOT_FOUND)
-                            .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseObject.builder()
-                            .message("Unexpected error")
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .build());
-        }
+        // Trả về token trong response
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Login successfully")
+                .data(loginResponse)
+                .status(HttpStatus.OK)
+                .build());
     }
     @PostMapping("/refreshToken")
-    public ResponseEntity<ResponseObject> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        try {
-            String refreshToken = getRefreshTokenFromCookie(request);
-            if (refreshToken == null || refreshToken.isBlank()) {
-                return ResponseEntity.badRequest().body(ResponseObject.builder()
-                        .status(HttpStatus.BAD_REQUEST)
-                        .data(null)
-                        .message("You are not logged in, please login again")
-                        .build());
-            }
-            UserEntity userDetail = userService.getUserDetailsFromRefreshToken(refreshToken);
-            Token jwtToken = tokenService.refreshToken(refreshToken, userDetail);
-
-            // Thiết lập cookies từ phía server
-            setCookies(response, jwtToken.getRefreshToken());
-
-            LoginResponse loginResponse = LoginResponse.builder()
-                    .message("Refresh token successfully")
-                    .token(jwtToken.getToken())
-                    .tokenType(jwtToken.getTokenType())
-                    .refreshToken(jwtToken.getRefreshToken())
-                    .username(userDetail.getUsername())
-                    .roles(userDetail.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
-                    .id(userDetail.getId()).build();
-            return ResponseEntity.ok().body(
-                    ResponseObject.builder()
-                            .data(loginResponse)
-                            .message(loginResponse.getMessage())
-                            .status(HttpStatus.OK)
-                            .build());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<ResponseObject> refreshToken(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String refreshToken = getRefreshTokenFromCookie(request);
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.badRequest().body(ResponseObject.builder()
+                    .status(HttpStatus.BAD_REQUEST)
                     .data(null)
-                    .message("An error occurred while refreshing the token")
+                    .message("You are not logged in, please login again")
                     .build());
         }
+        UserEntity userDetail = userService.getUserDetailsFromRefreshToken(refreshToken);
+        Token jwtToken = tokenService.refreshToken(refreshToken, userDetail);
+
+        // Thiết lập cookies từ phía server
+        setCookies(response, jwtToken.getRefreshToken());
+
+        LoginResponse loginResponse = LoginResponse.builder()
+                .message("Refresh token successfully")
+                .token(jwtToken.getToken())
+                .tokenType(jwtToken.getTokenType())
+                .refreshToken(jwtToken.getRefreshToken())
+                .username(userDetail.getUsername())
+                .roles(userDetail.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
+                .id(userDetail.getId()).build();
+        return ResponseEntity.ok().body(
+                ResponseObject.builder()
+                        .data(loginResponse)
+                        .message(loginResponse.getMessage())
+                        .status(HttpStatus.OK)
+                        .build());
     }
     private void setCookies(HttpServletResponse response, String refreshToken) {
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
@@ -317,21 +269,14 @@ public class UserController {
 
     @PostMapping("/details")
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER') or hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> getUserDetails(@RequestHeader("Authorization") String authorizationHeader) {
-        try {
-            String extractedToken = authorizationHeader.substring(7); // Remove "Bearer " from the token string
-            UserEntity user = userService.getUserDetailsFromToken(extractedToken);
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message("Get user details successfully")
-                    .data(UserResponse.fromUser(user))
-                    .status(HttpStatus.OK)
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                    .message(e.getMessage())
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build());
-        }
+    public ResponseEntity<ResponseObject> getUserDetails(@RequestHeader("Authorization") String authorizationHeader) throws Exception {
+        String extractedToken = authorizationHeader.substring(7); // Remove "Bearer " from the token string
+        UserEntity user = userService.getUserDetailsFromToken(extractedToken);
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message("Get user details successfully")
+                .data(UserResponse.fromUser(user))
+                .status(HttpStatus.OK)
+                .build());
     }
 
     @PutMapping("/details/{userId}")
@@ -340,26 +285,19 @@ public class UserController {
             @PathVariable Long userId,
             @RequestBody UpdateUserDTO updatedUserDTO,
             @RequestHeader("Authorization") String authorizationHeader
-    ) {
-        try {
-            String extractedToken = authorizationHeader.substring(7);
-            UserEntity user = userService.getUserDetailsFromToken(extractedToken);
-            // Ensure that the user making the request matches the user being updated
-            if (!user.getId().equals(userId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-            UserEntity updatedUser = userService.updateUser(userId, updatedUserDTO);
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message("Update user details successfully")
-                    .data(UserResponse.fromUser(updatedUser))
-                    .status(HttpStatus.OK)
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                    .message(e.getMessage())
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build());
+    ) throws Exception {
+        String extractedToken = authorizationHeader.substring(7);
+        UserEntity user = userService.getUserDetailsFromToken(extractedToken);
+        // Ensure that the user making the request matches the user being updated
+        if (!user.getId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+        UserEntity updatedUser = userService.updateUser(userId, updatedUserDTO);
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message("Update user details successfully")
+                .data(UserResponse.fromUser(updatedUser))
+                .status(HttpStatus.OK)
+                .build());
     }
     @PutMapping("/admin/update/{userId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
@@ -367,84 +305,70 @@ public class UserController {
             @PathVariable Long userId,
             @RequestBody UpdateUserByAdminDTO updateUserByAdminDTO,
             @RequestHeader("Authorization") String authorizationHeader
-    ) {
-        try {
-            String extractedToken = authorizationHeader.substring(7);
-            UserEntity requester = userService.getUserDetailsFromToken(extractedToken);
-            UserEntity targetUser = userService.getUserById(userId);
+    ) throws Exception {
+        String extractedToken = authorizationHeader.substring(7);
+        UserEntity requester = userService.getUserDetailsFromToken(extractedToken);
+        UserEntity targetUser = userService.getUserById(userId);
 
-            // Moderator có toàn quyền
-            if (requester.getRole().getName().equals(RoleEntity.MODERATOR)) {
-                // Không cần kiểm tra gì thêm
-            } else if (requester.getRole().getName().equals(RoleEntity.ADMIN)) {
-                // Kiểm tra nếu Admin cập nhật chính tài khoản của họ
-                if (requester.getId().equals(userId)) {
-                    // Admin chỉ không được thay đổi role thành Moderator
-                    if (updateUserByAdminDTO.getRoleId() != null) {
-                        RoleEntity requestedRole = roleService.getRoleById(updateUserByAdminDTO.getRoleId());
-                        if (requestedRole.getName().equals(RoleEntity.MODERATOR)) {
-                            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                    .body(ResponseObject.builder()
-                                            .message("Admins cannot change their role to Moderator")
-                                            .status(HttpStatus.BAD_REQUEST)
-                                            .build());
-                        }
-                    }
-                } else {
-                    // Không được cập nhật thông tin của Admin khác hoặc Moderator
-                    if (targetUser.getRole().getName().equals(RoleEntity.ADMIN)) {
+        // Moderator có toàn quyền
+        if (requester.getRole().getName().equals(RoleEntity.MODERATOR)) {
+            // Không cần kiểm tra gì thêm
+        } else if (requester.getRole().getName().equals(RoleEntity.ADMIN)) {
+            // Kiểm tra nếu Admin cập nhật chính tài khoản của họ
+            if (requester.getId().equals(userId)) {
+                // Admin chỉ không được thay đổi role thành Moderator
+                if (updateUserByAdminDTO.getRoleId() != null) {
+                    RoleEntity requestedRole = roleService.getRoleById(updateUserByAdminDTO.getRoleId());
+                    if (requestedRole.getName().equals(RoleEntity.MODERATOR)) {
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .body(ResponseObject.builder()
-                                        .message("Admins cannot update other Admins")
-                                        .status(HttpStatus.BAD_REQUEST)
-                                        .build());
-                    }
-                    if (targetUser.getRole().getName().equals(RoleEntity.MODERATOR)) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body(ResponseObject.builder()
-                                        .message("Admins cannot update Moderators")
-                                        .status(HttpStatus.BAD_REQUEST)
-                                        .build());
-                    }
-
-                    // Admin không được thay đổi role của bất kỳ ai
-                    if (updateUserByAdminDTO.getRoleId() != null) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body(ResponseObject.builder()
-                                        .message("Admins cannot change roles")
+                                        .message("Admins cannot change their role to Moderator")
                                         .status(HttpStatus.BAD_REQUEST)
                                         .build());
                     }
                 }
             } else {
-                // User không có quyền
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(ResponseObject.builder()
-                                .message("Access denied")
-                                .status(HttpStatus.FORBIDDEN)
-                                .build());
-            }
+                // Không được cập nhật thông tin của Admin khác hoặc Moderator
+                if (targetUser.getRole().getName().equals(RoleEntity.ADMIN)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(ResponseObject.builder()
+                                    .message("Admins cannot update other Admins")
+                                    .status(HttpStatus.BAD_REQUEST)
+                                    .build());
+                }
+                if (targetUser.getRole().getName().equals(RoleEntity.MODERATOR)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(ResponseObject.builder()
+                                    .message("Admins cannot update Moderators")
+                                    .status(HttpStatus.BAD_REQUEST)
+                                    .build());
+                }
 
-            // Thực hiện cập nhật
-            UserResponse updatedUser = userService.updateUserByAdmin(userId, updateUserByAdminDTO);
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message("Update user successfully")
-                    .data(updatedUser)
-                    .status(HttpStatus.OK)
-                    .build());
-        } catch (DataNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                // Admin không được thay đổi role của bất kỳ ai
+                if (updateUserByAdminDTO.getRoleId() != null) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(ResponseObject.builder()
+                                    .message("Admins cannot change roles")
+                                    .status(HttpStatus.BAD_REQUEST)
+                                    .build());
+                }
+            }
+        } else {
+            // User không có quyền
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(ResponseObject.builder()
-                            .message(e.getMessage())
-                            .status(HttpStatus.NOT_FOUND)
-                            .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseObject.builder()
-                            .message(e.getMessage())
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .message("Access denied")
+                            .status(HttpStatus.FORBIDDEN)
                             .build());
         }
+
+        // Thực hiện cập nhật
+        UserResponse updatedUser = userService.updateUserByAdmin(userId, updateUserByAdminDTO);
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message("Update user successfully")
+                .data(updatedUser)
+                .status(HttpStatus.OK)
+                .build());
     }
 
 
@@ -501,52 +425,45 @@ public class UserController {
             @Valid @PathVariable int active,
             @RequestHeader("Authorization") String authorizationHeader
     ) throws Exception {
-        try {
-            String extractedToken = authorizationHeader.substring(7);
-            UserEntity requester = userService.getUserDetailsFromToken(extractedToken);
-            UserEntity targetUser = userService.getUserById(userId);
+        String extractedToken = authorizationHeader.substring(7);
+        UserEntity requester = userService.getUserDetailsFromToken(extractedToken);
+        UserEntity targetUser = userService.getUserById(userId);
 
-            // Moderator có quyền block/unblock tất cả tài khoản
-            if (requester.getRole().getName().equals(RoleEntity.MODERATOR)) {
+        // Moderator có quyền block/unblock tất cả tài khoản
+        if (requester.getRole().getName().equals(RoleEntity.MODERATOR)) {
+            userService.blockOrEnable(userId, active > 0);
+        } else if (requester.getRole().getName().equals(RoleEntity.ADMIN)) {
+            // Admin chỉ có quyền block/unblock User
+            if (targetUser.getRole().getName().equals(RoleEntity.USER)) {
                 userService.blockOrEnable(userId, active > 0);
-            } else if (requester.getRole().getName().equals(RoleEntity.ADMIN)) {
-                // Admin chỉ có quyền block/unblock User
-                if (targetUser.getRole().getName().equals(RoleEntity.USER)) {
-                    userService.blockOrEnable(userId, active > 0);
-                } else {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(ResponseObject.builder()
-                                    .message("Access denied")
-                                    .status(HttpStatus.BAD_REQUEST)
-                                    .build());
-                }
             } else {
-                // Nếu là User hoặc vai trò khác
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(ResponseObject.builder()
                                 .message("Access denied")
                                 .status(HttpStatus.BAD_REQUEST)
                                 .build());
             }
-
-            String message = active > 0 ? "Successfully enabled the user." : "Successfully blocked the user.";
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message(message)
-                    .status(HttpStatus.OK)
-                    .data(null)
-                    .build());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                    .message(e.getMessage())
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build());
+        } else {
+            // Nếu là User hoặc vai trò khác
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseObject.builder()
+                            .message("Access denied")
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
         }
+
+        String message = active > 0 ? "Successfully enabled the user." : "Successfully blocked the user.";
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message(message)
+                .status(HttpStatus.OK)
+                .data(null)
+                .build());
     }
 
     //@PostMapping("/login/social")
     private ResponseEntity<ResponseObject> loginSocial(
             @Valid @RequestBody UserLoginDTO userLoginDTO,
-            HttpServletRequest request
+            HttpServletRequest request, HttpServletResponse response
     ) throws Exception {
         // Gọi hàm loginSocial từ UserService cho đăng nhập mạng xã hội
         String token = userService.loginSocial(userLoginDTO);
@@ -555,6 +472,9 @@ public class UserController {
         String userAgent = request.getHeader("User-Agent");
         UserEntity userDetail = userService.getUserDetailsFromToken(token);
         Token jwtToken = tokenService.addToken(userDetail, token, isMobileDevice(userAgent));
+
+        // Thiết lập cookies từ phía server
+        setCookies(response, jwtToken.getRefreshToken());
 
         // Tạo đối tượng LoginResponse
         LoginResponse loginResponse = LoginResponse.builder()
@@ -588,7 +508,7 @@ public class UserController {
     }
 
     @GetMapping("/auth/social/callback")
-    public ResponseEntity<ResponseObject> callback(@RequestParam("code") String code, @RequestParam("login_type") String loginType, HttpServletRequest request) throws Exception {
+    public ResponseEntity<ResponseObject> callback(@RequestParam("code") String code, @RequestParam("login_type") String loginType, HttpServletRequest request, HttpServletResponse response) throws Exception {
         // Call the AuthService to get user info
         Map<String, Object> userInfo = authService.authenticateAndFetchProfile(code, loginType);
 
@@ -645,32 +565,18 @@ public class UserController {
             //userLoginDTO.setGoogleAccountId("");
         }
 
-        return this.loginSocial(userLoginDTO, request);
+        return this.loginSocial(userLoginDTO, request, response);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('MODERATOR')")
-    public ResponseEntity<ResponseObject> deleteUser(@PathVariable Long id) {
-        try {
-            userService.deleteUser(id);
-            return ResponseEntity.ok().body(ResponseObject.builder()
-                    .message("Delete user successfully")
-                    .status(HttpStatus.OK)
-                    .data(null)
-                    .build());
-        } catch (DataNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseObject.builder()
-                    .message(e.getMessage())
-                    .status(HttpStatus.NOT_FOUND)
-                    .data(null)
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseObject.builder()
-                    .message(e.getMessage())
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .data(null)
-                    .build());
-        }
+    public ResponseEntity<ResponseObject> deleteUser(@PathVariable Long id) throws Exception {
+        userService.deleteUser(id);
+        return ResponseEntity.ok().body(ResponseObject.builder()
+                .message("Delete user successfully")
+                .status(HttpStatus.OK)
+                .data(null)
+                .build());
     }
 
 

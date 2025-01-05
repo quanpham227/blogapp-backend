@@ -40,7 +40,7 @@ public class PostEntity extends BaseEntity{
     @Column(name = "thumbnail", length = 2048)
     private String thumbnail;
 
-    @Column(name = "public_id", unique = true, nullable = false)
+    @Column(name = "public_id", nullable = false)
     private String publicId;
 
     @Column(name = "status")
