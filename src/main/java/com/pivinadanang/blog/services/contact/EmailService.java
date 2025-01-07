@@ -25,19 +25,26 @@ public class EmailService implements IEmailService {
 
     @Override
     public void sendEmail(String to, String subject, String text, String from) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(text);
+        message.setFrom(from);
+
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(text);
-            message.setFrom(from);
             mailSender.send(message);
         } catch (MailAuthenticationException e) {
             logger.error("Authentication error: {}", e.getMessage());
-            notifyAdmin("Authentication Error", "Could not send email: " + e.getMessage());
+            notifyAdmin("Authentication error", e.getMessage());
         } catch (Exception e) {
             logger.error("Error sending email: {}", e.getMessage());
-            notifyAdmin("Email Sending Error", "Error sending email: " + e.getMessage());
+            // Retry sending the email
+            try {
+                mailSender.send(message);
+            } catch (Exception retryException) {
+                logger.error("Retry failed: {}", retryException.getMessage());
+                notifyAdmin("Email sending failed", retryException.getMessage());
+            }
         }
     }
 

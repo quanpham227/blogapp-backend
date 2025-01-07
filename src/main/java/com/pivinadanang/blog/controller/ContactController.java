@@ -2,6 +2,7 @@ package com.pivinadanang.blog.controller;
 
 
 import com.pivinadanang.blog.dtos.ContactDTO;
+import com.pivinadanang.blog.exceptions.InternalServerErrorException;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.services.contact.IEmailService;
 import jakarta.validation.Valid;
@@ -59,13 +60,8 @@ public class ContactController {
         try {
             emailService.sendEmail(to, subject, text, from);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    ResponseObject.builder()
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .data(null)
-                            .message("Failed to send email. Please try again later.")
-                            .build()
-            );
+            throw new InternalServerErrorException("Failed to send email. Please try again later.");
+
         }
 
         return ResponseEntity.ok(

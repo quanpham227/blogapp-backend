@@ -1,5 +1,6 @@
 package com.pivinadanang.blog.repository;
 
+import com.pivinadanang.blog.BlogApplication;
 import com.pivinadanang.blog.enums.PostStatus;
 import com.pivinadanang.blog.enums.PostVisibility;
 import com.pivinadanang.blog.models.CategoryEntity;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@ContextConfiguration(classes = BlogApplication.class)
 @Transactional
 @Rollback
 class CategoryRepositoryTest {

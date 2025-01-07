@@ -64,13 +64,15 @@ public class EmailServiceTest {
     }
     @Test
     void testSendEmail_GeneralError() {
-        // Ghi đè lỗi RuntimeException
+        // Mock RuntimeException
         doThrow(new RuntimeException("General error"))
                 .when(mailSender).send(any(SimpleMailMessage.class));
 
         emailService.sendEmail(to, subject, text, from);
 
-        verify(mailSender, times(2)).send(any(SimpleMailMessage.class));
+        // Verify that the send method was called twice for the original email
+        verify(mailSender, times(2)).send((SimpleMailMessage) argThat(message -> !((SimpleMailMessage) message).getTo()[0].equals(adminEmail)));
+        // Verify that the send method was called once for the admin notification
         verify(mailSender, times(1)).send((SimpleMailMessage) argThat(message -> ((SimpleMailMessage) message).getTo()[0].equals(adminEmail)));
     }
 }

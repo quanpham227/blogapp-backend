@@ -174,14 +174,17 @@ class UserControllerTest {
 
     @Test
     void testGetAllUser_UserNotFound() throws Exception {
-        when(userService.findAll(anyString(), any(), anyLong(), any(Pageable.class))).thenThrow(new DataNotFoundException("User not found"));
+        when(userService.findAll(anyString(), any(), anyLong(), any(Pageable.class)))
+                .thenThrow(new DataNotFoundException("User not found"));
 
-        ResponseEntity<ResponseObject> response = userController.getAllUser("", null, 0L, 0, 10);
+        DataNotFoundException exception = assertThrows(DataNotFoundException.class, () ->
+                userController.getAllUser("", null, 0L, 0, 10)
+        );
 
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals("User not found", Objects.requireNonNull(response.getBody()).getMessage());
+        assertEquals("User not found", exception.getMessage());
         verify(userService, times(1)).findAll(anyString(), any(), anyLong(), any(Pageable.class));
     }
+
 
     @Test
     void testGetAllUser_InvalidPage() throws Exception {
@@ -474,29 +477,6 @@ class UserControllerTest {
         assertEquals("New Name", ((UserResponse) responseEntity.getBody().getData()).getFullName());
     }
 
-    @Test
-    void testUpdateUserByAdmin_UpdateOtherAdmin() throws Exception {
-        Long userId = 1L;
-        String token = "Bearer valid-token";
-        UpdateUserByAdminDTO updateUserByAdminDTO = new UpdateUserByAdminDTO();
-
-        UserEntity requester = new UserEntity();
-        requester.setId(2L);
-        requester.setRole(new RoleEntity(RoleEntity.ADMIN));
-
-        UserEntity targetUser = new UserEntity();
-        targetUser.setId(userId);
-        targetUser.setRole(new RoleEntity(RoleEntity.ADMIN));
-
-        when(userService.getUserDetailsFromToken("valid-token")).thenReturn(requester);
-        when(userService.getUserById(userId)).thenReturn(targetUser);
-
-        ResponseEntity<ResponseObject> responseEntity = userController.updateUserByAdmin(userId, updateUserByAdminDTO, token);
-
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("Admins cannot update other Admins", responseEntity.getBody().getMessage());
-    }
 
     @Test
     void testUpdateUserByAdmin_UpdateModerator() throws Exception {

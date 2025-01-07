@@ -1,7 +1,9 @@
 package com.pivinadanang.blog.controllers;
 
+import com.pivinadanang.blog.config.test.TestEmailConfig;
 import com.pivinadanang.blog.controller.ContactController;
 import com.pivinadanang.blog.dtos.ContactDTO;
+import com.pivinadanang.blog.exceptions.InternalServerErrorException;
 import com.pivinadanang.blog.responses.ResponseObject;
 import com.pivinadanang.blog.services.contact.IEmailService;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,15 +11,18 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
+@Import(TestEmailConfig.class)
 public class ContactControllerTest {
 
     @Mock
@@ -98,11 +103,17 @@ public class ContactControllerTest {
                 "Message: " + contactForm.getMessage();
         String from = contactForm.getEmail();
 
-        doThrow(new RuntimeException("Email service failed")).when(emailService).sendEmail(to, subject, text, from);
+        // Giả lập ngoại lệ khi gọi emailService.sendEmail
+        doThrow(new InternalServerErrorException("Failed to send email. Please try again later."))
+                .when(emailService).sendEmail(to, subject, text, from);
 
-        ResponseEntity<ResponseObject> responseEntity = contactController.sendContactEmail(contactForm);
+        // Kiểm tra ngoại lệ được ném
+        InternalServerErrorException exception = assertThrows(
+                InternalServerErrorException.class,
+                () -> contactController.sendContactEmail(contactForm)
+        );
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertEquals("Failed to send email. Please try again later.", responseEntity.getBody().getMessage());
+        assertEquals("Failed to send email. Please try again later.", exception.getMessage());
     }
+
 }

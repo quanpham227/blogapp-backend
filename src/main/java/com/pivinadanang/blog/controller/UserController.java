@@ -76,29 +76,17 @@ public class UserController {
                             .status(HttpStatus.BAD_REQUEST)
                             .build());
         }
-        try {
-            Pageable pageable = PageRequest.of(page, limit, Sort.by("createdAt").ascending());
-            Page<UserResponse> userPage = userService.findAll(keyword, status, roleId, pageable)
-                    .map(UserResponse::fromUser);
-            int totalPages = userPage.getTotalPages();
-            List<UserResponse> userResponses = userPage.getContent();
-            UserListResponse userListResponse = UserListResponse
-                    .builder()
-                    .users(userResponses)
-                    .totalPages(totalPages)
-                    .build();
-            return buildOkResponse(userListResponse, "Get users successfully");
-        } catch (DataNotFoundException e) {
-            logger.error("DataNotFoundException in getAllUser: ", e);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ResponseObject.builder()
-                            .message(e.getMessage())
-                            .status(HttpStatus.NOT_FOUND)
-                            .build());
-        } catch (RuntimeException exception) {
-            logger.error("Exception in getAllUser: ", exception);
-            return buildErrorResponse(exception);
-        }
+        Pageable pageable = PageRequest.of(page, limit, Sort.by("createdAt").ascending());
+        Page<UserResponse> userPage = userService.findAll(keyword, status, roleId, pageable)
+                .map(UserResponse::fromUser);
+        int totalPages = userPage.getTotalPages();
+        List<UserResponse> userResponses = userPage.getContent();
+        UserListResponse userListResponse = UserListResponse
+                .builder()
+                .users(userResponses)
+                .totalPages(totalPages)
+                .build();
+        return buildOkResponse(userListResponse, "Get users successfully");
     }
     @PostMapping("/register")
     public ResponseEntity<ResponseObject> createUser(@Valid @RequestBody UserDTO userDTO,
