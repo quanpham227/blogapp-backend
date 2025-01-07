@@ -23,8 +23,8 @@ class CorsConfig {
         return origins;
     }
 
-    public void setOrigins(List<String> origins) {
-        this.origins = origins;
+    public void setOrigins(String origins) {
+        this.origins = List.of(origins.split(","));
     }
 }
 

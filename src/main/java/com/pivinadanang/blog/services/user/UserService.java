@@ -189,10 +189,11 @@ public class UserService implements IUserService{
 
         // Check if the phone number is being changed and if it already exists for another user
         String phoneNumber = updatedUserDTO.getPhoneNumber();
-        if (!existingUser.getPhoneNumber().equals(phoneNumber) &&
-                userRepository.existsByPhoneNumber(phoneNumber)) {
+        if ((existingUser.getPhoneNumber() == null || !existingUser.getPhoneNumber().equals(phoneNumber)) &&
+                phoneNumber != null && userRepository.existsByPhoneNumber(phoneNumber)) {
             throw new DataIntegrityViolationException("Phone number already exists");
         }
+
 
         // Update user information based on the DTO
         if (updatedUserDTO.getFullName() != null) {

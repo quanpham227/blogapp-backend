@@ -330,17 +330,17 @@ public class UserController {
             } else {
                 // Không được cập nhật thông tin của Admin khác hoặc Moderator
                 if (targetUser.getRole().getName().equals(RoleEntity.ADMIN)) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
                             .body(ResponseObject.builder()
                                     .message("Admins cannot update other Admins")
-                                    .status(HttpStatus.BAD_REQUEST)
+                                    .status(HttpStatus.FORBIDDEN)
                                     .build());
                 }
                 if (targetUser.getRole().getName().equals(RoleEntity.MODERATOR)) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                             .body(ResponseObject.builder()
                                     .message("Admins cannot update Moderators")
-                                    .status(HttpStatus.BAD_REQUEST)
+                                    .status(HttpStatus.FORBIDDEN)
                                     .build());
                 }
 
